@@ -63,7 +63,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
     try {
       const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.name || ''
       const contact = user?.phoneNumber || user?.contact || ''
-      await tasksApi.claim(claimModal.taskId, name, contact)
+      await tasksApi.claim(claimModal.taskId, name, contact, true)
       setClaimModal(null)
       Alert.alert('Success!', 'Task accepted! Check My Active Tasks.')
       load(1, search, category)
