@@ -1,6 +1,10 @@
 import api from './client'
 import type { LoginModel, RegisterModel, AuthResponse } from '../types'
 
+export const publicApi = {
+  getStats: () => api.get('/public/stats'),
+}
+
 export const authApi = {
   login: (data: LoginModel) => api.post<AuthResponse>('/auth/login', data),
   register: (data: RegisterModel) => api.post<AuthResponse>('/auth/register', data),
@@ -21,33 +25,43 @@ export const tasksApi = {
   getById: (id: string) => api.get(`/tasks/${id}`),
   create: (data: object) => api.post('/tasks', data),
   update: (id: string, data: object) => api.put(`/tasks/${id}`, data),
-  claim: (id: string, helperName: string, helperContact: string) =>
-    api.post(`/tasks/${id}/claim`, { HelperName: helperName, HelperContact: helperContact }),
+  claim: (id: string, helperName: string, helperContact: string, termsAccepted = false) =>
+    api.post(`/tasks/${id}/claim`, { HelperName: helperName, HelperContact: helperContact, TermsAccepted: termsAccepted }),
   complete: (id: string) => api.post(`/tasks/${id}/complete`, {}),
   confirm: (id: string) => api.post(`/tasks/${id}/confirm`, {}),
   cancel: (id: string, reason: string) => api.post(`/tasks/${id}/cancel`, { reason }),
   getMessages: (id: string, params?: object) => api.get(`/tasks/${id}/messages`, { params }),
   sendMessage: (id: string, content: string) => api.post(`/tasks/${id}/messages`, { content }),
   markMessagesRead: (id: string) => api.put(`/tasks/${id}/messages/read`, {}),
+  addProgress: (id: string, message: string) => api.post(`/tasks/${id}/progress`, { progressNote: message }),
   getDashboardStats: () => api.get('/tasks/dashboard/stats'),
   getRecentActivity: (limit = 5) => api.get(`/tasks/dashboard/activity?limit=${limit}`),
+  getPaymentHistory: () => api.get('/tasks/payment-history'),
   getPaymentUrl: (id: string) => api.get(`/tasks/${id}/payment-url`),
   initiatePayment: (taskId: string) => api.post('/payment/initiate', { taskId }),
   getFilters: () => api.get('/tasks/filters'),
 }
 
-export const walletApi = {
-  getBalance: () => api.get('/wallet/balance'),
-  getTransactions: (page = 1, pageSize = 20) =>
-    api.get(`/wallet/transactions?page=${page}&pageSize=${pageSize}`),
+export const bankingApi = {
   getBankAccounts: () => api.get('/banking/accounts'),
+  getBanks: () => api.get('/banking/banks'),
   addBankAccount: (data: object) => api.post('/banking/accounts', data),
-  requestWithdrawal: (data: object) => api.post('/wallet/withdraw', data),
-  getPendingWithdrawals: () => api.get('/wallet/withdrawals/pending'),
+  verifyBankAccount: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
+}
+
+export const supportApi = {
+  createTicket: (data: object) => api.post('/support/tickets', data),
+  getMyTickets: () => api.get('/support/tickets'),
+  getTicket: (id: number) => api.get(`/support/tickets/${id}`),
 }
 
 export const notificationsApi = {
-  getAll: (page = 1, pageSize = 20) => api.get('/notifications', { params: { page, pageSize } }),
+  getAll: (page = 1, pageSize = 20, type?: string, unreadOnly?: boolean) => {
+    const params: any = { page, pageSize }
+    if (type) params.type = type
+    if (unreadOnly) params.unreadOnly = true
+    return api.get('/notifications', { params })
+  },
   markRead: (id: string) => api.post(`/notifications/${id}/mark-read`, {}),
   markAllRead: () => api.post('/notifications/mark-all-read', {}),
   markTaskRead: (taskId: number) => api.post('/notifications/mark-task-read', { taskId }),
@@ -55,47 +69,42 @@ export const notificationsApi = {
   clearRead: () => api.delete('/notifications/clear-read'),
 }
 
+export const disputesApi = {
+  raise: (taskId: string, issue: string, category: string) => api.post('/disputes', { taskId, issue, category }),
+  getMy: () => api.get('/disputes/my'),
+}
+
 export const ratingsApi = {
-  submit: (taskId: string, ratingValue: number, review?: string) =>
-    api.post('/ratings', { taskId, ratingValue, review }),
-  getForUser: (userId: number, page = 1, pageSize = 5) =>
-    api.get(`/ratings/user/${userId}?page=${page}&pageSize=${pageSize}`),
+  submit: (taskId: string, ratingValue: number, review?: string) => api.post('/ratings', { taskId, ratingValue, review }),
+  getForUser: (userId: number, page = 1, pageSize = 5) => api.get(`/ratings/user/${userId}?page=${page}&pageSize=${pageSize}`),
   canRate: (taskId: string) => api.get(`/ratings/can-rate/${taskId}`),
 }
 
-export const categoryApi = {
-  getAll: () => api.get('/categories'),
-}
+export const categoryApi = { getAll: () => api.get('/categories') }
 
 export const userPreferencesApi = {
-  get: () => api.get('/UserPreferences'),
-  update: (data: object) => api.put('/UserPreferences', data),
-}
-
-export const disputesApi = {
-  raise: (taskId: string, issue: string, category: string) =>
-    api.post('/disputes', { taskId, issue, category }),
-  getMy: () => api.get('/disputes/my'),
+  get: () => api.get('/user/preferences'),
+  update: (data: object) => api.put('/user/preferences', data),
 }
 
 export const adminApi = {
   getDashboard: () => api.get('/admin/dashboard'),
   getPayments: () => api.get('/admin/payments'),
   getTasks: (params?: object) => api.get('/admin/tasks', { params }),
-  verifyPayment: (id: string) => api.patch(`/admin/tasks/${id}/verify`, {}),
-  unverifyPayment: (id: string) => api.patch(`/admin/tasks/${id}/unverify`, {}),
-  bulkVerify: (ids: string[]) => api.patch('/admin/tasks/bulk-verify', { taskIds: ids }),
-  forceReleaseEscrow: (id: string) => api.patch(`/admin/tasks/${id}/force-release-escrow`, {}),
+  verifyPayment: (id: string, reason: string) => api.patch(`/admin/tasks/${id}/verify`, { reason }),
+  unverifyPayment: (id: string, reason: string) => api.patch(`/admin/tasks/${id}/unverify`, { reason }),
+  bulkVerify: (ids: string[], reason: string) => api.patch('/admin/tasks/bulk-verify', { taskIds: ids, reason }),
+  forceReleaseEscrow: (id: string, reason: string) => api.patch(`/admin/tasks/${id}/force-release-escrow`, { reason }),
   getUsers: (params?: object) => api.get('/admin/users', { params }),
-  updateUserStatus: (id: number, isVerified: boolean) =>
-    api.patch(`/admin/users/${id}/status`, { isVerified }),
-  updateUserRole: (id: number, role: string) => api.patch(`/admin/users/${id}/role`, { role }),
-  getAuditLogs: (page = 1, pageSize = 20) =>
-    api.get(`/admin/audit-logs?page=${page}&pageSize=${pageSize}`),
-  getWithdrawalRequests: (params?: object) => api.get('/admin/withdrawal-requests', { params }),
+  updateUserStatus: (id: number, isVerified: boolean, reason: string) => api.patch(`/admin/users/${id}/status`, { isVerified, reason }),
+  updateUserRole: (id: number, role: string, reason: string) => api.patch(`/admin/users/${id}/role`, { role, reason }),
+  getUserTaskHistory: (id: number) => api.get(`/admin/users/${id}/tasks`),
+  getAuditLogs: (page = 1, pageSize = 20) => api.get(`/admin/audit-logs?page=${page}&pageSize=${pageSize}`),
+  getBankAccounts: (unverifiedOnly?: boolean) => api.get('/admin/bank-accounts', { params: { unverifiedOnly } }),
+  verifyBankAccount: (id: number) => api.patch(`/admin/bank-accounts/${id}/verify`, {}),
   getDisputes: (params?: object) => api.get('/disputes', { params }),
-  resolveDispute: (id: number, resolution: string, action: string) =>
-    api.patch(`/disputes/${id}/resolve`, { resolution, action }),
+  resolveDispute: (id: number, resolution: string, action: string, reason: string) => api.patch(`/disputes/${id}/resolve`, { resolution, action, reason }),
   deleteTask: (taskId: string) => api.delete(`/admin/tasks/${taskId}`),
   deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
+  getTaskMessages: (taskId: string) => api.get(`/admin/tasks/${taskId}/messages`),
 }
