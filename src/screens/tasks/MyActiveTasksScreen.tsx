@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, FlatList, StyleSheet, Alert, RefreshControl, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, StyleSheet, Alert, RefreshControl, TouchableOpacity, TextInput } from 'react-native'
 import { tasksApi, disputesApi, ratingsApi } from '../../api'
 import { LoadingScreen, EmptyState } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
@@ -41,6 +41,7 @@ export default function MyActiveTasksScreen({ navigation }: any) {
     dateNeeded: t.dueDate || t.dateNeeded || '',
     userName: t.creatorName || t.userName || '',
     userContact: t.creatorContact || t.userContact || '',
+    payoutAmount: t.payoutAmount || t.PayoutAmount || 0,
   })
 
   const handleComplete = async () => {
@@ -91,7 +92,7 @@ export default function MyActiveTasksScreen({ navigation }: any) {
       <View style={styles.taskCard}>
         <View style={styles.taskHeader}>
           <StatusBadge status={t.taskStatus} />
-          <Text style={styles.budget}>R{(t.budget * 0.85).toFixed(0)} <Text style={styles.budgetSub}>you earn</Text></Text>
+          <Text style={styles.budget}>R{Number(t.payoutAmount || t.budget * 0.85).toFixed(0)} <Text style={styles.budgetSub}>you earn</Text></Text>
         </View>
         <Text style={styles.taskTitle} numberOfLines={2}>{t.taskName || t.taskDescription}</Text>
         <View style={styles.taskMeta}>
