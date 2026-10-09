@@ -29,7 +29,7 @@ jobs:
 
   android-debug-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,6 +45,8 @@ jobs:
           java-version: 17
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
+      - name: Configure Gradle and cache dependencies
+        uses: gradle/actions/setup-gradle@v4
       - name: Install dependencies
         run: npm ci
       - name: Install Android platform and build tools
