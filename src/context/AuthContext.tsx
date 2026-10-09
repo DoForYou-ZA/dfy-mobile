@@ -105,10 +105,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token])
 
   const isAdmin = useCallback(() => {
-    if (!user) return false
-    if (typeof user.isAdmin === 'boolean') return user.isAdmin
-    return user.roles?.includes('Admin') ?? false
-  }, [user])
+    const userRoles = Array.isArray(user?.roles) ? user.roles : []
+    const hasUserAdminRole = user?.isAdmin === true
+      || userRoles.some(role => String(role).toLowerCase() === 'admin')
+    if (hasUserAdminRole) return true
+
+    // The cached profile can be stale or incomplete. Also inspect role claims in
+    // the signed-in token so an admin cannot enter the customer/runner UI merely
+    // because the local profile cache omitted its role.
+    if (!token) return false
+    try {
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+      const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+      const roleClaims = [
+        payload.role,
+        payload.roles,
+        payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'],
+      ].flatMap(value => Array.isArray(value) ? value : value ? [value] : [])
+      return roleClaims.some(role => String(role).toLowerCase() === 'admin')
+    } catch {
+      return false
+    }
+  }, [user, token])
 
   const isProfileComplete = useCallback(() => {
     if (!user) return false
