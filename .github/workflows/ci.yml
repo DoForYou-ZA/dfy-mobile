@@ -30,6 +30,11 @@ jobs:
   android-release-build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Expo public variables are embedded in the client bundle at build time.
+    # Keep these staging URLs here so the installed APK targets the staging API.
+    env:
+      EXPO_PUBLIC_DFY_API_URL: https://dfy-be-staging.onrender.com/api/v1
+      EXPO_PUBLIC_DFY_SIGNALR_URL: https://dfy-be-staging.onrender.com
     steps:
       - name: Checkout
         uses: actions/checkout@v4
