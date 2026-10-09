@@ -23,9 +23,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: TypeScript check
-        run: npm run typecheck
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee typecheck.log
       - name: Export Android JavaScript bundle
-        run: npx expo export --platform android
+        run: |
+          set -o pipefail
+          npx expo export --platform android 2>&1 | tee expo-export.log
+      - name: Upload CI diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfy-mobile-ci-diagnostics
+          path: |
+            typecheck.log
+            expo-export.log
+          if-no-files-found: ignore
 
   android-release-build:
     runs-on: ubuntu-latest
@@ -68,10 +81,20 @@ jobs:
           df -h
       - name: Build standalone release APK (embeds JavaScript; no Metro required)
         working-directory: android
-        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee ../android-build.log
       - name: Show runner disk space after build
         if: always()
         run: df -h
+      - name: Upload Android build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfy-mobile-android-build-diagnostics
+          path: android-build.log
+          if-no-files-found: ignore
       - name: Upload standalone release APK
         uses: actions/upload-artifact@v4
         with:
