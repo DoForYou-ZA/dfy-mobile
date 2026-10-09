@@ -67,7 +67,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
       await tasksApi.confirm(confirmModal.taskId)
       setConfirmModal(null)
       await loadTasks()
-      Alert.alert('Success', 'Payment released to runner!')
+      Alert.alert('Completion confirmed', 'Escrow was released and the runner payout has been queued. You will be notified when Paystack confirms the transfer.')
     } catch { Alert.alert('Error', 'Failed to confirm task.') }
     finally { setActionLoading(false) }
   }
