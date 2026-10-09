@@ -43,7 +43,7 @@ function TopNavbar({ navRef }: { navRef: any }) {
           accessibilityRole="button"
           accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         >
-          <Text style={s.bellIcon}>♧</Text>
+          <Text style={s.bellIcon}>🔔</Text>
           {unreadCount > 0 && (
             <View style={s.bellBadge}><Text style={s.bellBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text></View>
           )}
