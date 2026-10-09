@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payloadText = decodeURIComponent(Array.from(decoded, char => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''))
       const payload = JSON.parse(payloadText)
       return payload.exp > Date.now() / 1000
-    } catch { return true } // if decode fails, assume valid and let API reject
+    } catch { return false } // malformed/unreadable tokens fail closed; the API remains authoritative
   }, [token])
 
   const isAdmin = useCallback(() => isAdminSession(user, token), [user, token])
