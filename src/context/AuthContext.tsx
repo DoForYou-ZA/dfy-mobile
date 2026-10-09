@@ -39,7 +39,9 @@ function isAdminSession(candidate: any, accessToken?: string | null): boolean {
     if (!encoded) return false
     const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
     const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
-    const claims = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+    const decoded = atob(padded)
+    const payloadText = decodeURIComponent(Array.from(decoded, char => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''))
+    const claims = JSON.parse(payloadText)
     const claimRoles = [
       claims.role,
       claims.roles,
