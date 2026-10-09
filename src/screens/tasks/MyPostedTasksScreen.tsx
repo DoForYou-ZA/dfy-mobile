@@ -103,8 +103,8 @@ export default function MyPostedTasksScreen({ navigation }: any) {
       const url = r.data?.data?.paymentUrl
       if (url) {
         await WebBrowser.openBrowserAsync(url)
-        // After browser closes, call payment-success to activate the task
-        try { await tasksApi.handlePaymentSuccess(taskId) } catch {}
+        // Payment state is authoritative on the backend (Paystack webhook/return).
+        // Closing the browser is not proof that payment succeeded.
         await loadTasks()
         return
       }
@@ -114,7 +114,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
       const url = r.data?.data?.paymentUrl
       if (url) {
         await WebBrowser.openBrowserAsync(url)
-        try { await tasksApi.handlePaymentSuccess(taskId) } catch {}
+        // Refresh backend state; never infer payment success from browser dismissal.
         await loadTasks()
       }
     } catch { Alert.alert('Error', 'Could not get payment URL.') }
