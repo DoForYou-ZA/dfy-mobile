@@ -44,7 +44,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
       - name: Install dependencies
         run: npm ci
       - name: Install Android platform and build tools
