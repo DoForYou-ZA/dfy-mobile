@@ -112,6 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(data.message || 'Login failed')
     }
     if (isAdminSession(data.user, data.token)) {
+      await clearAccessToken()
+      await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
+      setToken(null)
+      setUser(null)
       throw new Error(ADMIN_MOBILE_MESSAGE)
     }
     await setAccessToken(data.token)
@@ -123,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     if (isAdminSession(fullUser, data.token)) {
       await clearAccessToken()
+      await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
       setToken(null)
       setUser(null)
       throw new Error(ADMIN_MOBILE_MESSAGE)
