@@ -1,60 +1,56 @@
 import React from 'react'
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
-import { COLORS, RADIUS, SPACING } from '../config/theme'
+import { COLORS, RADIUS, SPACING, SHADOW } from '../config/theme'
 
-// .loading-state from global.css
-export function LoadingScreen({ message = 'Loading...' }: { message?: string }) {
+export function LoadingScreen({ message = 'Getting things ready…' }: { message?: string }) {
   return (
     <View style={s.loadingState}>
-      <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={s.loadingMark}><Text style={s.markText}>d</Text><View style={s.markDot} /></View>
+      <ActivityIndicator size="small" color={COLORS.primary} />
       <Text style={s.loadingText}>{message}</Text>
     </View>
   )
 }
 
-// .empty-state from global.css
 export function EmptyState({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) {
   return (
     <View style={s.emptyState}>
-      <Text style={s.emptyIcon}>{icon}</Text>
+      <View style={s.emptyMark}><Text style={s.emptyIcon}>{icon}</Text></View>
       <Text style={s.emptyTitle}>{title}</Text>
       {subtitle ? <Text style={s.emptySubtitle}>{subtitle}</Text> : null}
     </View>
   )
 }
 
-// .alert .alert-error/success/warning/info from global.css
 export function AlertBanner({ type = 'info', message }: { type?: 'error' | 'success' | 'warning' | 'info'; message: string }) {
   const map = {
-    error:   { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' },
-    success: { bg: '#DCFCE7', color: '#166534', border: '#BBF7D0' },
-    warning: { bg: '#FEF9C3', color: '#854D0E', border: '#FDE68A' },
-    info:    { bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE' },
+    error: { bg: '#FCECEA', color: '#9A302B', border: '#F2D1CC', accent: COLORS.danger },
+    success: { bg: '#E8F4EC', color: '#225E44', border: '#CDE5D5', accent: COLORS.success },
+    warning: { bg: '#FFF3DA', color: '#7A5018', border: '#F1DFB8', accent: COLORS.warning },
+    info: { bg: '#EAF0F9', color: '#2B4F7C', border: '#D3DEEF', accent: COLORS.info },
   }
   const c = map[type]
   return (
-    <View style={[s.alert, { backgroundColor: c.bg, borderColor: c.border }]}>
+    <View style={[s.alert, { backgroundColor: c.bg, borderColor: c.border, borderLeftColor: c.accent }]}>
       <Text style={[s.alertText, { color: c.color }]}>{message}</Text>
     </View>
   )
 }
 
-// .page-header from global.css — orange gradient header used on every page
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <View style={s.pageHeader}>
+      <Text style={s.pageEyebrow}>DOFORYOU</Text>
       <Text style={s.pageHeaderTitle}>{title}</Text>
       {subtitle ? <Text style={s.pageHeaderSub}>{subtitle}</Text> : null}
     </View>
   )
 }
 
-// .section-card from global.css
 export function SectionCard({ children, style }: { children: React.ReactNode; style?: any }) {
   return <View style={[s.sectionCard, style]}>{children}</View>
 }
 
-// .section-header from global.css
 export function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <View style={s.sectionHeader}>
@@ -66,71 +62,31 @@ export function SectionHeader({ title, right }: { title: string; right?: React.R
 
 const s = StyleSheet.create({
   loadingState: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    padding: SPACING.xl,
-    backgroundColor: COLORS.background,
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: 14, padding: SPACING.xl, backgroundColor: COLORS.background,
   },
-  loadingText: { color: COLORS.textSecondary, fontSize: 14 },
-
-  emptyState: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    padding: SPACING.xl * 2,
+  loadingMark: {
+    width: 52, height: 52, borderRadius: 18, backgroundColor: COLORS.ink,
+    alignItems: 'center', justifyContent: 'center',
   },
-  emptyIcon: { fontSize: 48, opacity: 0.35, marginBottom: 4 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center' },
-  emptySubtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
-
-  alert: {
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    padding: 14,
-    marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
+  markText: { color: COLORS.white, fontSize: 30, fontWeight: '800', marginTop: -4 },
+  markDot: { position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary, right: 9, bottom: 10 },
+  loadingText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '500' },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: SPACING.xl * 1.5 },
+  emptyMark: {
+    width: 68, height: 68, borderRadius: 24, backgroundColor: COLORS.primaryLight,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 2,
   },
-  alertText: { fontSize: 14, lineHeight: 20, flex: 1 },
-
-  // .page-header — orange gradient
-  pageHeader: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  pageHeaderTitle: { fontSize: 28, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  pageHeaderSub: { fontSize: 15, color: 'rgba(255,255,255,0.85)' },
-
-  // .section-card
-  sectionCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-
-  // .section-header
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+  emptyIcon: { fontSize: 28, color: COLORS.ink },
+  emptyTitle: { fontSize: 19, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center', letterSpacing: -0.25 },
+  emptySubtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
+  alert: { borderWidth: 1, borderLeftWidth: 4, borderRadius: RADIUS.sm, padding: 14, marginBottom: 16 },
+  alertText: { fontSize: 14, lineHeight: 21, flex: 1 },
+  pageHeader: { backgroundColor: COLORS.ink, paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.xl, marginBottom: SPACING.md },
+  pageEyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 2.2, color: COLORS.accent, marginBottom: 10 },
+  pageHeaderTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.7, color: COLORS.white, marginBottom: 5 },
+  pageHeaderSub: { fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 21 },
+  sectionCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, marginBottom: SPACING.md, ...SHADOW.sm },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.3 },
 })
