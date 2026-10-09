@@ -54,6 +54,7 @@ function TopNavbar({ navRef }: { navRef: any }) {
 
 function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any }) {
   const { isAuthenticated, isAdmin, canPostErrands, user } = useAuth()
+  const { unreadCount } = useNotifications()
   const insets = useSafeAreaInsets()
   if (!isAuthenticated() || isAdmin() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
 
@@ -85,7 +86,7 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
       <TouchableOpacity accessibilityRole="button" style={s.navItem} onPress={() => go('Notifications')}>
         <View style={s.navIconWrap}>
           <Text style={[s.navIcon, isActive('Notifications') && s.navIconActive]}>♧</Text>
-          {useNotificationsBadgePlaceholder(false)}
+          {unreadCount > 0 && <View style={s.navBadge} />}
         </View>
         <Text style={[s.navLabel, isActive('Notifications') && s.navLabelActive]}>Alerts</Text>
       </TouchableOpacity>
@@ -97,9 +98,6 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
   )
 }
 
-function useNotificationsBadgePlaceholder(_unused: boolean) {
-  return null
-}
 
 const orangeHeader = {
   headerStyle: { backgroundColor: COLORS.primary },
@@ -183,6 +181,7 @@ const s = StyleSheet.create({
   },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 44 },
   navIconWrap: { position: 'relative' },
+  navBadge: { position: 'absolute', top: 1, right: -4, width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.danger, borderWidth: 1, borderColor: COLORS.surface },
   navIcon: { fontSize: 23, color: COLORS.textMuted, fontWeight: '600' },
   navIconActive: { color: COLORS.primary, fontWeight: '900' },
   navLabel: { fontSize: 10, fontWeight: '700', color: COLORS.textMuted },
