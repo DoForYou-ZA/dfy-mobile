@@ -93,7 +93,6 @@ export default function PostErrandScreen({ navigation, route }: any) {
       const data = res.data
       if (data.success !== false) {
         const payUrl = data.data?.paymentUrl
-        const createdTaskId = data.data?.task?.taskId
 
         if (payUrl) {
           // Open Paystack checkout. Browser dismissal is not proof of payment;
