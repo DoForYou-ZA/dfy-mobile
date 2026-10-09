@@ -94,23 +94,23 @@ export default function DashboardScreen({ navigation }: any) {
 
   const metrics = userType === 'creator'
     ? [
-        { label: 'Active tasks', value: stats?.activeTasks ?? 0, icon: '↗', tone: 'orange' },
-        { label: 'Need your review', value: stats?.awaitingConfirmation ?? 0, icon: '✓', tone: 'blue' },
-        { label: 'Tasks posted', value: stats?.postedTasks ?? 0, icon: '＋', tone: 'purple' },
-        { label: 'Completed', value: stats?.completedPostedTasks ?? 0, icon: '★', tone: 'green' },
+        { label: 'Active tasks', value: stats?.activeTasks ?? 0, icon: '↗', iconBg: '#FFF0D9', iconFg: '#BC6500', tone: 'orange' },
+        { label: 'Need your review', value: stats?.awaitingConfirmation ?? 0, icon: '✓', iconBg: '#EAF0FF', iconFg: '#315EC0', tone: 'blue' },
+        { label: 'Tasks posted', value: stats?.postedTasks ?? 0, icon: '＋', iconBg: '#F2ECFF', iconFg: '#7650B8', tone: 'purple' },
+        { label: 'Completed', value: stats?.completedPostedTasks ?? 0, icon: '★', iconBg: '#E6F7EF', iconFg: '#17865B', tone: 'green' },
       ]
     : userType === 'runner'
       ? [
-          { label: 'Available tasks', value: stats?.availableTasks ?? 0, icon: '⌕', tone: 'orange' },
-          { label: 'My active tasks', value: stats?.myActiveTasks ?? 0, icon: '↗', tone: 'blue' },
-          { label: 'Total earnings', value: rand(stats?.totalEarnings), icon: 'R', tone: 'green' },
-          { label: 'Payouts pending', value: rand(stats?.pendingPayouts), icon: '◷', tone: 'purple' },
+          { label: 'Available tasks', value: stats?.availableTasks ?? 0, icon: '⌕', iconBg: '#FFF0D9', iconFg: '#BC6500', tone: 'orange' },
+          { label: 'My active tasks', value: stats?.myActiveTasks ?? 0, icon: '↗', iconBg: '#EAF0FF', iconFg: '#315EC0', tone: 'blue' },
+          { label: 'Total earnings', value: rand(stats?.totalEarnings), icon: 'R', iconBg: '#E6F7EF', iconFg: '#17865B', tone: 'green' },
+          { label: 'Payouts pending', value: rand(stats?.pendingPayouts), icon: '◷', iconBg: '#F2ECFF', iconFg: '#7650B8', tone: 'purple' },
         ]
       : [
           { label: 'Active tasks', value: stats?.activeTasks ?? stats?.myActiveTasks ?? 0, icon: '↗', tone: 'orange' },
           { label: 'Need your review', value: stats?.awaitingConfirmation ?? 0, icon: '✓', tone: 'blue' },
-          { label: 'Available tasks', value: stats?.availableTasks ?? 0, icon: '⌕', tone: 'purple' },
-          { label: 'Total earnings', value: rand(stats?.totalEarnings), icon: 'R', tone: 'green' },
+          { label: 'Available tasks', value: stats?.availableTasks ?? 0, icon: '⌕', iconBg: '#F2ECFF', iconFg: '#7650B8', tone: 'purple' },
+          { label: 'Total earnings', value: rand(stats?.totalEarnings), icon: 'R', iconBg: '#E6F7EF', iconFg: '#17865B', tone: 'green' },
         ]
 
   const metricToneStyles: Record<string, { background: any; text: any }> = {
