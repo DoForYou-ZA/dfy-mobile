@@ -124,32 +124,27 @@ export default function MyPostedTasksScreen({ navigation }: any) {
 
   const handlePayNow = async (taskId: string) => {
     try {
-      const r = await tasksApi.getPaymentUrl(taskId)
-      const url = r.data?.data?.paymentUrl
-      if (url) {
-        await WebBrowser.openBrowserAsync(url)
-        // Payment state is authoritative on the backend (Paystack webhook/return).
-        // Closing the browser is not proof that payment succeeded.
-        await loadTasks()
+      const response = await tasksApi.getPaymentUrl(taskId)
+      const paymentUrl = response.data?.data?.paymentUrl
+      if (!paymentUrl) {
+        Alert.alert('Payment link unavailable', 'Refresh your tasks and try again. Payment status is confirmed by DoForYou’s backend.')
         return
       }
-    } catch {}
-    try {
-      const r = await tasksApi.initiatePayment(taskId)
-      const url = r.data?.data?.paymentUrl
-      if (url) {
-        await WebBrowser.openBrowserAsync(url)
-        // Refresh backend state; never infer payment success from browser dismissal.
-        await loadTasks()
-      }
-    } catch { Alert.alert('Error', 'Could not get payment URL.') }
+
+      // The backend owns the task payment workflow. Never call the retired
+      // /payment/initiate endpoint as a fallback.
+      await WebBrowser.openBrowserAsync(paymentUrl)
+      await loadTasks()
+    } catch (err: any) {
+      Alert.alert('Unable to start payment', err.response?.data?.message || 'Could not get a payment link. Please try again.')
+    }
   }
 
   if (loading) return <LoadingScreen message="Loading your posted tasks..." />
 
   const SECTIONS: { key: Section; icon: string; label: string }[] = [
     { key: 'pendingPayment', icon: '⚠️', label: 'Pending Payment' },
-    { key: 'posted', icon: '📢', label: 'Live on Browse Errands' },
+    { key: 'posted', icon: '📢', label: 'Live tasks' },
     { key: 'claimed', icon: '⏳', label: 'In Progress' },
     { key: 'completed', icon: '🕐', label: 'Awaiting Confirmation' },
     { key: 'runnerPaid', icon: '✅', label: 'Completed' },
