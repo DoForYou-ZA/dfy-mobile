@@ -64,6 +64,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!data.success || !data.token || !data.user) {
       throw new Error(data.message || 'Login failed')
     }
+    // A mobile customer session must never be created for an admin account.
+    // Check the API user record and JWT role claims before writing the token.
+    const userIsAdmin = data.user.isAdmin === true
+      || data.user.roles?.some(role => role.trim().toLowerCase() === 'admin')
+    let tokenIsAdmin = false
+    try {
+      const base64 = data.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+      const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+      const roleClaims = [
+        payload.role,
+        payload.roles,
+        payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'],
+      ]
+      tokenIsAdmin = roleClaims
+        .flatMap(value => Array.isArray(value) ? value : [value])
+        .some(value => typeof value === 'string' && value.trim().toLowerCase() === 'admin')
+    } catch {}
+    if (userIsAdmin || tokenIsAdmin) {
+      throw new Error('Admin accounts cannot sign in to the DoForYou mobile app. Please use the desktop admin experience.')
+    }
+
     await setAccessToken(data.token)
     setToken(data.token)
     let fullUser = data.user
