@@ -1,115 +1,56 @@
-// Exact 1:1 match of DoForYou web CSS variables
+// Native-first DoForYou palette: warm, bright, and calm.
+// Keep the signature DFY orange while reserving stronger color for key actions.
 export const COLORS = {
-  primary: '#FF8A00',
-  primaryDark: '#E67A00',
-  primaryLight: '#FFE3C2',
-  success: '#22C55E',
-  successDark: '#16A34A',
-  danger: '#EF4444',
-  dangerDark: '#DC2626',
-  warning: '#F59E0B',
-  warningDark: '#D97706',
-  info: '#3B82F6',
-  infoDark: '#2563EB',
-  secondary: '#6B7280',
-  secondaryDark: '#4B5563',
-  background: '#F9FAFB',
-  backgroundDark: '#F3F4F6',
-  surface: '#FFFFFF',
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  white: '#FFFFFF',
-  black: '#000000',
-  overlay: 'rgba(0,0,0,0.5)',
-  starColor: '#F59E0B',
+  primary: '#FF861A', primaryDark: '#E76B0A', primaryLight: '#FFE7D0',
+  accent: '#20A89A', accentLight: '#DDF7F1',
+  success: '#1FAF78', successDark: '#13895C',
+  danger: '#E85D68', dangerDark: '#C94350',
+  warning: '#F2B84B', warningDark: '#BE861A',
+  info: '#4A91E8', infoDark: '#2F70C7',
+  secondary: '#5F7284', secondaryDark: '#405466',
+  background: '#FFF9F3', backgroundDark: '#FFF0E3',
+  surface: '#FFFFFF', border: '#F0E1D4', borderLight: '#F8EDE4',
+  textPrimary: '#24313D', textSecondary: '#667582', textMuted: '#94A0AA',
+  white: '#FFFFFF', black: '#000000', overlay: 'rgba(31,42,52,0.42)',
+  starColor: '#F3B53F',
 }
 
-export const RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  full: 999,
-}
-
-export const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-}
+export const RADIUS = { sm: 8, md: 12, lg: 16, xl: 22, full: 999 }
+export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }
 
 export const SHADOW = {
-  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 },
-  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 6 },
-  xl: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.1, shadowRadius: 25, elevation: 10 },
-  primary: { shadowColor: '#FF8A00', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  sm: { shadowColor: '#8B6A4F', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 5, elevation: 1 },
+  md: { shadowColor: '#8B6A4F', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 3 },
+  lg: { shadowColor: '#8B6A4F', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 5 },
+  xl: { shadowColor: '#8B6A4F', shadowOffset: { width: 0, height: 18 }, shadowOpacity: 0.1, shadowRadius: 26, elevation: 8 },
+  primary: { shadowColor: '#FF861A', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 4 },
 }
 
-// Shared reusable style objects — mirrors global.css patterns
+// Shared visual primitives for existing forms and task cards.
 export const GLOBAL = {
-  // .card
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    padding: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.xl,
+    borderWidth: 1, borderColor: COLORS.borderLight, padding: SPACING.md,
+    shadowColor: '#8B6A4F', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06, shadowRadius: 12, elevation: 2,
   },
-  // .section-card
   sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.xl,
+    borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md,
+    marginBottom: SPACING.md, shadowColor: '#8B6A4F',
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04,
+    shadowRadius: 8, elevation: 1,
   },
-  // .form-input
   input: {
-    width: '100%' as const,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: RADIUS.md,
-    fontSize: 15,
-    color: '#1F2937',
-    backgroundColor: '#FFFFFF',
+    width: '100%' as const, paddingHorizontal: 16, paddingVertical: 13,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md,
+    fontSize: 15, color: COLORS.textPrimary, backgroundColor: '#FFFCF9',
   },
-  // .form-label
-  label: {
-    fontSize: 14,
-    fontWeight: '500' as const,
-    color: '#1F2937',
-    marginBottom: 6,
-  },
-  // .task-card
+  label: { fontSize: 14, fontWeight: '600' as const, color: COLORS.textPrimary, marginBottom: 7 },
   taskCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    overflow: 'hidden' as const,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.xl,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' as const,
+    shadowColor: '#8B6A4F', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04, shadowRadius: 8, elevation: 1,
   },
 }
