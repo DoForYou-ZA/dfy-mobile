@@ -64,6 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!data.success || !data.token || !data.user) {
       throw new Error(data.message || 'Login failed')
     }
+    const isAdminUser = (candidate: any) =>
+      candidate?.isAdmin === true || (candidate?.roles || []).some((role: string) => String(role).toLowerCase() === 'admin')
+
+    // Reject known admin accounts before creating a mobile session.
+    if (isAdminUser(data.user)) {
+      throw new Error('Admin accounts cannot access DFY Mobile. Please use the DoForYou web admin dashboard.')
+    }
+
     await setAccessToken(data.token)
     setToken(data.token)
     let fullUser = data.user
@@ -72,6 +80,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profileData = profileRes.data?.data || profileRes.data
       if (profileData) fullUser = { ...data.user, ...profileData }
     } catch {}
+
+    // Some API responses include role details only in the profile response.
+    if (isAdminUser(fullUser)) {
+      await clearAccessToken()
+      await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
+      setToken(null)
+      setUser(null)
+      throw new Error('Admin accounts cannot access DFY Mobile. Please use the DoForYou web admin dashboard.')
+    }
+
     await AsyncStorage.setItem('currentUser', JSON.stringify(fullUser))
     if (fullUser.userType) {
       const prefs = {
@@ -109,8 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAdmin = useCallback(() => {
     if (!user) return false
-    if (typeof user.isAdmin === 'boolean') return user.isAdmin
-    return user.roles?.includes('Admin') ?? false
+    if (user.isAdmin === true) return true
+    return user.roles?.some(role => String(role).toLowerCase() === 'admin') ?? false
   }, [user])
 
   const isProfileComplete = useCallback(() => {
