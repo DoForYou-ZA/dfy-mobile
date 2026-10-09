@@ -96,16 +96,9 @@ export default function PostErrandScreen({ navigation, route }: any) {
         const createdTaskId = data.data?.task?.taskId
 
         if (payUrl) {
-          // Open PayFast in in-app browser
-          const result = await WebBrowser.openBrowserAsync(payUrl)
-
-          // After browser closes (user completed or cancelled payment),
-          // call payment-success so the backend updates task to Posted.
-          // This handles the case where PayFast webhook can't reach localhost.
-          try {
-            await tasksApi.handlePaymentSuccess(createdTaskId)
-          } catch { /* silent — webhook may have already handled it */ }
-
+          // Open Paystack checkout. Browser dismissal is not proof of payment;
+          // the backend webhook/return flow remains authoritative.
+          await WebBrowser.openBrowserAsync(payUrl)
           navigation.navigate('MyPostedTasks')
         } else {
           Alert.alert('Success!', isEdit ? 'Task updated.' : 'Task created!', [
