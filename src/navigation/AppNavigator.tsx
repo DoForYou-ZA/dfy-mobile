@@ -10,6 +10,7 @@ import { COLORS, RADIUS } from '../config/theme'
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
 import DashboardScreen from '../screens/DashboardScreen'
+import AdminAccessScreen from '../screens/AdminAccessScreen'
 import BrowseErrandsScreen from '../screens/tasks/BrowseErrandsScreen'
 import PostErrandScreen from '../screens/tasks/PostErrandScreen'
 import MyPostedTasksScreen from '../screens/tasks/MyPostedTasksScreen'
@@ -56,7 +57,7 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
   const insets = useSafeAreaInsets()
   const userType = user?.userType || ''
 
-  if (!isAuthenticated() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
+  if (!isAuthenticated() || isAdmin() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
 
   const go = (route: string) => navRef.current?.navigate(route as never)
   const isActive = (r: string) => currentRoute === r
@@ -120,7 +121,7 @@ const orangeHeader = {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, isAdmin, loading } = useAuth()
   const navRef = useNavigationContainerRef()
   const [currentRoute, setCurrentRoute] = React.useState('Dashboard')
 
@@ -135,7 +136,7 @@ export default function AppNavigator() {
       }}
     >
       <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-        {isAuthenticated() && <TopNavbar navRef={navRef} />}
+        {isAuthenticated() && !isAdmin() && <TopNavbar navRef={navRef} />}
 
         <View style={{ flex: 1 }}>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -144,6 +145,8 @@ export default function AppNavigator() {
                 <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="Register" component={RegisterScreen} />
               </>
+            ) : isAdmin() ? (
+              <Stack.Screen name="AdminAccess" component={AdminAccessScreen} />
             ) : (
               <>
                 <Stack.Screen name="Dashboard" component={DashboardScreen} />
@@ -165,7 +168,7 @@ export default function AppNavigator() {
           </Stack.Navigator>
         </View>
 
-        {isAuthenticated() && (
+        {isAuthenticated() && !isAdmin() && (
           <BottomNav currentRoute={currentRoute} navRef={navRef} />
         )}
       </View>
