@@ -93,7 +93,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
     setClaimModal(task)
   }
 
-  // .task-card layout matching web exactly
+  // Native task card
   const renderTask = ({ item: task }: { item: Task }) => (
     <View style={s.taskCard}>
       {/* .task-card-header */}
@@ -116,11 +116,11 @@ export default function BrowseErrandsScreen({ navigation }: any) {
           <Text style={s.taskSubtitle} numberOfLines={1}>{task.taskDescription}</Text>
         )}
         <View style={s.taskMeta}>
-          <Text style={s.taskMetaItem}>📍 {task.area_suburb || task.area || 'Location not specified'}</Text>
-          <Text style={s.taskMetaItem}>🕐 {task.dateNeeded
+          <Text style={s.taskMetaItem}>⌖ {task.area_suburb || task.area || 'Location not specified'}</Text>
+          <Text style={s.taskMetaItem}>◷ {task.dateNeeded
             ? new Date(task.dateNeeded).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
             : 'Date flexible'}</Text>
-          {task.notes ? <Text style={s.taskMetaItem} numberOfLines={1}>📝 {task.notes}</Text> : null}
+          {task.notes ? <Text style={s.taskMetaItem} numberOfLines={1}>≡ {task.notes}</Text> : null}
         </View>
         {/* .task-footer-meta */}
         <View style={s.taskFooterMeta}>
@@ -153,8 +153,8 @@ export default function BrowseErrandsScreen({ navigation }: any) {
       <View style={s.hero}>
         <View style={s.heroInner}>
           <View>
-            <Text style={s.heroTitle}>🚀 Start Earning Today!</Text>
-            <Text style={s.heroSub}>Monetize your skills • Choose flexible opportunities</Text>
+            <Text style={s.heroTitle}>Find a task that fits your day.</Text>
+            <Text style={s.heroSub}>Choose work that fits your skills and schedule.</Text>
             <View style={s.heroStats}>
               <View style={s.heroStat}>
                 <Text style={s.heroStatNum}>{totalItems}</Text>
@@ -307,7 +307,7 @@ const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.background },
 
   // .browse-hero
-  hero: { backgroundColor: COLORS.primary, paddingVertical: 28, paddingHorizontal: SPACING.md, marginBottom: SPACING.lg },
+  hero: { backgroundColor: COLORS.ink, paddingVertical: 28, paddingHorizontal: SPACING.md, marginBottom: SPACING.lg },
   heroInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
   heroTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 6 },
   heroSub: { color: 'rgba(255,255,255,0.9)', fontSize: 14, marginBottom: 12 },
