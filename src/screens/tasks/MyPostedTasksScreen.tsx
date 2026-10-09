@@ -124,25 +124,19 @@ export default function MyPostedTasksScreen({ navigation }: any) {
 
   const handlePayNow = async (taskId: string) => {
     try {
-      const r = await tasksApi.getPaymentUrl(taskId)
-      const url = r.data?.data?.paymentUrl
-      if (url) {
-        await WebBrowser.openBrowserAsync(url)
-        // Payment state is authoritative on the backend (Paystack webhook/return).
-        // Closing the browser is not proof that payment succeeded.
-        await loadTasks()
+      const response = await tasksApi.getPaymentUrl(taskId)
+      const url = response.data?.data?.paymentUrl
+      if (!url) {
+        Alert.alert('Payment unavailable', 'DFY could not create a checkout link for this task. Refresh the task and try again.')
         return
       }
-    } catch {}
-    try {
-      const r = await tasksApi.initiatePayment(taskId)
-      const url = r.data?.data?.paymentUrl
-      if (url) {
-        await WebBrowser.openBrowserAsync(url)
-        // Refresh backend state; never infer payment success from browser dismissal.
-        await loadTasks()
-      }
-    } catch { Alert.alert('Error', 'Could not get payment URL.') }
+      await WebBrowser.openBrowserAsync(url)
+      // Browser dismissal is not proof of payment. The backend webhook and
+      // verification flow remain authoritative for the task's payment state.
+      await loadTasks()
+    } catch (error: any) {
+      Alert.alert('Payment unavailable', error.response?.data?.message || 'Could not get a checkout link. Please refresh and try again.')
+    }
   }
 
   if (loading) return <LoadingScreen message="Loading your posted tasks..." />
