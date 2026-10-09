@@ -25,7 +25,7 @@ const PAGE_SIZE = 20
 const POLL_MS = 30_000
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, isAdmin, user } = useAuth()
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -39,7 +39,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [])
 
   const fetch = useCallback(async () => {
-    if (!isAuthenticated()) return
+    if (!isAuthenticated() || isAdmin()) return
     try {
       const res = await notificationsApi.getAll(1, PAGE_SIZE)
       if (res.data?.success) {
@@ -51,7 +51,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
     } catch {}
     finally { setLoading(false) }
-  }, [isAuthenticated])
+  }, [isAuthenticated, isAdmin])
 
   const startPolling = useCallback((fetchFn: () => Promise<void>) => {
     if (pollRef.current) return
@@ -59,7 +59,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [])
 
   const loadMore = useCallback(async () => {
-    if (!isAuthenticated()) return
+    if (!isAuthenticated() || isAdmin()) return
     const next = page + 1
     try {
       const res = await notificationsApi.getAll(next, PAGE_SIZE)
@@ -73,7 +73,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         setPage(next)
       }
     } catch {}
-  }, [isAuthenticated, page])
+  }, [isAuthenticated, isAdmin, page])
 
   const pushNotification = useCallback((raw: any) => {
     const n: AppNotification = {
@@ -101,7 +101,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated()) return
+    if (!isAuthenticated() || isAdmin()) return
     const setupHub = async () => {
       const token = await AsyncStorage.getItem('token')
       if (!token) return
@@ -122,15 +122,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
     setupHub()
     return () => { hubRef.current?.stop(); hubRef.current = null }
-  }, [isAuthenticated, user?.id, pushNotification, fetch, startPolling, stopPolling])
+  }, [isAuthenticated, isAdmin, user?.id, pushNotification, fetch, startPolling, stopPolling])
 
   useEffect(() => {
-    if (!isAuthenticated()) { setNotifications([]); return }
+    if (!isAuthenticated() || isAdmin()) { setNotifications([]); return }
     setLoading(true)
     fetch()
     startPolling(fetch)
     return () => stopPolling()
-  }, [isAuthenticated, fetch, startPolling, stopPolling])
+  }, [isAuthenticated, isAdmin, fetch, startPolling, stopPolling])
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
