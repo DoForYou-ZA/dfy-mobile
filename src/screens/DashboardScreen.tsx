@@ -1,313 +1,303 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
 import { useAuth } from '../context/AuthContext'
 import { tasksApi, ratingsApi } from '../api'
-import { LoadingScreen, SectionCard, SectionHeader } from '../components/Common'
+import { LoadingScreen } from '../components/Common'
 import Button from '../components/Button'
-import { COLORS, RADIUS, SPACING, SHADOW, GLOBAL } from '../config/theme'
+import { COLORS, RADIUS, SPACING, SHADOW } from '../config/theme'
 import type { DashboardStats } from '../types'
 
 export default function DashboardScreen({ navigation }: any) {
-  const { user, isProfileIncomplete, isAdmin, canPostErrands, canAcceptTasks } = useAuth()
+  const { user, isProfileIncomplete, canPostErrands, canAcceptTasks } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<any[]>([])
-  const [ratings, setRatings] = useState<any[]>([])
-  const [ratingsAvg, setRatingsAvg] = useState(0)
-  const [ratingsTotalCount, setRatingsTotalCount] = useState(0)
-  const [ratingsBreakdown, setRatingsBreakdown] = useState<Record<number, number>>({})
+  const [rating, setRating] = useState<{ average: number; count: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const userType = user?.userType || ''
-
-  const load = async () => {
-    try {
-      const [sRes, aRes] = await Promise.all([
-        tasksApi.getDashboardStats().catch(() => ({ data: null })),
-        tasksApi.getRecentActivity(5).catch(() => ({ data: null })),
-      ])
-      if (sRes.data?.data) setStats(sRes.data.data)
-      const acts = aRes.data?.data
-      setActivity(Array.isArray(acts) ? acts : [])
-      if ((userType === 'runner' || userType === 'both') && user?.id) {
-        const rRes = await ratingsApi.getForUser(user.id, 1, 5).catch(() => ({ data: null }))
-        const d = rRes.data?.data
-        setRatings(d?.ratings || [])
-        setRatingsAvg(d?.average || 0)
-        setRatingsTotalCount(d?.count || 0)
-        setRatingsBreakdown(d?.starBreakdown || {})
-      }
-    } catch {}
-    finally { setLoading(false); setRefreshing(false) }
-  }
-
-  useEffect(() => { load() }, [])
-  const onRefresh = () => { setRefreshing(true); load() }
-
   const displayName = user
     ? (user.firstName ? `${user.firstName} ${user.lastName ?? ''}`.trim() : user.name)
-    : ''
+    : 'there'
+  const firstName = displayName.split(' ')[0] || 'there'
   const profileCompletion = user?.profileCompletion ?? 0
 
-  if (loading) return <LoadingScreen message="Loading dashboard..." />
+  const load = useCallback(async () => {
+    try {
+      const [statsRes, activityRes] = await Promise.all([
+        tasksApi.getDashboardStats().catch(() => ({ data: null })),
+        tasksApi.getRecentActivity(4).catch(() => ({ data: null })),
+      ])
+      setStats(statsRes.data?.data || statsRes.data || null)
+      const rows = activityRes.data?.data
+      setActivity(Array.isArray(rows) ? rows.slice(0, 4) : [])
+      if ((userType === 'runner' || userType === 'both') && user?.id) {
+        const ratingRes = await ratingsApi.getForUser(user.id, 1, 1).catch(() => ({ data: null }))
+        const value = ratingRes.data?.data || ratingRes.data
+        if (value) setRating({ average: value.average || 0, count: value.count || 0 })
+      }
+    } catch {
+      // The dashboard remains usable when optional summary endpoints are unavailable.
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [userType, user?.id])
 
-  // Matches web stat-card layout exactly
-  const creatorStats = [
-    { label: 'Posted Tasks', value: stats?.postedTasks ?? 0, bg: 'bg-primary' },
-    { label: 'Pending Payment', value: stats?.pendingPayment ?? 0, bg: 'bg-danger' },
-    { label: 'Active Tasks', value: stats?.activeTasks ?? 0, bg: 'bg-warning' },
-    { label: 'Awaiting Confirm', value: stats?.awaitingConfirmation ?? 0, bg: 'bg-info' },
-    { label: 'Completed', value: stats?.completedPostedTasks ?? 0, bg: 'bg-success' },
-    { label: 'Total Spent', value: `R${(stats?.totalSpent ?? 0).toFixed(0)}`, bg: 'bg-dark' },
-    { label: 'This Month', value: `R${(stats?.thisMonthSpending ?? 0).toFixed(0)}`, bg: 'bg-secondary' },
-    { label: 'Avg Task Cost', value: `R${(stats?.averageTaskCost ?? 0).toFixed(0)}`, bg: 'bg-primary' },
-  ]
-  const runnerStats = [
-    { label: 'Available Tasks', value: stats?.availableTasks ?? 0, bg: 'bg-info' },
-    { label: 'My Active', value: stats?.myActiveTasks ?? 0, bg: 'bg-warning' },
-    { label: 'Completed', value: stats?.runnerCompletedTasks ?? 0, bg: 'bg-success' },
-    { label: 'Total Earnings', value: `R${(stats?.totalEarnings ?? 0).toFixed(0)}`, bg: 'bg-primary' },
-        { label: 'Payouts Pending', value: `R${(stats?.pendingPayouts ?? 0).toFixed(0)}`, bg: 'bg-warning' },
-    { label: 'This Month', value: `R${(stats?.thisMonthEarnings ?? 0).toFixed(0)}`, bg: 'bg-info' },
-    { label: 'Completion Rate', value: `${(stats?.completionRate ?? 0).toFixed(0)}%`, bg: 'bg-dark' },
-  ]
+  useEffect(() => { load() }, [load])
 
-  const iconBg: Record<string, string> = {
-    'bg-primary': COLORS.primary, 'bg-success': COLORS.success,
-    'bg-warning': COLORS.warning, 'bg-danger': COLORS.danger,
-    'bg-info': COLORS.info, 'bg-secondary': COLORS.secondary,
-    'bg-dark': '#374151',
+  const refresh = () => {
+    setRefreshing(true)
+    load()
   }
 
-  const currentStats = userType === 'creator' ? creatorStats
-    : userType === 'runner' ? runnerStats
-    : userType === 'both' ? [...creatorStats, ...runnerStats]
-    : []
+  const isCreator = canPostErrands()
+  const isRunner = canAcceptTasks()
+  const statsCards = [
+    ...(isCreator ? [
+      { label: 'Tasks posted', value: stats?.postedTasks ?? 0, color: COLORS.primaryLight, symbol: '↗' },
+      { label: 'Awaiting action', value: stats?.awaitingConfirmation ?? 0, color: COLORS.warningLight, symbol: '◷' },
+    ] : []),
+    ...(isRunner ? [
+      { label: 'Available tasks', value: stats?.availableTasks ?? 0, color: COLORS.infoLight, symbol: '⌕' },
+      { label: 'My active tasks', value: stats?.myActiveTasks ?? 0, color: COLORS.successLight, symbol: '✓' },
+    ] : []),
+    ...(isRunner ? [
+      { label: 'Total earnings', value: `R${(stats?.totalEarnings ?? 0).toFixed(0)}`, color: COLORS.accentSoft, symbol: 'R' },
+    ] : []),
+    ...(isCreator ? [
+      { label: 'Completed tasks', value: stats?.completedPostedTasks ?? 0, color: COLORS.successLight, symbol: '✓' },
+    ] : []),
+  ].slice(0, 4)
+
+  if (loading) return <LoadingScreen message="Getting your DFY space ready..." />
 
   return (
     <ScrollView
       style={s.page}
       contentContainerStyle={s.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={COLORS.primary} />}
+      showsVerticalScrollIndicator={false}
     >
-      {/* .dashboard-header — orange gradient */}
-      <View style={s.dashHeader}>
-        <View style={s.dashHeaderInner}>
-          {userType === 'creator' && <Text style={s.dashTitle}>Task Creator Dashboard</Text>}
-          {userType === 'runner' && <Text style={s.dashTitle}>Task Runner Dashboard</Text>}
-          {userType === 'both' && <Text style={s.dashTitle}>My Dashboard</Text>}
-          {!userType && <Text style={s.dashTitle}>Welcome, {displayName.split(' ')[0]}!</Text>}
-          <Text style={s.dashSub}>
-            {userType === 'creator' ? 'Manage and track your posted tasks'
-              : userType === 'runner' ? 'Find tasks and track your earnings'
-              : userType === 'both' ? 'Manage your tasks as both creator and runner'
-              : 'Set up your profile to get started'}
-          </Text>
+      <View style={s.welcome}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.greeting}>YOUR DFY SPACE</Text>
+          <Text style={s.heading}>Hey, {firstName} <Text style={s.wave}>✦</Text></Text>
+          <Text style={s.welcomeSub}>A little progress goes a long way.</Text>
+        </View>
+        <View style={s.avatar}><Text style={s.avatarText}>{firstName.charAt(0).toUpperCase()}</Text></View>
+      </View>
 
-          {/* .profile-alert */}
-          {isProfileIncomplete() && (
-            <TouchableOpacity style={s.profileAlert} onPress={() => navigation.navigate('Profile')}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.profileAlertTitle}>Profile Completion: {profileCompletion}%</Text>
-                <View style={s.progressWrap}>
-                  <View style={[s.progressFill, { width: `${profileCompletion}%` as any }]} />
-                </View>
-                <Text style={s.profileAlertSub}>Complete your profile to unlock all features</Text>
-              </View>
-              <Button title="Complete Profile" onPress={() => navigation.navigate('Profile')} variant="secondary" size="sm" />
-            </TouchableOpacity>
-          )}
+      <View style={s.heroCard}>
+        <View style={s.heroDecorOne} />
+        <View style={s.heroDecorTwo} />
+        <View style={s.heroContent}>
+          <View style={s.pill}><View style={s.pillDot} /><Text style={s.pillText}>MADE FOR GETTING THINGS DONE</Text></View>
+          <Text style={s.heroTitle}>
+            {isCreator && isRunner ? 'Make it happen. Earn along the way.'
+              : isCreator ? 'What can we help you get done?'
+              : isRunner ? 'Your next opportunity is out there.'
+              : 'Let’s get your DFY journey started.'}
+          </Text>
+          <Text style={s.heroSubtitle}>
+            {isCreator && isRunner ? 'Post a task when you need a hand, or find work that fits your day.'
+              : isCreator ? 'Post a task, find the right help, and keep everything in one place.'
+              : isRunner ? 'Explore local tasks, choose what suits you, and track your progress.'
+              : 'Complete your profile to start posting or accepting tasks.'}
+          </Text>
+          <View style={s.heroActions}>
+            {isCreator && (
+              <Button title="＋ Post a task" onPress={() => navigation.navigate(isProfileIncomplete() ? 'Profile' : 'PostErrand')} size="md" style={s.heroPrimary} />
+            )}
+            {isRunner && (
+              <Button title="Explore tasks  →" onPress={() => navigation.navigate('BrowseErrands')} size="md" style={s.heroPrimary} />
+            )}
+            {!isCreator && !isRunner && (
+              <Button title="Complete profile  →" onPress={() => navigation.navigate('Profile')} size="md" style={s.heroPrimary} />
+            )}
+          </View>
+          <View style={s.heroFoot}><Text style={s.heroFootMark}>✓</Text><Text style={s.heroFootText}>Local people. Useful tasks. Real progress.</Text></View>
         </View>
       </View>
 
-      <View style={s.body}>
-        {/* .stats-grid */}
-        {currentStats.length > 0 && (
+      {isProfileIncomplete() && (
+        <TouchableOpacity style={s.profileCard} onPress={() => navigation.navigate('Profile')} activeOpacity={0.82}>
+          <View style={s.profileIcon}><Text style={s.profileIconText}>↗</Text></View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.profileTitle}>Finish setting up your profile</Text>
+            <Text style={s.profileSubtitle}>A complete profile helps unlock the right task actions.</Text>
+            <View style={s.progressTrack}><View style={[s.progressFill, { width: `${Math.min(100, Math.max(0, profileCompletion))}%` as any }]} /></View>
+          </View>
+          <Text style={s.profileArrow}>›</Text>
+        </TouchableOpacity>
+      )}
+
+      {statsCards.length > 0 && (
+        <View style={s.section}>
+          <View style={s.sectionHeading}>
+            <View><Text style={s.sectionEyebrow}>AT A GLANCE</Text><Text style={s.sectionTitle}>Your activity</Text></View>
+          </View>
           <View style={s.statsGrid}>
-            {currentStats.map((st, i) => (
-              <View key={i} style={s.statCard}>
-                <View style={[s.statIcon, { backgroundColor: iconBg[st.bg] || COLORS.primary }]} />
-                <View style={s.statContent}>
-                  <Text style={s.statValue}>{st.value}</Text>
-                  <Text style={s.statLabel}>{st.label}</Text>
+            {statsCards.map((item) => (
+              <View key={item.label} style={s.statCard}>
+                <View style={[s.statIcon, { backgroundColor: item.color }]}><Text style={s.statSymbol}>{item.symbol}</Text></View>
+                <Text style={s.statValue} numberOfLines={1} adjustsFontSizeToFit>{item.value}</Text>
+                <Text style={s.statLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={s.section}>
+        <View style={s.sectionHeading}>
+          <View><Text style={s.sectionEyebrow}>PICK UP WHERE YOU LEFT OFF</Text><Text style={s.sectionTitle}>Your next move</Text></View>
+        </View>
+        <View style={s.actionList}>
+          {isRunner && (
+            <TouchableOpacity style={s.actionCard} onPress={() => navigation.navigate('BrowseErrands')} activeOpacity={0.82}>
+              <View style={[s.actionIcon, { backgroundColor: COLORS.infoLight }]}><Text style={[s.actionIconText, { color: COLORS.info }]}>⌕</Text></View>
+              <View style={s.actionCopy}><Text style={s.actionTitle}>Find a task</Text><Text style={s.actionSubtitle}>Browse work that fits your skills and schedule.</Text></View>
+              <Text style={s.actionArrow}>›</Text>
+            </TouchableOpacity>
+          )}
+          {isCreator && (
+            <TouchableOpacity style={s.actionCard} onPress={() => navigation.navigate(isProfileIncomplete() ? 'Profile' : 'PostErrand')} activeOpacity={0.82}>
+              <View style={[s.actionIcon, { backgroundColor: COLORS.primaryLight }]}><Text style={[s.actionIconText, { color: COLORS.primaryDark }]}>＋</Text></View>
+              <View style={s.actionCopy}><Text style={s.actionTitle}>Post a task</Text><Text style={s.actionSubtitle}>Tell the community what you need help with.</Text></View>
+              <Text style={s.actionArrow}>›</Text>
+            </TouchableOpacity>
+          )}
+          {isCreator && (
+            <TouchableOpacity style={s.actionCard} onPress={() => navigation.navigate('MyPostedTasks')} activeOpacity={0.82}>
+              <View style={[s.actionIcon, { backgroundColor: COLORS.warningLight }]}><Text style={[s.actionIconText, { color: COLORS.warningDark }]}>◷</Text></View>
+              <View style={s.actionCopy}><Text style={s.actionTitle}>Manage posted tasks</Text><Text style={s.actionSubtitle}>Review progress, confirmations, and updates.</Text></View>
+              <Text style={s.actionArrow}>›</Text>
+            </TouchableOpacity>
+          )}
+          {isRunner && (
+            <TouchableOpacity style={s.actionCard} onPress={() => navigation.navigate('MyActiveTasks')} activeOpacity={0.82}>
+              <View style={[s.actionIcon, { backgroundColor: COLORS.successLight }]}><Text style={[s.actionIconText, { color: COLORS.success }]}>✓</Text></View>
+              <View style={s.actionCopy}><Text style={s.actionTitle}>My tasks</Text><Text style={s.actionSubtitle}>Keep track of active work and completion.</Text></View>
+              <Text style={s.actionArrow}>›</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={s.actionCard} onPress={() => navigation.navigate('MyCompletedTasks')} activeOpacity={0.82}>
+            <View style={[s.actionIcon, { backgroundColor: COLORS.accentSoft }]}><Text style={[s.actionIconText, { color: COLORS.warningDark }]}>★</Text></View>
+            <View style={s.actionCopy}><Text style={s.actionTitle}>Completed tasks</Text><Text style={s.actionSubtitle}>Look back at tasks you have finished.</Text></View>
+            <Text style={s.actionArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {(isRunner && rating && rating.count > 0) && (
+        <View style={s.ratingStrip}>
+          <View style={s.ratingStar}><Text style={s.ratingStarText}>★</Text></View>
+          <View style={{ flex: 1 }}><Text style={s.ratingTitle}>Your community rating</Text><Text style={s.ratingSubtitle}>{rating.count} review{rating.count === 1 ? '' : 's'} from completed tasks</Text></View>
+          <Text style={s.ratingNumber}>{rating.average.toFixed(1)}</Text>
+        </View>
+      )}
+
+      <View style={s.section}>
+        <View style={s.sectionHeading}>
+          <View><Text style={s.sectionEyebrow}>THE LATEST</Text><Text style={s.sectionTitle}>Recent activity</Text></View>
+        </View>
+        {activity.length > 0 ? (
+          <View style={s.activityCard}>
+            {activity.map((item, index) => (
+              <View key={item.id ?? index} style={[s.activityItem, index > 0 && s.activityDivider]}>
+                <View style={s.activityDotWrap}><View style={s.activityDot} /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.activityText} numberOfLines={2}>{(item.description || item.message || 'Task update').substring(0, 100)}</Text>
+                  <Text style={s.activityMeta}>
+                    {item.updatedAt || item.timestamp
+                      ? new Date(item.updatedAt || item.timestamp).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })
+                      : 'Recently'}
+                    {item.status ? `  ·  ${item.status}` : ''}
+                  </Text>
                 </View>
               </View>
             ))}
           </View>
-        )}
-
-        {/* Recent Activity */}
-        {activity.length > 0 && (
-          <SectionCard>
-            <SectionHeader title="Recent Activity" />
-            <View style={s.activityFeed}>
-              {activity.map((a, i) => (
-                <View key={i} style={s.activityItem}>
-                  <Text style={s.activityIcon}>
-                    {a.type === 'created' ? '➕' : '🤝'}
-                  </Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.activityText} numberOfLines={2}>
-                      {(a.description || a.message || '').substring(0, 80)}
-                    </Text>
-                    <Text style={s.activityMeta}>
-                      {new Date(a.updatedAt || a.timestamp).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      {'  ·  '}{a.status}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </SectionCard>
-        )}
-
-        {/* Ratings */}
-        {(userType === 'runner' || userType === 'both') && (
-          <SectionCard>
-            <SectionHeader title="My Ratings" />
-            {ratingsTotalCount === 0 ? (
-              <Text style={s.emptyText}>No ratings yet. Complete tasks to receive reviews.</Text>
-            ) : (
-              <>
-                <View style={s.ratingsStats}>
-                  <View style={s.ratingsScore}>
-                    <Text style={s.ratingsScoreNum}>{ratingsAvg.toFixed(1)}</Text>
-                    <Text style={s.ratingsStars}>{'★'.repeat(Math.round(ratingsAvg))}{'☆'.repeat(5 - Math.round(ratingsAvg))}</Text>
-                    <Text style={s.ratingsCount}>{ratingsTotalCount} review{ratingsTotalCount !== 1 ? 's' : ''}</Text>
-                  </View>
-                  <View style={s.ratingsBars}>
-                    {[5, 4, 3, 2, 1].map(star => {
-                      const cnt = ratingsBreakdown[star] || 0
-                      const pct = ratingsTotalCount > 0 ? Math.round((cnt / ratingsTotalCount) * 100) : 0
-                      return (
-                        <View key={star} style={s.ratingsBarRow}>
-                          <Text style={s.ratingsBarLabel}>{star}</Text>
-                          <Text style={s.ratingsBarStar}>★</Text>
-                          <View style={s.ratingsBarTrack}>
-                            <View style={[s.ratingsBarFill, { width: `${pct}%` as any }]} />
-                          </View>
-                          <Text style={s.ratingsBarCount}>{cnt}</Text>
-                        </View>
-                      )
-                    })}
-                  </View>
-                </View>
-                {ratings.map((r: any) => (
-                  <View key={r.id} style={s.ratingCard}>
-                    <View style={s.ratingCardHeader}>
-                      <Text style={s.ratingCardTitle} numberOfLines={2}>{r.taskName || r.taskDescription || 'Task'}</Text>
-                      <Text style={s.ratingCardStars}>{'★'.repeat(r.ratingValue)}{'☆'.repeat(5 - r.ratingValue)}</Text>
-                    </View>
-                    {r.review && <Text style={s.ratingCardReview}>"{r.review}"</Text>}
-                    <Text style={s.ratingCardMeta}>by {r.ratedBy} · {new Date(r.createdAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
-                  </View>
-                ))}
-              </>
-            )}
-          </SectionCard>
-        )}
-
-        {/* Quick Actions */}
-        <SectionCard>
-          <SectionHeader title="Quick Actions" />
-          <View style={s.quickActions}>
-            {canPostErrands() && !isProfileIncomplete() && (
-              <Button title="Post New Task" onPress={() => navigation.navigate('PostErrand')} size="sm" />
-            )}
-            {canAcceptTasks() && (
-              <Button title="Find Tasks" onPress={() => navigation.navigate('BrowseErrands')} size="sm" />
-            )}
-            {(userType === 'creator' || userType === 'both') && (
-              <Button title="My Posted Tasks" onPress={() => navigation.navigate('MyPostedTasks')} variant="outline" size="sm" />
-            )}
-            {(userType === 'runner' || userType === 'both') && (
-              <Button title="My Active Tasks" onPress={() => navigation.navigate('MyActiveTasks')} variant="outline" size="sm" />
-            )}
-            <Button title="My Profile" onPress={() => navigation.navigate('Profile')} variant="secondary" size="sm" />
-            <Button title="Wallet" onPress={() => navigation.navigate('Wallet')} variant="secondary" size="sm" />
-            {isProfileIncomplete() && (
-              <Button title="Complete Profile" onPress={() => navigation.navigate('Profile')} size="sm" />
-            )}
+        ) : (
+          <View style={s.emptyCard}>
+            <View style={s.emptyIcon}><Text style={s.emptyIconText}>✦</Text></View>
+            <Text style={s.emptyTitle}>Your story starts here</Text>
+            <Text style={s.emptyText}>When you post or take on tasks, updates will show up here.</Text>
           </View>
-        </SectionCard>
+        )}
       </View>
+      <Text style={s.footer}>DOFORYOU  ·  GOOD THINGS GET DONE TOGETHER</Text>
     </ScrollView>
   )
 }
 
 const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingBottom: 32 },
-
-  // .dashboard-header
-  dashHeader: { backgroundColor: COLORS.primary, paddingBottom: SPACING.lg },
-  dashHeaderInner: { padding: SPACING.lg, paddingTop: SPACING.lg },
-  dashTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  dashSub: { fontSize: 15, color: 'rgba(255,255,255,0.85)', lineHeight: 22 },
-
-  // .profile-alert
-  profileAlert: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: RADIUS.lg,
-    padding: 16, marginTop: 20, flexWrap: 'wrap',
-  },
-  profileAlertTitle: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 6 },
-  progressWrap: { height: 6, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 3, width: 220, maxWidth: '100%', marginBottom: 4 },
-  progressFill: { height: 6, backgroundColor: '#fff', borderRadius: 3 },
-  profileAlertSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
-
-  body: { padding: SPACING.md, gap: SPACING.md },
-
-  // .stats-grid
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: SPACING.md },
-  statCard: {
-    flex: 1, minWidth: '45%',
-    backgroundColor: COLORS.surface, borderRadius: RADIUS.xl,
-    padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: COLORS.borderLight,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
-  },
-  statIcon: { width: 48, height: 48, borderRadius: RADIUS.lg },
-  statContent: { flex: 1 },
-  statValue: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
-  statLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-
-  // .activity-feed
-  activityFeed: { gap: 8 },
-  activityItem: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 14,
-    padding: 14, backgroundColor: COLORS.background, borderRadius: RADIUS.lg,
-  },
-  activityIcon: { fontSize: 14, marginTop: 2 },
-  activityText: { fontSize: 14, color: COLORS.textPrimary, lineHeight: 20 },
-  activityMeta: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-
-  emptyText: { fontSize: 14, color: COLORS.textSecondary, padding: 8 },
-
-  // .ratings-stats
-  ratingsStats: { flexDirection: 'row', gap: 24, alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap' },
-  ratingsScore: { alignItems: 'center' },
-  ratingsScoreNum: { fontSize: 40, fontWeight: '700', color: COLORS.starColor, lineHeight: 44 },
-  ratingsStars: { color: COLORS.starColor, fontSize: 18, marginVertical: 2 },
-  ratingsCount: { fontSize: 12, color: COLORS.textSecondary },
-  ratingsBars: { flex: 1, minWidth: 160 },
-  ratingsBarRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  ratingsBarLabel: { fontSize: 12, color: COLORS.textSecondary, width: 10, textAlign: 'right' },
-  ratingsBarStar: { color: COLORS.starColor, fontSize: 11 },
-  ratingsBarTrack: { flex: 1, height: 6, backgroundColor: COLORS.border, borderRadius: 3, overflow: 'hidden' },
-  ratingsBarFill: { height: 6, backgroundColor: COLORS.starColor, borderRadius: 3 },
-  ratingsBarCount: { fontSize: 12, color: COLORS.textSecondary, width: 20 },
-
-  // .rating-card
-  ratingCard: {
-    backgroundColor: COLORS.background, borderRadius: RADIUS.lg,
-    padding: 14, borderWidth: 1, borderColor: COLORS.border, marginTop: 10,
-  },
-  ratingCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 4 },
-  ratingCardTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, flex: 1 },
-  ratingCardStars: { color: COLORS.starColor, fontWeight: '700', fontSize: 14 },
-  ratingCardReview: { fontSize: 13, color: COLORS.textSecondary, fontStyle: 'italic', marginBottom: 4 },
-  ratingCardMeta: { fontSize: 12, color: COLORS.textSecondary },
-
-  // .quick-actions
-  quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  content: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 34 },
+  welcome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  greeting: { color: COLORS.primaryDark, fontSize: 10, fontWeight: '900', letterSpacing: 2 },
+  heading: { color: COLORS.textPrimary, fontSize: 27, fontWeight: '900', letterSpacing: -0.8, marginTop: 5 },
+  wave: { color: COLORS.primary, fontSize: 24 },
+  welcomeSub: { color: COLORS.textSecondary, fontSize: 13, marginTop: 4 },
+  avatar: { width: 48, height: 48, borderRadius: 18, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#FFFFFF' },
+  avatarText: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '900' },
+  heroCard: { backgroundColor: '#FFF0E2', borderWidth: 1, borderColor: '#F9DFC8', borderRadius: 26, padding: 19, overflow: 'hidden', marginBottom: 25 },
+  heroDecorOne: { position: 'absolute', width: 130, height: 130, borderRadius: 65, right: -58, top: -54, backgroundColor: '#FFD9B7', opacity: 0.65 },
+  heroDecorTwo: { position: 'absolute', width: 82, height: 82, borderRadius: 41, right: -25, top: 22, backgroundColor: '#FFE5A5', opacity: 0.68 },
+  heroContent: { position: 'relative' },
+  pill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: 'rgba(255,255,255,0.78)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 13 },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
+  pillText: { color: COLORS.textSecondary, fontSize: 8, letterSpacing: 1, fontWeight: '900' },
+  heroTitle: { color: COLORS.textPrimary, fontSize: 25, lineHeight: 30, fontWeight: '900', letterSpacing: -0.6, maxWidth: 305 },
+  heroSubtitle: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19, marginTop: 8, maxWidth: 310 },
+  heroActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 17 },
+  heroPrimary: { alignSelf: 'flex-start' },
+  heroFoot: { flexDirection: 'row', alignItems: 'center', gap: 7, borderTopWidth: 1, borderTopColor: 'rgba(217,97,18,0.14)', paddingTop: 13, marginTop: 17 },
+  heroFootMark: { backgroundColor: COLORS.successLight, color: COLORS.success, fontWeight: '900', overflow: 'hidden', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 },
+  heroFootText: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '600' },
+  profileCard: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 20, padding: 14, marginBottom: 25, ...SHADOW.sm },
+  profileIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight },
+  profileIconText: { color: COLORS.primaryDark, fontSize: 20, fontWeight: '800' },
+  profileTitle: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '900' },
+  profileSubtitle: { color: COLORS.textSecondary, fontSize: 10, lineHeight: 15, marginTop: 3 },
+  progressTrack: { height: 5, backgroundColor: COLORS.borderLight, borderRadius: 3, marginTop: 9, overflow: 'hidden' },
+  progressFill: { height: 5, borderRadius: 3, backgroundColor: COLORS.primary },
+  profileArrow: { color: COLORS.primary, fontSize: 27, paddingLeft: 3 },
+  section: { marginBottom: 25 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 },
+  sectionEyebrow: { color: COLORS.primaryDark, fontSize: 9, letterSpacing: 1.8, fontWeight: '900' },
+  sectionTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '900', letterSpacing: -0.4, marginTop: 3 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  statCard: { width: '48%', flexGrow: 1, minHeight: 111, padding: 14, borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
+  statIcon: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  statSymbol: { fontSize: 17, fontWeight: '900', color: COLORS.textPrimary },
+  statValue: { color: COLORS.textPrimary, fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
+  statLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '600', marginTop: 3 },
+  actionList: { gap: 9 },
+  actionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderRadius: 19, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
+  actionIcon: { width: 43, height: 43, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  actionIconText: { fontSize: 22, fontWeight: '800' },
+  actionCopy: { flex: 1 },
+  actionTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '900' },
+  actionSubtitle: { color: COLORS.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 4 },
+  actionArrow: { color: COLORS.textMuted, fontSize: 28, paddingLeft: 2 },
+  ratingStrip: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.accentSoft, borderRadius: 20, borderWidth: 1, borderColor: '#F4E5B2', padding: 15, marginBottom: 25 },
+  ratingStar: { width: 39, height: 39, borderRadius: 14, backgroundColor: '#FFE9A5', alignItems: 'center', justifyContent: 'center' },
+  ratingStarText: { color: COLORS.warningDark, fontSize: 22 },
+  ratingTitle: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '900' },
+  ratingSubtitle: { color: COLORS.textSecondary, fontSize: 10, marginTop: 3 },
+  ratingNumber: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900' },
+  activityCard: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.borderLight, borderRadius: 20, paddingHorizontal: 15, ...SHADOW.sm },
+  activityItem: { flexDirection: 'row', gap: 10, paddingVertical: 14 },
+  activityDivider: { borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  activityDotWrap: { width: 24, alignItems: 'center', paddingTop: 5 },
+  activityDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.primary },
+  activityText: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '700', lineHeight: 17 },
+  activityMeta: { color: COLORS.textMuted, fontSize: 10, marginTop: 5 },
+  emptyCard: { alignItems: 'center', padding: 24, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.borderLight, borderRadius: 20 },
+  emptyIcon: { width: 46, height: 46, borderRadius: 17, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  emptyIconText: { fontSize: 22, color: COLORS.primary },
+  emptyTitle: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '900' },
+  emptyText: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 5 },
+  footer: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.6, textAlign: 'center', paddingTop: 3, paddingBottom: 5 },
 })
