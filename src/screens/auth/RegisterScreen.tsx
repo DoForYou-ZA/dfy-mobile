@@ -24,6 +24,39 @@ const ROLES = [
   { value: 'both', symbol: '↔', label: 'Both', desc: 'Post tasks and help others, too.' },
 ]
 
+type FieldProps = {
+  label: string
+  value: string
+  onChangeText: (value: string) => void
+  placeholder: string
+  keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'number-pad'
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+  secureTextEntry?: boolean
+  autoComplete?: 'off' | 'name' | 'email' | 'tel' | 'street-address' | 'new-password'
+}
+
+function Field({
+  label, value, onChangeText, placeholder, keyboardType, autoCapitalize, secureTextEntry, autoComplete,
+}: FieldProps) {
+  return (
+    <View style={s.fieldGroup}>
+      <Text style={s.label}>{label}</Text>
+      <TextInput
+        style={s.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textMuted}
+        keyboardType={keyboardType || 'default'}
+        autoCapitalize={autoCapitalize || 'sentences'}
+        autoCorrect={false}
+        secureTextEntry={secureTextEntry}
+        autoComplete={autoComplete || 'off'}
+      />
+    </View>
+  )
+}
+
 export default function RegisterScreen({ navigation }: any) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -89,31 +122,7 @@ export default function RegisterScreen({ navigation }: any) {
     }
   }
 
-  const Field = ({
-    label, value, onChangeText, placeholder, keyboardType, autoCapitalize, secureTextEntry, autoComplete,
-  }: {
-    label: string; value: string; onChangeText: (value: string) => void; placeholder: string;
-    keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'number-pad';
-    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-    secureTextEntry?: boolean;
-    autoComplete?: 'off' | 'name' | 'email' | 'tel' | 'street-address' | 'new-password';
-  }) => (
-    <View style={s.fieldGroup}>
-      <Text style={s.label}>{label}</Text>
-      <TextInput
-        style={s.input}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
-        keyboardType={keyboardType || 'default'}
-        autoCapitalize={autoCapitalize || 'sentences'}
-        autoCorrect={false}
-        secureTextEntry={secureTextEntry}
-        autoComplete={autoComplete || 'off'}
-      />
-    </View>
-  )
+
 
   return (
     <KeyboardAvoidingView style={s.page} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
