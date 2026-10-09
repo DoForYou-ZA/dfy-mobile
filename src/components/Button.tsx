@@ -3,7 +3,7 @@ import {
   TouchableOpacity, Text, StyleSheet, ActivityIndicator,
   ViewStyle, TextStyle
 } from 'react-native'
-import { COLORS, RADIUS } from '../config/theme'
+import { COLORS, RADIUS, SHADOW } from '../config/theme'
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'outline-secondary' | 'danger' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
@@ -25,22 +25,27 @@ export default function Button({
   loading, disabled, style, textStyle, fullWidth,
 }: Props) {
   const isDisabled = disabled || loading
+  const isLight = variant === 'outline' || variant === 'outline-secondary' || variant === 'ghost' || variant === 'secondary'
+
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
       style={[
         styles.btn,
         styles[`v_${variant}`],
         styles[`s_${size}`],
         fullWidth && styles.block,
+        variant === 'primary' && !isDisabled && SHADOW.primary,
         isDisabled && styles.disabled,
         style,
       ]}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.8}
+      activeOpacity={0.82}
     >
       {loading
-        ? <ActivityIndicator size="small" color={variant === 'outline' || variant === 'outline-secondary' || variant === 'ghost' ? COLORS.primary : '#fff'} />
+        ? <ActivityIndicator size="small" color={isLight ? COLORS.primary : COLORS.white} />
         : <Text style={[styles.txt, styles[`t_${variant}`], styles[`ts_${size}`], textStyle]}>{title}</Text>
       }
     </TouchableOpacity>
@@ -49,60 +54,33 @@ export default function Button({
 
 const styles = StyleSheet.create({
   btn: {
-    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderRadius: RADIUS.md,
-    borderWidth: 0,
+    gap: 8,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   block: { width: '100%', justifyContent: 'center' },
-  disabled: { opacity: 0.55 },
-
-  // Variants — match .btn-primary, .btn-secondary etc from global.css
-  v_primary: {
-    backgroundColor: COLORS.primary,
-    shadowColor: '#FF8A00',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  v_secondary: {
-    backgroundColor: COLORS.backgroundDark,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  v_outline: {
-    backgroundColor: COLORS.white,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-  },
-  'v_outline-secondary': {
-    backgroundColor: COLORS.white,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  v_danger: { backgroundColor: COLORS.danger },
-  v_ghost: { backgroundColor: 'transparent' },
-
-  // Sizes — match .btn-sm, .btn (default), .btn-lg
-  s_sm: { paddingHorizontal: 12, paddingVertical: 6 },
-  s_md: { paddingHorizontal: 20, paddingVertical: 10 },
-  s_lg: { paddingHorizontal: 28, paddingVertical: 14 },
-
-  // Text colors
-  txt: { fontWeight: '600', textAlign: 'center' },
-  t_primary: { color: '#fff' },
+  disabled: { opacity: 0.48 },
+  v_primary: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  v_secondary: { backgroundColor: COLORS.backgroundDark, borderColor: COLORS.border },
+  v_outline: { backgroundColor: COLORS.surface, borderColor: COLORS.primary },
+  'v_outline-secondary': { backgroundColor: COLORS.surface, borderColor: COLORS.border },
+  v_danger: { backgroundColor: COLORS.danger, borderColor: COLORS.danger },
+  v_ghost: { backgroundColor: 'transparent', borderColor: 'transparent' },
+  s_sm: { minHeight: 36, paddingHorizontal: 14, paddingVertical: 8 },
+  s_md: { minHeight: 46, paddingHorizontal: 20, paddingVertical: 12 },
+  s_lg: { minHeight: 54, paddingHorizontal: 24, paddingVertical: 15 },
+  txt: { fontWeight: '700', textAlign: 'center', letterSpacing: 0.1 },
+  t_primary: { color: COLORS.white },
   t_secondary: { color: COLORS.textPrimary },
-  t_outline: { color: COLORS.primary },
-  't_outline-secondary': { color: COLORS.textSecondary },
-  t_danger: { color: '#fff' },
-  t_ghost: { color: COLORS.primary },
-
-  // Text sizes
-  ts_sm: { fontSize: 13 },
-  ts_md: { fontSize: 15 },
-  ts_lg: { fontSize: 16 },
+  t_outline: { color: COLORS.primaryDark },
+  't_outline-secondary': { color: COLORS.textPrimary },
+  t_danger: { color: COLORS.white },
+  t_ghost: { color: COLORS.primaryDark },
+  ts_sm: { fontSize: 12 },
+  ts_md: { fontSize: 14 },
+  ts_lg: { fontSize: 15 },
 })
