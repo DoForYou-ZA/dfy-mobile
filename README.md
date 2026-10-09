@@ -39,6 +39,12 @@ npx expo export --platform android
 
 GitHub Actions runs the TypeScript check and Android JavaScript bundle export. The bundle export is not a signed APK or a substitute for installing the app on a device.
 
+## Mobile design and roles
+
+The mobile client has its own native-first visual system: warm, light surfaces; DFY orange for primary actions; and mint/blue accents for secondary actions. It is not intended to reproduce the web dashboard layout on a phone.
+
+The mobile workspace is for task creators and runners. Administrator accounts are shown an access notice and cannot enter the mobile task workspace. Admin workflows stay on the web application; the API remains responsible for enforcing authorization independently of the client UI.
+
 ## Payment and task-state rules
 
 - Creating a task may return a Paystack checkout URL; open that URL in the browser.
