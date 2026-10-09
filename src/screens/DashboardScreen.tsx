@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { tasksApi, ratingsApi } from '../api'
 import { LoadingScreen } from '../components/Common'
 import Button from '../components/Button'
-import { COLORS, RADIUS, SHADOW, SPACING } from '../config/theme'
+import { COLORS, RADIUS, SHADOW } from '../config/theme'
 import type { DashboardStats } from '../types'
 
 type ActivityItem = {
@@ -35,7 +35,7 @@ function activityDate(item: ActivityItem) {
 
 export default function DashboardScreen({ navigation }: any) {
   const {
-    user, isProfileIncomplete, canPostErrands, canAcceptTasks,
+    user, isProfileIncomplete, canPostErrands,
   } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<ActivityItem[]>([])
