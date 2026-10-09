@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, Alert
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
-import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
+import { COLORS, RADIUS, SHADOW, SPACING } from '../../config/theme'
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth()
@@ -16,13 +16,19 @@ export default function LoginScreen({ navigation }: any) {
   const [error, setError] = useState('')
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Please fill in all fields'); return }
-    setError(''); setLoading(true)
+    if (!email.trim() || !password) {
+      setError('Enter your email address and password to continue.')
+      return
+    }
+    setError('')
+    setLoading(true)
     try {
       await login(email.trim(), password)
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed. Please try again.')
-    } finally { setLoading(false) }
+      setError(err.response?.data?.message || err.message || 'We could not sign you in. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -30,184 +36,206 @@ export default function LoginScreen({ navigation }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Orange gradient panel */}
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Welcome Back!</Text>
-          <Text style={styles.panelSub}>Sign in to continue your DoForYou journey</Text>
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🔒</Text>
-              <Text style={styles.featureLabel}>Secure</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>⚡</Text>
-              <Text style={styles.featureLabel}>Fast</Text>
-            </View>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.brandRow}>
+          <View style={styles.brandMark}>
+            <Text style={styles.brandMarkLetter}>D</Text>
+            <View style={styles.brandMarkDot} />
+          </View>
+          <View>
+            <Text style={styles.brandName}>DoForYou</Text>
+            <Text style={styles.brandTagline}>HELPING YOUR COMMUNITY MOVE</Text>
           </View>
         </View>
 
-        {/* White form card */}
+        <View style={styles.hero}>
+          <View style={styles.heroKicker}>
+            <View style={styles.liveDot} />
+            <Text style={styles.heroKickerText}>LOCAL HELP. REAL OPPORTUNITY.</Text>
+          </View>
+          <Text style={styles.heroTitle}>Good things happen when we help each other.</Text>
+          <Text style={styles.heroSubtitle}>
+            Find a helping hand, offer your skills, and get everyday things moving.
+          </Text>
+          <View style={styles.valueRow}>
+            <View style={styles.valuePill}>
+              <View style={[styles.valueIcon, styles.valueIconOrange]}>
+                <Text style={styles.valueIconText}>＋</Text>
+              </View>
+              <Text style={styles.valueLabel}>Post a task</Text>
+            </View>
+            <View style={styles.valuePill}>
+              <View style={[styles.valueIcon, styles.valueIconGreen]}>
+                <Text style={styles.valueIconTextGreen}>↗</Text>
+              </View>
+              <Text style={styles.valueLabel}>Find work</Text>
+            </View>
+          </View>
+          <View style={styles.heroOrb} />
+          <View style={styles.heroOrbSmall} />
+        </View>
+
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Sign In</Text>
-          <Text style={styles.formSubtitle}>Enter your credentials to access your account</Text>
+          <View style={styles.formHeading}>
+            <Text style={styles.formTitle}>Welcome back</Text>
+            <Text style={styles.formSubtitle}>Sign in to pick up where you left off.</Text>
+          </View>
 
           {error ? (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>⚠️ {error}</Text>
+            <View style={styles.errorBanner} accessibilityRole="alert">
+              <View style={styles.errorMark}><Text style={styles.errorMarkText}>!</Text></View>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>Email address</Text>
             <TextInput
               style={styles.input}
-              placeholder="your@email.com"
+              placeholder="you@example.com"
               placeholderTextColor={COLORS.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
               autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="next"
             />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordRow}>
+            <View style={styles.passwordWrap}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="••••••••"
+                style={styles.passwordInput}
+                placeholder="Enter your password"
                 placeholderTextColor={COLORS.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoComplete="current-password"
+                textContentType="password"
+                returnKeyType="go"
+                onSubmitEditing={handleLogin}
               />
               <TouchableOpacity
-                style={styles.eyeBtn}
-                onPress={() => setShowPassword(v => !v)}
+                style={styles.revealButton}
+                onPress={() => setShowPassword(value => !value)}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                <Text style={styles.revealText}>{showPassword ? 'Hide' : 'Show'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <Button
-            title="Sign In"
+            title="Sign in to DFY  →"
             onPress={handleLogin}
             loading={loading}
-            disabled={!email || !password}
+            disabled={!email.trim() || !password}
             fullWidth
             size="lg"
-            style={{ marginTop: 8 }}
+            style={styles.signInButton}
           />
 
           <TouchableOpacity
             style={styles.switchRow}
             onPress={() => navigation.navigate('Register')}
+            activeOpacity={0.75}
           >
-            <Text style={styles.switchText}>
-              Don't have an account?{' '}
-              <Text style={styles.switchLink}>Sign Up</Text>
-            </Text>
+            <Text style={styles.switchText}>New to DoForYou? </Text>
+            <Text style={styles.switchLink}>Create an account</Text>
           </TouchableOpacity>
+
+          <View style={styles.trustRow}>
+            <View style={styles.trustDot} />
+            <Text style={styles.trustText}>Your tasks and payments are managed securely.</Text>
+          </View>
         </View>
+        <Text style={styles.footer}>Small tasks. Stronger communities.</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.primary },
-  scroll: { flexGrow: 1 },
-  panel: {
-    backgroundColor: COLORS.primary,
-    padding: SPACING.lg,
-    paddingTop: 60,
-    paddingBottom: 40,
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 22 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 28 },
+  brandMark: {
+    width: 46, height: 46, borderRadius: 16, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
   },
-  panelTitle: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: COLORS.white,
-    marginBottom: 8,
-    textAlign: 'center',
+  brandMarkLetter: { color: COLORS.white, fontSize: 27, fontWeight: '900', marginTop: -2 },
+  brandMarkDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFE4B8', position: 'absolute', right: 9, bottom: 8 },
+  brandName: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+  brandTagline: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 3 },
+  hero: { marginBottom: 24, position: 'relative', overflow: 'hidden' },
+  heroKicker: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, marginBottom: 13, zIndex: 1 },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.success },
+  heroKickerText: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: COLORS.secondary },
+  heroTitle: {
+    color: COLORS.textPrimary, fontSize: 34, lineHeight: 39, fontWeight: '900',
+    letterSpacing: -1.1, marginBottom: 11, maxWidth: 390, zIndex: 1,
   },
-  panelSub: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
+  heroSubtitle: { color: COLORS.textSecondary, fontSize: 15, lineHeight: 23, maxWidth: 340, zIndex: 1 },
+  valueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 20, zIndex: 1 },
+  valuePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8,
+    paddingHorizontal: 10, borderRadius: RADIUS.full, backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  features: { flexDirection: 'row', gap: 16 },
-  featureItem: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: RADIUS.lg,
-    padding: 16,
-    minWidth: 80,
-    gap: 8,
-  },
-  featureIcon: { fontSize: 24 },
-  featureLabel: { fontSize: 13, fontWeight: '500', color: COLORS.white },
+  valueIcon: { width: 24, height: 24, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  valueIconOrange: { backgroundColor: COLORS.primaryLight },
+  valueIconGreen: { backgroundColor: '#E6F7EF' },
+  valueIconText: { color: COLORS.primaryDark, fontSize: 16, fontWeight: '900', marginTop: -1 },
+  valueIconTextGreen: { color: COLORS.success, fontSize: 15, fontWeight: '900' },
+  valueLabel: { color: COLORS.textPrimary, fontSize: 11, fontWeight: '700' },
+  heroOrb: { position: 'absolute', width: 100, height: 100, borderRadius: 50, right: -54, top: -32, backgroundColor: '#FFF0D9' },
+  heroOrbSmall: { position: 'absolute', width: 42, height: 42, borderRadius: 21, right: 0, top: 10, backgroundColor: '#FFF7EB', borderWidth: 1, borderColor: '#FFE6C7' },
   formCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 32,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    padding: SPACING.lg,
-    paddingTop: 28,
-    flex: 1,
-    marginTop: -20,
-    ...SHADOW.lg,
+    backgroundColor: COLORS.surface, borderRadius: 26, padding: 21,
+    borderWidth: 1, borderColor: COLORS.border, ...SHADOW.md,
   },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  formSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
-  },
+  formHeading: { marginBottom: 22 },
+  formTitle: { color: COLORS.textPrimary, fontSize: 25, fontWeight: '900', letterSpacing: -0.6, marginBottom: 5 },
+  formSubtitle: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19 },
   errorBanner: {
-    backgroundColor: '#FEE2E2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: RADIUS.md,
-    padding: 12,
-    marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 9,
+    backgroundColor: '#FFF0EE', borderColor: '#F8D2CE', borderWidth: 1,
+    borderRadius: RADIUS.md, padding: 12, marginBottom: 16,
   },
-  errorText: { color: '#991B1B', fontSize: 14 },
-  inputGroup: { marginBottom: 16 },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-    marginBottom: 6,
-  },
+  errorMark: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#FBD6D2', alignItems: 'center', justifyContent: 'center' },
+  errorMarkText: { color: '#AD2922', fontWeight: '900', fontSize: 13 },
+  errorText: { color: '#AD2922', fontSize: 12, flex: 1, lineHeight: 18 },
+  inputGroup: { marginBottom: 17 },
+  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
   input: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    padding: 12,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.white,
+    width: '100%', minHeight: 52, borderWidth: 1.5, borderColor: COLORS.border,
+    borderRadius: RADIUS.md, paddingHorizontal: 15, paddingVertical: 12,
+    fontSize: 14, color: COLORS.textPrimary, backgroundColor: '#FFFEFC',
   },
-  passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: {
-    padding: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+  passwordWrap: {
+    flexDirection: 'row', alignItems: 'center', borderWidth: 1.5,
+    borderColor: COLORS.border, borderRadius: RADIUS.md, backgroundColor: '#FFFEFC',
   },
-  eyeText: { fontSize: 16 },
-  switchRow: { marginTop: SPACING.lg, alignItems: 'center' },
-  switchText: { fontSize: 14, color: COLORS.textSecondary },
-  switchLink: { color: COLORS.primary, fontWeight: '600' },
+  passwordInput: { flex: 1, minHeight: 52, paddingHorizontal: 15, paddingVertical: 12, fontSize: 14, color: COLORS.textPrimary },
+  revealButton: { paddingHorizontal: 14, paddingVertical: 10 },
+  revealText: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
+  signInButton: { marginTop: 2, borderRadius: RADIUS.md, minHeight: 52 },
+  switchRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 20, paddingVertical: 5 },
+  switchText: { color: COLORS.textSecondary, fontSize: 12 },
+  switchLink: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '900' },
+  trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 18 },
+  trustDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
+  trustText: { color: COLORS.textMuted, fontSize: 10, textAlign: 'center' },
+  footer: { textAlign: 'center', paddingTop: 21, color: COLORS.textMuted, fontSize: 11, fontWeight: '600' },
 })
