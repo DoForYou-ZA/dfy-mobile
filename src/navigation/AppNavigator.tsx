@@ -1,6 +1,6 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { NavigationContainer, NavigationContainerRef, useNavigationContainerRef } from '@react-navigation/native'
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +9,7 @@ import { COLORS, RADIUS } from '../config/theme'
 
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
+import AdminMobileBlockedScreen from '../screens/AdminMobileBlockedScreen'
 import DashboardScreen from '../screens/DashboardScreen'
 import BrowseErrandsScreen from '../screens/tasks/BrowseErrandsScreen'
 import PostErrandScreen from '../screens/tasks/PostErrandScreen'
@@ -21,29 +22,40 @@ import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
 
 const Stack = createNativeStackNavigator()
+const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register', 'AdminMobileBlocked']
 
-const MAIN_ROUTES = ['Dashboard','BrowseErrands','PostErrand','MyPostedTasks','MyActiveTasks','MyCompletedTasks','BankAccounts','Profile','Notifications']
-const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
+function BrandMark({ size = 36 }: { size?: number }) {
+  return (
+    <View style={[s.brandMark, { width: size, height: size, borderRadius: size * 0.34 }]}>
+      <Text style={[s.brandMarkText, { fontSize: size * 0.68 }]}>d</Text>
+      <View style={[s.brandDot, { width: size * 0.16, height: size * 0.16, borderRadius: size * 0.08 }]} />
+    </View>
+  )
+}
 
 function TopNavbar({ navRef }: { navRef: any }) {
   const { unreadCount } = useNotifications()
   const insets = useSafeAreaInsets()
+
   return (
-    <View style={[s.navbar, { paddingTop: insets.top }]}>
-      <View style={s.navbarInner}>
-        <Text style={s.brand}>
-          <Text style={s.brandName}>DoForYou</Text>
-          <Text style={s.brandDot}>.</Text>
-        </Text>
+    <View style={[s.topBar, { paddingTop: insets.top }]}>
+      <View style={s.topBarInner}>
+        <View style={s.brandRow}>
+          <BrandMark size={35} />
+          <View>
+            <Text style={s.brandName}>DoForYou</Text>
+            <Text style={s.brandTagline}>SMALL TASKS. REAL HELP.</Text>
+          </View>
+        </View>
         <TouchableOpacity
-          style={s.bellBtn}
+          accessibilityRole="button"
+          accessibilityLabel={unreadCount > 0 ? `Inbox, ${unreadCount} unread` : 'Open inbox'}
+          style={s.inboxButton}
           onPress={() => navRef.current?.navigate('Notifications' as never)}
         >
-          <Text style={s.bellIcon}>🔔</Text>
+          <Text style={s.inboxGlyph}>•••</Text>
           {unreadCount > 0 && (
-            <View style={s.bellBadge}>
-              <Text style={s.bellBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-            </View>
+            <View style={s.inboxBadge}><Text style={s.inboxBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text></View>
           )}
         </TouchableOpacity>
       </View>
@@ -52,79 +64,74 @@ function TopNavbar({ navRef }: { navRef: any }) {
 }
 
 function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any }) {
-  const { isAuthenticated, isAdmin, canPostErrands, user } = useAuth()
+  const { isAuthenticated, canPostErrands, canAcceptTasks, isAdmin } = useAuth()
   const insets = useSafeAreaInsets()
-  const userType = user?.userType || ''
 
-  if (!isAuthenticated() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
+  if (!isAuthenticated() || isAdmin() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
 
-  const go = (route: string) => navRef.current?.navigate(route as never)
-  const isActive = (r: string) => currentRoute === r
   const canPost = canPostErrands()
+  const canAccept = canAcceptTasks()
+  const primaryTaskRoute = canPost ? 'PostErrand' : canAccept ? 'MyActiveTasks' : 'BrowseErrands'
+  const primaryTaskLabel = canPost ? 'Post' : canAccept ? 'My tasks' : 'Tasks'
+  const primaryTaskGlyph = canPost ? '+' : canAccept ? '▤' : '↗'
+  const isActive = (route: string) => currentRoute === route
+  const go = (route: string) => navRef.current?.navigate(route as never)
+
+  const item = (route: string, glyph: string, label: string) => (
+    <TouchableOpacity
+      key={route}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive(route) }}
+      accessibilityLabel={label}
+      style={s.navItem}
+      onPress={() => go(route)}
+    >
+      {isActive(route) && <View style={s.activePip} />}
+      <Text style={[s.navGlyph, isActive(route) && s.navGlyphActive]}>{glyph}</Text>
+      <Text style={[s.navLabel, isActive(route) && s.navLabelActive]}>{label}</Text>
+    </TouchableOpacity>
+  )
 
   return (
-    <View style={[s.bottomNav, { paddingBottom: insets.bottom || 8 }]}>
-      {/* Home */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Dashboard')}>
-        {isActive('Dashboard') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Dashboard') && s.navIconActive]}>🏠</Text>
-        <Text style={[s.navLabel, isActive('Dashboard') && s.navLabelActive]}>Home</Text>
+    <View style={[s.bottomNav, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      {item('Dashboard', '⌂', 'Home')}
+      {item('BrowseErrands', '⌕', 'Explore')}
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={primaryTaskLabel}
+        style={s.primaryNavItem}
+        onPress={() => go(primaryTaskRoute)}
+      >
+        <View style={[s.primaryNavButton, isActive(primaryTaskRoute) && s.primaryNavButtonActive]}>
+          <Text style={s.primaryNavGlyph}>{primaryTaskGlyph}</Text>
+        </View>
+        <Text style={[s.navLabel, s.primaryNavLabel, isActive(primaryTaskRoute) && s.navLabelActive]}>{primaryTaskLabel}</Text>
       </TouchableOpacity>
-
-      {/* Browse */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('BrowseErrands')}>
-        {isActive('BrowseErrands') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('BrowseErrands') && s.navIconActive]}>🔍</Text>
-        <Text style={[s.navLabel, isActive('BrowseErrands') && s.navLabelActive]}>Browse</Text>
-      </TouchableOpacity>
-
-      {/* FAB — Post (creator) or My Tasks (runner) */}
-      {canPost ? (
-        <TouchableOpacity style={s.navItem} onPress={() => go('PostErrand')}>
-          <View style={[s.fab, isActive('PostErrand') && s.fabActive]}>
-            <Text style={s.fabIcon}>+</Text>
-          </View>
-          <Text style={[s.navLabel, { marginTop: 2 }, isActive('PostErrand') && s.navLabelActive]}>Post</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={s.navItem} onPress={() => go('MyActiveTasks')}>
-          <View style={[s.fab, s.fabRunner, isActive('MyActiveTasks') && s.fabActive]}>
-            <Text style={s.fabIcon}>☰</Text>
-          </View>
-          <Text style={[s.navLabel, { marginTop: 2 }, isActive('MyActiveTasks') && s.navLabelActive]}>My Tasks</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Notifications */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Notifications')}>
-        {isActive('Notifications') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Notifications') && s.navIconActive]}>🔔</Text>
-        <Text style={[s.navLabel, isActive('Notifications') && s.navLabelActive]}>Alerts</Text>
-      </TouchableOpacity>
-
-      {/* Profile */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Profile')}>
-        {isActive('Profile') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Profile') && s.navIconActive]}>👤</Text>
-        <Text style={[s.navLabel, isActive('Profile') && s.navLabelActive]}>Profile</Text>
-      </TouchableOpacity>
+      {item('Notifications', '◌', 'Inbox')}
+      {item('Profile', '○', 'Account')}
     </View>
   )
 }
 
-const orangeHeader = {
-  headerStyle: { backgroundColor: COLORS.primary },
-  headerTintColor: '#fff' as const,
-  headerTitleStyle: { fontWeight: '700' as const, fontSize: 17 },
+const nativeHeader = {
+  headerShown: true,
+  headerStyle: { backgroundColor: COLORS.ink },
+  headerTintColor: COLORS.white,
+  headerTitleStyle: { fontWeight: '800' as const, fontSize: 16 },
+  headerShadowVisible: false,
   headerBackTitle: '',
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, isAdmin, loading, logout } = useAuth()
   const navRef = useNavigationContainerRef()
   const [currentRoute, setCurrentRoute] = React.useState('Dashboard')
 
   if (loading) return null
+
+  const authenticated = isAuthenticated()
+  const adminMode = authenticated && isAdmin()
+  const navigatorKey = adminMode ? 'admin-only' : authenticated ? 'customer-app' : 'public-auth'
 
   return (
     <NavigationContainer
@@ -134,12 +141,18 @@ export default function AppNavigator() {
         if (route) setCurrentRoute(route)
       }}
     >
-      <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-        {isAuthenticated() && <TopNavbar navRef={navRef} />}
-
-        <View style={{ flex: 1 }}>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {!isAuthenticated() ? (
+      <View style={s.app}>
+        {authenticated && !adminMode && <TopNavbar navRef={navRef} />}
+        <View style={s.screenArea}>
+          <Stack.Navigator
+            key={navigatorKey}
+            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}
+          >
+            {adminMode ? (
+              <Stack.Screen name="AdminMobileBlocked">
+                {() => <AdminMobileBlockedScreen onSignOut={logout} />}
+              </Stack.Screen>
+            ) : !authenticated ? (
               <>
                 <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="Register" component={RegisterScreen} />
@@ -158,104 +171,51 @@ export default function AppNavigator() {
                 <Stack.Screen
                   name="TaskChat"
                   component={TaskChatScreen}
-                  options={{ headerShown: true, title: 'Task Chat', ...orangeHeader }}
+                  options={{ ...nativeHeader, title: 'Task conversation' }}
                 />
               </>
             )}
           </Stack.Navigator>
         </View>
-
-        {isAuthenticated() && (
-          <BottomNav currentRoute={currentRoute} navRef={navRef} />
-        )}
+        {authenticated && !adminMode && <BottomNav currentRoute={currentRoute} navRef={navRef} />}
       </View>
     </NavigationContainer>
   )
 }
 
 const s = StyleSheet.create({
-  // .navbar — white top bar
-  navbar: {
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    zIndex: 100,
+  app: { flex: 1, backgroundColor: COLORS.background },
+  screenArea: { flex: 1 },
+  topBar: { backgroundColor: COLORS.background, zIndex: 10 },
+  topBarInner: {
+    minHeight: 63, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', paddingHorizontal: 17, paddingBottom: 11,
+    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
   },
-  navbarInner: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  brand: {},
-  brandName: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
-  brandDot: { fontSize: 20, fontWeight: '700', color: COLORS.primary },
-  bellBtn: {
-    position: 'relative', width: 38, height: 38,
-    alignItems: 'center', justifyContent: 'center', borderRadius: 19,
-  },
-  bellIcon: { fontSize: 20 },
-  bellBadge: {
-    position: 'absolute', top: 2, right: 2,
-    minWidth: 16, height: 16,
-    backgroundColor: COLORS.danger, borderRadius: 999,
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3,
-  },
-  bellBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
-
-  // .bottom-nav — white, border-top, 64px, shadow-up
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  brandMark: { backgroundColor: COLORS.ink, alignItems: 'center', justifyContent: 'center' },
+  brandMarkText: { color: COLORS.white, fontWeight: '900', marginTop: -3 },
+  brandDot: { position: 'absolute', right: 5, bottom: 5, backgroundColor: COLORS.primary },
+  brandName: { color: COLORS.ink, fontSize: 15, fontWeight: '900', letterSpacing: -0.35 },
+  brandTagline: { fontSize: 7, color: COLORS.textMuted, fontWeight: '900', letterSpacing: 1.25, marginTop: 3 },
+  inboxButton: { width: 41, height: 41, backgroundColor: COLORS.surface, borderColor: COLORS.border, borderWidth: 1, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  inboxGlyph: { marginTop: -8, fontSize: 18, fontWeight: '900', letterSpacing: 1, color: COLORS.textPrimary },
+  inboxBadge: { position: 'absolute', minWidth: 17, height: 17, paddingHorizontal: 4, borderRadius: 9, top: -3, right: -3, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  inboxBadgeText: { color: COLORS.white, fontSize: 9, fontWeight: '900' },
   bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 8,
-    height: 64,
-    paddingHorizontal: 4,
-    alignItems: 'stretch',
+    flexDirection: 'row', alignItems: 'stretch', justifyContent: 'space-around',
+    backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border,
+    paddingTop: 7, paddingHorizontal: 5, minHeight: 66,
   },
-
-  // .bnav-item
-  navItem: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    gap: 3, position: 'relative', minHeight: 44,
-  },
-
-  // .bnav-item.active::after — orange top bar
-  activeBar: {
-    position: 'absolute', top: 0, left: '25%', right: '25%',
-    height: 2, backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 2, borderBottomRightRadius: 2,
-  },
-
-  navIcon: { fontSize: 20, color: COLORS.textSecondary },
-  navIconActive: { color: COLORS.primary },
-  navLabel: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary },
-  navLabelActive: { color: COLORS.primary },
-
-  // .bnav-post-btn — orange FAB
-  fab: {
-    width: 46, height: 46, borderRadius: 23,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: -18,
-    shadowColor: '#FF8A00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  fabRunner: { backgroundColor: '#1F2937' },
-  fabActive: { transform: [{ scale: 1.08 }] },
-  fabIcon: { fontSize: 22, color: '#fff', fontWeight: '700' },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 49, position: 'relative' },
+  activePip: { position: 'absolute', top: -7, width: 18, height: 3, borderRadius: 2, backgroundColor: COLORS.primary },
+  navGlyph: { fontSize: 22, fontWeight: '500', color: COLORS.textMuted, minHeight: 24 },
+  navGlyphActive: { color: COLORS.primaryDark },
+  navLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textMuted },
+  navLabelActive: { color: COLORS.primaryDark },
+  primaryNavItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1, minHeight: 49 },
+  primaryNavButton: { width: 42, height: 42, borderRadius: 16, marginTop: -19, backgroundColor: COLORS.primary, borderWidth: 3, borderColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' },
+  primaryNavButtonActive: { backgroundColor: COLORS.primaryDark },
+  primaryNavGlyph: { color: COLORS.white, fontSize: 24, fontWeight: '700', marginTop: -1 },
+  primaryNavLabel: { marginTop: 1 },
 })
