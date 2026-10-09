@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import * as signalR from '@microsoft/signalr'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { notificationsApi } from '../api'
 import { useAuth } from './AuthContext'
 import ENV from '../config/env'
+import { getAccessToken } from '../core/tokenStorage'
 import type { AppNotification } from '../types'
 
 interface NotificationContextValue {
@@ -103,7 +103,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!isAuthenticated() || isAdmin()) return
     const setupHub = async () => {
-      const token = await AsyncStorage.getItem('token')
+      const token = await getAccessToken()
       if (!token) return
       const hubUrl = `${ENV.signalRUrl}/api/v1/hubs/chat`
       const hub = new signalR.HubConnectionBuilder()
