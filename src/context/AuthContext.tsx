@@ -158,7 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
       const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
-      const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+      const decoded = atob(padded)
+      const payloadText = decodeURIComponent(Array.from(decoded, char => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''))
+      const payload = JSON.parse(payloadText)
       return payload.exp > Date.now() / 1000
     } catch { return true } // if decode fails, assume valid and let API reject
   }, [token])
