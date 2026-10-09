@@ -14,18 +14,28 @@ export interface AuthResponse {
   success: boolean; message: string; user?: User; token?: string
   refreshToken?: string; expiration?: string
 }
-export type PaymentStatus = 'pending' | 'verified' | 'failed' | 'expired' | 'refunded' | 'escrow_held'
-export type TaskStatus = 'draft' | 'posted' | 'claimed' | 'in_progress' | 'completed' | 'confirmed' | 'runner_paid' | 'cancelled' | 'disputed'
+export type PaymentStatus =
+  | 'Pending' | 'EscrowHeld' | 'EscrowReleased' | 'PayoutPending' | 'Processing'
+  | 'RunnerPaid' | 'PayoutReturned' | 'PayoutCancelled' | 'PayoutFailed'
+  | 'DisputePending' | 'RefundPending' | 'Refunded' | 'Failed' | 'Expired'
+  | 'pending' | 'verified' | 'failed' | 'expired' | 'refunded' | 'escrow_held'
+export type TaskStatus =
+  | 'PendingPayment' | 'Posted' | 'Claimed' | 'InProgress' | 'Completed'
+  | 'Confirmed' | 'RunnerPaid' | 'PayoutPending' | 'PayoutFailed'
+  | 'AwaitingConfirmation' | 'DisputePending' | 'RefundPending' | 'Cancelled'
+  | 'draft' | 'posted' | 'claimed' | 'in_progress' | 'completed' | 'awaiting_confirmation' | 'confirmed' | 'runner_paid' | 'cancelled' | 'disputed'
 export type Priority = 'standard' | 'urgent' | 'low'
 export interface Task {
-  id: number; taskId: string; timestamp: string; userName: string; userContact: string
+  id: number; taskId: string; timestamp?: string; userName: string; userContact: string
   createdByUserId: number; taskName?: string; taskDescription: string; area: string
-  dateNeeded: string; budget: number; notes?: string; paymentStatus: PaymentStatus
+  dateNeeded: string; budget: number; payoutAmount?: number; notes?: string; paymentStatus: PaymentStatus
   taskStatus: TaskStatus; helperName?: string; helperContact?: string; helperEmail?: string
   acceptedByUserId?: number; priority: Priority; category?: string; createdAt: string
-  updatedAt: string; completedAt?: string; escrowStatus?: string
+  updatedAt?: string; completedAt?: string; escrowStatus?: string
   task_description?: string; area_suburb?: string; date_time_needed?: string
   contact_number?: string; name_and_surname?: string; taskid?: string; status?: string
+  canAccept?: boolean; canEdit?: boolean; canComplete?: boolean; canCancel?: boolean
+  canConfirm?: boolean; canMessage?: boolean; canDispute?: boolean
 }
 export interface ChatMessage {
   id: string | number; taskId: string; senderId: number; senderName: string
@@ -35,9 +45,11 @@ export interface WalletBalance {
   availableBalance: number; pendingPayouts: number; totalEarned: number; totalWithdrawn: number
 }
 export interface BankAccount {
-  id: number; bankName: string; accountNumber: string; accountHolderName: string
-  accountType: string; branchCode: string; isVerified: boolean; isDefault: boolean
+  id: number; bankName: string; bankCode?: string; accountNumber: string
+  accountHolderName: string; accountType: string; branchCode?: string
+  isVerified: boolean; isDefault?: boolean; isDefaultPayout?: boolean; verificationMessage?: string; createdAt?: string
 }
+export interface SupportedBank { bankCode: string; bankGroupId?: string; name: string; branchCode?: string | null }
 export interface AppNotification {
   id: number; type: string; title: string; message: string; isRead: boolean
   createdAt: string; updatedAt: string; count: number

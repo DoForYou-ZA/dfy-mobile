@@ -14,14 +14,15 @@ import BrowseErrandsScreen from '../screens/tasks/BrowseErrandsScreen'
 import PostErrandScreen from '../screens/tasks/PostErrandScreen'
 import MyPostedTasksScreen from '../screens/tasks/MyPostedTasksScreen'
 import MyActiveTasksScreen from '../screens/tasks/MyActiveTasksScreen'
+import MyCompletedTasksScreen from '../screens/tasks/MyCompletedTasksScreen'
 import TaskChatScreen from '../screens/tasks/TaskChatScreen'
-import WalletScreen from '../screens/user/WalletScreen'
+import BankAccountsScreen from '../screens/user/BankAccountsScreen'
 import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
 
 const Stack = createNativeStackNavigator()
 
-const MAIN_ROUTES = ['Dashboard','BrowseErrands','PostErrand','MyPostedTasks','MyActiveTasks','Wallet','Profile','Notifications']
+const MAIN_ROUTES = ['Dashboard','BrowseErrands','PostErrand','MyPostedTasks','MyActiveTasks','MyCompletedTasks','BankAccounts','Profile','Notifications']
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
@@ -94,11 +95,11 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
         </TouchableOpacity>
       )}
 
-      {/* Wallet */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Wallet')}>
-        {isActive('Wallet') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Wallet') && s.navIconActive]}>💰</Text>
-        <Text style={[s.navLabel, isActive('Wallet') && s.navLabelActive]}>Wallet</Text>
+      {/* Notifications */}
+      <TouchableOpacity style={s.navItem} onPress={() => go('Notifications')}>
+        {isActive('Notifications') && <View style={s.activeBar} />}
+        <Text style={[s.navIcon, isActive('Notifications') && s.navIconActive]}>🔔</Text>
+        <Text style={[s.navLabel, isActive('Notifications') && s.navLabelActive]}>Alerts</Text>
       </TouchableOpacity>
 
       {/* Profile */}
@@ -150,7 +151,8 @@ export default function AppNavigator() {
                 <Stack.Screen name="PostErrand" component={PostErrandScreen} />
                 <Stack.Screen name="MyPostedTasks" component={MyPostedTasksScreen} />
                 <Stack.Screen name="MyActiveTasks" component={MyActiveTasksScreen} />
-                <Stack.Screen name="Wallet" component={WalletScreen} />
+                <Stack.Screen name="MyCompletedTasks" component={MyCompletedTasksScreen} />
+                <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 <Stack.Screen

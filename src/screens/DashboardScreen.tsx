@@ -66,8 +66,7 @@ export default function DashboardScreen({ navigation }: any) {
     { label: 'My Active', value: stats?.myActiveTasks ?? 0, bg: 'bg-warning' },
     { label: 'Completed', value: stats?.runnerCompletedTasks ?? 0, bg: 'bg-success' },
     { label: 'Total Earnings', value: `R${(stats?.totalEarnings ?? 0).toFixed(0)}`, bg: 'bg-primary' },
-    { label: 'Balance', value: `R${(stats?.availableBalance ?? 0).toFixed(0)}`, bg: 'bg-success' },
-    { label: 'Pending Payouts', value: `R${(stats?.pendingPayouts ?? 0).toFixed(0)}`, bg: 'bg-warning' },
+        { label: 'Payouts Pending', value: `R${(stats?.pendingPayouts ?? 0).toFixed(0)}`, bg: 'bg-warning' },
     { label: 'This Month', value: `R${(stats?.thisMonthEarnings ?? 0).toFixed(0)}`, bg: 'bg-info' },
     { label: 'Completion Rate', value: `${(stats?.completionRate ?? 0).toFixed(0)}%`, bg: 'bg-dark' },
   ]

@@ -11,7 +11,7 @@ const USER_TYPES = [
   { value: 'both', label: '🤝 Both', desc: 'Full access to post and complete tasks' },
 ]
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
   const { user, refreshUser, logout } = useAuth()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
   const [loading, setLoading] = useState(false)
@@ -201,6 +201,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      <Button title="Bank Accounts" onPress={() => navigation.navigate('BankAccounts')} variant="secondary" fullWidth style={{ marginTop: 8 }} />
       <Button title="Sign Out" onPress={logout} variant="outline" fullWidth style={{ marginTop: 8 }} />
     </ScrollView>
   )
