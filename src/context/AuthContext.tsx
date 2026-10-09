@@ -45,8 +45,11 @@ function tokenHasAdminRole(token: string | null | undefined): boolean {
 }
 
 function isAdminIdentity(candidate: any, token?: string | null): boolean {
+  const roles = Array.isArray(candidate?.roles)
+    ? candidate.roles
+    : candidate?.roles ? [candidate.roles] : []
   return candidate?.isAdmin === true
-    || (candidate?.roles || []).some((role: string) => String(role).toLowerCase() === 'admin')
+    || roles.some((role: string) => String(role).toLowerCase() === 'admin')
     || tokenHasAdminRole(token)
 }
 
