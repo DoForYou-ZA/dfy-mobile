@@ -143,11 +143,11 @@ export default function MyPostedTasksScreen({ navigation }: any) {
   if (loading) return <LoadingScreen message="Loading your posted tasks..." />
 
   const SECTIONS: { key: Section; icon: string; label: string }[] = [
-    { key: 'pendingPayment', icon: '⚠️', label: 'Pending Payment' },
-    { key: 'posted', icon: '📢', label: 'Live tasks' },
-    { key: 'claimed', icon: '⏳', label: 'In Progress' },
-    { key: 'completed', icon: '🕐', label: 'Awaiting Confirmation' },
-    { key: 'runnerPaid', icon: '✅', label: 'Completed' },
+    { key: 'pendingPayment', icon: '!', label: 'Payment needed' },
+    { key: 'posted', icon: '↗', label: 'Live tasks' },
+    { key: 'claimed', icon: '…', label: 'In progress' },
+    { key: 'completed', icon: '◷', label: 'Awaiting confirmation' },
+    { key: 'runnerPaid', icon: '✓', label: 'Completed' },
   ]
 
   const renderTask = (task: Task, sectionKey: Section) => (
@@ -191,7 +191,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
         )}
       </View>
 
-      {/* .task-card-footer — action rows matching web */}
+      {/* Native task actions */}
       <View style={s.taskCardFooter}>
         {sectionKey === 'pendingPayment' && (
           <View style={s.actionRow}>
@@ -411,7 +411,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
 const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingBottom: 32 },
-  pageHeader: { backgroundColor: COLORS.primary, padding: SPACING.lg, marginBottom: SPACING.lg },
+  pageHeader: { backgroundColor: COLORS.ink, padding: SPACING.lg, marginBottom: SPACING.lg },
   pageHeaderTitle: { fontSize: 28, fontWeight: '700', color: '#fff', marginBottom: 4 },
   pageHeaderSub: { fontSize: 15, color: 'rgba(255,255,255,0.85)' },
   body: { paddingHorizontal: SPACING.md },
