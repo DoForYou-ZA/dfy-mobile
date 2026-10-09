@@ -1,20 +1,28 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, Alert
+  KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native'
 import { authApi } from '../../api'
 import Button from '../../components/Button'
-import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
+import { COLORS, RADIUS, SPACING } from '../../config/theme'
 
-const STEPS = ['Personal Info', 'Role & Details', 'Security']
+const STEPS = ['Your details', 'How you’ll use DFY', 'Secure your account']
 
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
-  const yy = id.substring(0, 2), mm = id.substring(2, 4), dd = id.substring(4, 6)
-  const year = parseInt(yy) > 25 ? `19${yy}` : `20${yy}`
+  const yy = id.substring(0, 2)
+  const mm = id.substring(2, 4)
+  const dd = id.substring(4, 6)
+  const year = parseInt(yy, 10) > 25 ? `19${yy}` : `20${yy}`
   return `${year}-${mm}-${dd}`
 }
+
+const ROLES = [
+  { value: 'creator', symbol: '＋', label: 'Post tasks', desc: 'Get help with the things you need done.' },
+  { value: 'runner', symbol: '↗', label: 'Complete tasks', desc: 'Put your skills to work and earn.' },
+  { value: 'both', symbol: '↔', label: 'Both', desc: 'Post tasks and help others, too.' },
+]
 
 export default function RegisterScreen({ navigation }: any) {
   const [step, setStep] = useState(1)
@@ -27,169 +35,201 @@ export default function RegisterScreen({ navigation }: any) {
     password: '', confirmPassword: '',
   })
 
-  const set = (field: string) => (val: string) =>
-    setForm(f => ({ ...f, [field]: val }))
+  const setField = (field: keyof typeof form) => (value: string) =>
+    setForm(current => ({ ...current, [field]: value }))
 
-  const handleIdChange = (val: string) =>
-    setForm(f => ({ ...f, idNumber: val, dateOfBirth: extractDobFromId(val) }))
+  const handleIdChange = (value: string) =>
+    setForm(current => ({ ...current, idNumber: value, dateOfBirth: extractDobFromId(value) }))
 
-  const canNext = () => {
-    if (step === 1) return !!(form.firstName && form.lastName && form.email && form.phoneNumber)
-    if (step === 2) return !!(form.userType && form.idNumber && form.address)
-    return false
+  const canContinue = () => {
+    if (step === 1) return !!(form.firstName.trim() && form.lastName.trim() && form.email.trim() && form.phoneNumber.trim())
+    if (step === 2) return !!(form.userType && form.idNumber.trim() && form.address.trim())
+    return !!(form.password && form.confirmPassword)
   }
 
   const handleSubmit = async () => {
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
-    if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
-    setError(''); setLoading(true)
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.phoneNumber.trim()) {
+      setStep(1)
+      setError('Complete your personal details before creating your account.')
+      return
+    }
+    if (!form.userType || !form.idNumber.trim() || !form.address.trim()) {
+      setStep(2)
+      setError('Choose how you’ll use DoForYou and complete the required details.')
+      return
+    }
+    if (form.password !== form.confirmPassword) { setError('Your passwords do not match.'); return }
+    if (form.password.length < 6) { setError('Use a password with at least 6 characters.'); return }
+
+    setError('')
+    setLoading(true)
     try {
-      const res = await authApi.register({
-        firstName: form.firstName, lastName: form.lastName,
-        email: form.email, phoneNumber: form.phoneNumber,
-        userType: form.userType, idNumber: form.idNumber,
-        dateOfBirth: form.dateOfBirth, address: form.address,
+      const response = await authApi.register({
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        phoneNumber: form.phoneNumber.trim(),
+        userType: form.userType,
+        idNumber: form.idNumber.trim(),
+        dateOfBirth: form.dateOfBirth,
+        address: form.address.trim(),
         password: form.password,
       })
-      if (res.data.success) {
-        Alert.alert('Account Created!', 'Please sign in to continue.', [
-          { text: 'Sign In', onPress: () => navigation.navigate('Login') }
+      if (response.data.success) {
+        Alert.alert('You’re on your way', 'Your DoForYou account is ready. Sign in to continue.', [
+          { text: 'Sign in', onPress: () => navigation.navigate('Login') },
         ])
       } else {
-        setError(res.data.message || 'Registration failed')
+        setError(response.data.message || 'We couldn’t create your account. Please try again.')
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.')
-    } finally { setLoading(false) }
+      setError(err.response?.data?.message || 'We couldn’t create your account. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const ROLES = [
-    { value: 'creator', icon: '📋', label: 'Task Creator', desc: 'Post tasks for others' },
-    { value: 'runner', icon: '🏃', label: 'Task Runner', desc: 'Complete tasks & earn' },
-    { value: 'both', icon: '🤝', label: 'Both', desc: 'Post & complete tasks' },
-  ]
+  const Field = ({
+    label, value, onChangeText, placeholder, keyboardType, autoCapitalize, secureTextEntry, autoComplete,
+  }: {
+    label: string; value: string; onChangeText: (value: string) => void; placeholder: string;
+    keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'number-pad';
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+    secureTextEntry?: boolean;
+    autoComplete?: 'off' | 'name' | 'email' | 'tel' | 'street-address' | 'new-password';
+  }) => (
+    <View style={s.fieldGroup}>
+      <Text style={s.label}>{label}</Text>
+      <TextInput
+        style={s.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.textMuted}
+        keyboardType={keyboardType || 'default'}
+        autoCapitalize={autoCapitalize || 'sentences'}
+        autoCorrect={false}
+        secureTextEntry={secureTextEntry}
+        autoComplete={autoComplete || 'off'}
+      />
+    </View>
+  )
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Join DoForYou</Text>
-          <Text style={styles.panelSub}>Connect with your community through tasks and services</Text>
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📋</Text>
-              <Text style={styles.featureLabel}>Post Tasks</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🤝</Text>
-              <Text style={styles.featureLabel}>Earn Money</Text>
-            </View>
+    <KeyboardAvoidingView style={s.page} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <View style={s.hero}>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')} style={s.backRow} accessibilityRole="button">
+            <Text style={s.backArrow}>‹</Text><Text style={s.backText}>Back to sign in</Text>
+          </TouchableOpacity>
+          <View style={s.brandRow}>
+            <View style={s.brandMark}><Text style={s.brandMarkText}>d</Text><View style={s.brandDot} /></View>
+            <Text style={s.brandName}>DoForYou</Text>
           </View>
+          <Text style={s.eyebrow}>JOIN YOUR COMMUNITY</Text>
+          <Text style={s.heroTitle}>Let’s get you{ '\n' }started.</Text>
+          <Text style={s.heroSubtitle}>One account. Two ways to make life a little easier.</Text>
         </View>
 
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Create Account</Text>
-
-          {/* Step indicator */}
-          <View style={styles.stepRow}>
-            {STEPS.map((s, i) => (
-              <View key={i} style={styles.stepItem}>
-                <View style={[
-                  styles.stepCircle,
-                  step > i + 1 && styles.stepDone,
-                  step === i + 1 && styles.stepActive,
-                ]}>
-                  <Text style={[styles.stepNum, step >= i + 1 && styles.stepNumActive]}>
-                    {step > i + 1 ? '✓' : i + 1}
-                  </Text>
-                </View>
-                <Text style={[styles.stepLabel, step === i + 1 && styles.stepLabelActive]}>{s}</Text>
-                {i < STEPS.length - 1 && <View style={[styles.stepLine, step > i + 1 && styles.stepLineDone]} />}
-              </View>
-            ))}
+        <View style={s.form}>
+          <View style={s.stepHeader}>
+            <View>
+              <Text style={s.stepCount}>STEP 0{step} OF 03</Text>
+              <Text style={s.formTitle}>{step === 1 ? 'A little about you' : step === 2 ? 'Make DFY yours' : 'Almost there'}</Text>
+            </View>
+            <View style={s.progressDots}>
+              {STEPS.map((_, index) => (
+                <View key={index} style={[s.progressDot, step >= index + 1 && s.progressDotActive]} />
+              ))}
+            </View>
           </View>
+          <Text style={s.formSubtitle}>{STEPS[step - 1]}</Text>
 
           {error ? (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>⚠️ {error}</Text>
-            </View>
+            <View accessibilityRole="alert" style={s.errorBanner}><Text style={s.errorText}>{error}</Text></View>
           ) : null}
 
           {step === 1 && (
-            <View style={{ gap: 12 }}>
-              <View style={styles.row}>
+            <View>
+              <View style={s.twoColumns}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>First Name *</Text>
-                  <TextInput style={styles.input} value={form.firstName} onChangeText={set('firstName')} placeholder="John" placeholderTextColor={COLORS.textMuted} />
+                  <Field label="First name" value={form.firstName} onChangeText={setField('firstName')} placeholder="First name" autoComplete="name" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Last Name *</Text>
-                  <TextInput style={styles.input} value={form.lastName} onChangeText={set('lastName')} placeholder="Doe" placeholderTextColor={COLORS.textMuted} />
+                  <Field label="Last name" value={form.lastName} onChangeText={setField('lastName')} placeholder="Last name" autoComplete="name" />
                 </View>
               </View>
-              <Text style={styles.label}>Email Address *</Text>
-              <TextInput style={styles.input} value={form.email} onChangeText={set('email')} placeholder="your@email.com" placeholderTextColor={COLORS.textMuted} keyboardType="email-address" autoCapitalize="none" />
-              <Text style={styles.label}>Phone Number *</Text>
-              <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="0812345678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" />
-              <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={{ marginTop: 8 }} />
+              <Field label="Email address" value={form.email} onChangeText={setField('email')} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+              <Field label="Phone number" value={form.phoneNumber} onChangeText={setField('phoneNumber')} placeholder="e.g. 082 123 4567" keyboardType="phone-pad" autoComplete="tel" />
             </View>
           )}
 
           {step === 2 && (
-            <View style={{ gap: 12 }}>
-              <Text style={styles.label}>I want to...</Text>
-              {ROLES.map(r => (
-                <TouchableOpacity
-                  key={r.value}
-                  style={[styles.roleCard, form.userType === r.value && styles.roleCardSelected]}
-                  onPress={() => setForm(f => ({ ...f, userType: r.value }))}
-                >
-                  <Text style={styles.roleIcon}>{r.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.roleLabel, form.userType === r.value && styles.roleLabelSelected]}>{r.label}</Text>
-                    <Text style={styles.roleDesc}>{r.desc}</Text>
-                  </View>
-                  {form.userType === r.value && <Text style={{ color: COLORS.primary, fontSize: 18 }}>✓</Text>}
-                </TouchableOpacity>
-              ))}
-              <Text style={styles.label}>ID Number *</Text>
-              <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdChange} placeholder="13-digit SA ID" placeholderTextColor={COLORS.textMuted} keyboardType="numeric" maxLength={13} />
-              {form.dateOfBirth ? <Text style={styles.hint}>Date of birth auto-filled: {form.dateOfBirth}</Text> : null}
-              <Text style={styles.label}>Address *</Text>
-              <TextInput style={styles.input} value={form.address} onChangeText={set('address')} placeholder="123 Main St, Johannesburg" placeholderTextColor={COLORS.textMuted} />
-              <View style={styles.navRow}>
-                <Button title="← Back" onPress={() => setStep(1)} variant="secondary" style={{ flex: 1 }} />
-                <Button title="Continue →" onPress={() => canNext() && setStep(3)} disabled={!canNext()} style={{ flex: 1 }} />
+            <View>
+              <Text style={s.sectionLabel}>I’m here to…</Text>
+              <View style={s.roleList}>
+                {ROLES.map(role => {
+                  const selected = form.userType === role.value
+                  return (
+                    <TouchableOpacity
+                      key={role.value}
+                      style={[s.roleCard, selected && s.roleCardSelected]}
+                      onPress={() => setField('userType')(role.value)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                    >
+                      <View style={[s.roleSymbol, selected && s.roleSymbolSelected]}>
+                        <Text style={[s.roleSymbolText, selected && s.roleSymbolTextSelected]}>{role.symbol}</Text>
+                      </View>
+                      <View style={s.roleCopy}>
+                        <Text style={s.roleTitle}>{role.label}</Text>
+                        <Text style={s.roleDescription}>{role.desc}</Text>
+                      </View>
+                      <View style={[s.radioOuter, selected && s.radioOuterSelected]}>
+                        {selected ? <View style={s.radioInner} /> : null}
+                      </View>
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
+              <Field label="South African ID number" value={form.idNumber} onChangeText={handleIdChange} placeholder="Enter your ID number" keyboardType="number-pad" />
+              <Field label="Residential address" value={form.address} onChangeText={setField('address')} placeholder="Street, suburb, city" autoComplete="street-address" />
+              <Text style={s.helperText}>Your details help keep the community accountable and safe.</Text>
             </View>
           )}
 
           {step === 3 && (
-            <View style={{ gap: 12 }}>
-              <Text style={styles.label}>Password *</Text>
-              <View style={styles.passwordRow}>
-                <TextInput style={[styles.input, { flex: 1 }]} value={form.password} onChangeText={set('password')} placeholder="Min 6 characters" placeholderTextColor={COLORS.textMuted} secureTextEntry={!showPassword} />
-                <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(v => !v)}>
-                  <Text>{showPassword ? '🙈' : '👁️'}</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.label}>Confirm Password *</Text>
-              <TextInput style={styles.input} value={form.confirmPassword} onChangeText={set('confirmPassword')} placeholder="Repeat password" placeholderTextColor={COLORS.textMuted} secureTextEntry={!showPassword} />
-              {form.confirmPassword && form.password !== form.confirmPassword && (
-                <Text style={styles.errorText}>Passwords don't match</Text>
-              )}
-              <View style={styles.navRow}>
-                <Button title="← Back" onPress={() => setStep(2)} variant="secondary" style={{ flex: 1 }} />
-                <Button title="Create Account" onPress={handleSubmit} loading={loading} disabled={!form.password || form.password !== form.confirmPassword} style={{ flex: 1 }} />
+            <View>
+              <Field label="Create a password" value={form.password} onChangeText={setField('password')} placeholder="At least 6 characters" secureTextEntry={!showPassword} autoComplete="new-password" />
+              <Field label="Confirm password" value={form.confirmPassword} onChangeText={setField('confirmPassword')} placeholder="Enter it again" secureTextEntry={!showPassword} autoComplete="new-password" />
+              <TouchableOpacity style={s.showPasswordRow} onPress={() => setShowPassword(value => !value)} accessibilityRole="button">
+                <View style={[s.checkbox, showPassword && s.checkboxSelected]}>{showPassword ? <Text style={s.checkboxTick}>✓</Text> : null}</View>
+                <Text style={s.showPasswordText}>Show passwords</Text>
+              </TouchableOpacity>
+              <View style={s.securityNote}>
+                <Text style={s.securitySymbol}>✓</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.securityTitle}>You’re in control</Text>
+                  <Text style={s.securityBody}>Use a password you don’t use on other sites. You can update your details later.</Text>
+                </View>
               </View>
             </View>
           )}
 
-          <TouchableOpacity style={styles.switchRow} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.switchText}>Already have an account? <Text style={styles.switchLink}>Sign In</Text></Text>
+          <View style={s.actions}>
+            {step > 1 ? (
+              <Button title="Back" onPress={() => { setError(''); setStep(value => value - 1) }} variant="outline-secondary" size="lg" style={{ flex: 1 }} />
+            ) : null}
+            {step < 3 ? (
+              <Button title="Continue  →" onPress={() => { setError(''); if (canContinue()) setStep(value => value + 1) }} disabled={!canContinue()} size="lg" style={{ flex: 2 }} />
+            ) : (
+              <Button title="Create account" onPress={handleSubmit} loading={loading} disabled={!canContinue()} size="lg" style={{ flex: 2 }} />
+            )}
+          </View>
+
+          <TouchableOpacity style={s.signInRow} onPress={() => navigation.navigate('Login')} accessibilityRole="button">
+            <Text style={s.signInText}>Already have an account? </Text>
+            <Text style={s.signInLink}>Sign in</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -197,45 +237,61 @@ export default function RegisterScreen({ navigation }: any) {
   )
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.primary },
-  scroll: { flexGrow: 1 },
-  panel: { backgroundColor: COLORS.primary, padding: SPACING.lg, paddingTop: 60, paddingBottom: 40, alignItems: 'center' },
-  panelTitle: { fontSize: 28, fontWeight: '300', color: COLORS.white, marginBottom: 8, textAlign: 'center' },
-  panelSub: { fontSize: 14, color: 'rgba(255,255,255,0.9)', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  features: { flexDirection: 'row', gap: 16 },
-  featureItem: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: RADIUS.lg, padding: 16, minWidth: 80, gap: 6 },
-  featureIcon: { fontSize: 24 },
-  featureLabel: { fontSize: 13, fontWeight: '500', color: COLORS.white },
-  formCard: { backgroundColor: COLORS.white, borderRadius: 32, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, padding: SPACING.lg, paddingTop: 28, flex: 1, marginTop: -20, ...SHADOW.lg },
-  formTitle: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
-  stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
-  stepItem: { flex: 1, alignItems: 'center', position: 'relative' },
-  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
-  stepActive: { backgroundColor: COLORS.primary },
-  stepDone: { backgroundColor: COLORS.success },
-  stepNum: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
-  stepNumActive: { color: COLORS.white },
-  stepLabel: { fontSize: 10, color: COLORS.textMuted, textAlign: 'center' },
-  stepLabelActive: { color: COLORS.primary, fontWeight: '600' },
-  stepLine: { position: 'absolute', top: 14, left: '60%', right: '-40%', height: 2, backgroundColor: COLORS.border },
-  stepLineDone: { backgroundColor: COLORS.success },
-  errorBanner: { backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FECACA', borderRadius: RADIUS.md, padding: 12, marginBottom: 16 },
-  errorText: { color: '#991B1B', fontSize: 13 },
-  row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 14, fontWeight: '500', color: COLORS.textPrimary, marginBottom: 6 },
-  hint: { fontSize: 12, color: COLORS.textSecondary },
-  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, fontSize: 15, color: COLORS.textPrimary, backgroundColor: COLORS.white },
-  roleCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14 },
-  roleCardSelected: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
-  roleIcon: { fontSize: 24 },
-  roleLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
-  roleLabelSelected: { color: COLORS.primary },
-  roleDesc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  navRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: { padding: 12, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md },
-  switchRow: { marginTop: SPACING.lg, alignItems: 'center' },
-  switchText: { fontSize: 14, color: COLORS.textSecondary },
-  switchLink: { color: COLORS.primary, fontWeight: '600' },
+const s = StyleSheet.create({
+  page: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { flexGrow: 1, paddingBottom: 25 },
+  hero: { backgroundColor: COLORS.ink, paddingHorizontal: SPACING.lg, paddingTop: 17, paddingBottom: 29, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  backRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingVertical: 9, paddingRight: 12 },
+  backArrow: { color: COLORS.white, fontSize: 27, marginRight: 5, marginTop: -3 },
+  backText: { color: 'rgba(255,255,255,0.72)', fontSize: 12, fontWeight: '600' },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18 },
+  brandMark: { width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
+  brandMarkText: { fontSize: 24, fontWeight: '900', color: COLORS.ink, marginTop: -3 },
+  brandDot: { position: 'absolute', right: 5, bottom: 6, width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary },
+  brandName: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
+  eyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 2.1, color: COLORS.accent, marginTop: 30, marginBottom: 10 },
+  heroTitle: { fontSize: 36, lineHeight: 39, fontWeight: '900', letterSpacing: -1.2, color: COLORS.white },
+  heroSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginTop: 9, maxWidth: 290 },
+  form: { paddingHorizontal: SPACING.lg, paddingTop: 28 },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  stepCount: { color: COLORS.primaryDark, letterSpacing: 1.6, fontSize: 9, fontWeight: '900', marginBottom: 6 },
+  formTitle: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', letterSpacing: -0.7 },
+  progressDots: { flexDirection: 'row', gap: 5 },
+  progressDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.border },
+  progressDotActive: { width: 18, backgroundColor: COLORS.primary },
+  formSubtitle: { color: COLORS.textSecondary, fontSize: 13, marginTop: 5, marginBottom: 21 },
+  errorBanner: { backgroundColor: '#FCECEA', borderWidth: 1, borderColor: '#F2D1CC', borderRadius: RADIUS.sm, padding: 12, marginBottom: 15 },
+  errorText: { color: '#9A302B', fontSize: 13, lineHeight: 19 },
+  twoColumns: { flexDirection: 'row', gap: 10 },
+  fieldGroup: { marginBottom: 15 },
+  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 7 },
+  input: { minHeight: 50, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm, fontSize: 14, color: COLORS.textPrimary, backgroundColor: COLORS.surface },
+  sectionLabel: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 10 },
+  roleList: { gap: 9, marginBottom: 20 },
+  roleCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, backgroundColor: COLORS.surface, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border },
+  roleCardSelected: { borderColor: COLORS.primary, backgroundColor: '#FFF6F2' },
+  roleSymbol: { width: 40, height: 40, borderRadius: 14, backgroundColor: COLORS.backgroundDark, alignItems: 'center', justifyContent: 'center' },
+  roleSymbolSelected: { backgroundColor: COLORS.primaryLight },
+  roleSymbolText: { fontSize: 20, color: COLORS.textSecondary, fontWeight: '800' },
+  roleSymbolTextSelected: { color: COLORS.primaryDark },
+  roleCopy: { flex: 1 },
+  roleTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800' },
+  roleDescription: { color: COLORS.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 3 },
+  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  radioOuterSelected: { borderColor: COLORS.primary },
+  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary },
+  helperText: { fontSize: 11, lineHeight: 17, color: COLORS.textMuted, marginTop: -3, marginBottom: 8 },
+  showPasswordRow: { flexDirection: 'row', gap: 8, alignItems: 'center', alignSelf: 'flex-start', marginVertical: 1, paddingVertical: 7 },
+  checkbox: { width: 17, height: 17, borderRadius: 5, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  checkboxSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  checkboxTick: { color: COLORS.white, fontSize: 11, fontWeight: '900' },
+  showPasswordText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },
+  securityNote: { marginTop: 19, padding: 15, borderRadius: RADIUS.md, backgroundColor: '#E8F4EC', borderWidth: 1, borderColor: '#CDE5D5', flexDirection: 'row', gap: 11, alignItems: 'flex-start' },
+  securitySymbol: { fontSize: 18, fontWeight: '900', color: COLORS.success },
+  securityTitle: { fontSize: 12, fontWeight: '900', color: '#225E44' },
+  securityBody: { fontSize: 11, color: '#376B53', lineHeight: 17, marginTop: 4 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 24 },
+  signInRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 23, marginBottom: 22 },
+  signInText: { color: COLORS.textSecondary, fontSize: 12 },
+  signInLink: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '900' },
 })
