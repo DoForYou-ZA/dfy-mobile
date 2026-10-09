@@ -32,10 +32,10 @@ function TopNavbar({ navRef }: { navRef: any }) {
   return (
     <View style={[s.navbar, { paddingTop: insets.top }]}>
       <View style={s.navbarInner}>
-        <Text style={s.brand}>
-          <Text style={s.brandName}>DoForYou</Text>
-          <Text style={s.brandDot}>.</Text>
-        </Text>
+        <View style={s.brandRow}>
+          <View style={s.brandMark}><Text style={s.brandMarkText}>D</Text></View>
+          <Text style={s.brandName}>DoForYou<Text style={s.brandDot}>.</Text></Text>
+        </View>
         <TouchableOpacity
           style={s.bellBtn}
           onPress={() => navRef.current?.navigate('Notifications' as never)}
@@ -179,9 +179,9 @@ export default function AppNavigator() {
 const s = StyleSheet.create({
   // .navbar — white top bar
   navbar: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLORS.borderLight,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -196,9 +196,11 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  brand: {},
-  brandName: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
-  brandDot: { fontSize: 20, fontWeight: '700', color: COLORS.primary },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  brandMark: { width: 32, height: 32, borderRadius: 11, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  brandMarkText: { color: COLORS.white, fontSize: 20, fontWeight: '900' },
+  brandName: { fontSize: 19, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.5 },
+  brandDot: { fontSize: 19, fontWeight: '800', color: COLORS.primary },
   bellBtn: {
     position: 'relative', width: 38, height: 38,
     alignItems: 'center', justifyContent: 'center', borderRadius: 19,
