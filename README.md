@@ -46,3 +46,10 @@ GitHub Actions runs the TypeScript check and Android JavaScript bundle export. T
 - After a runner marks a task complete, the creator has 24 hours to confirm completion or raise a dispute.
 - A queued payout is not a completed payout. Display “paid” only when the backend reports the provider-confirmed result.
 - Runner payouts go directly to a verified bank account; the retired wallet flow must not be reintroduced.
+
+
+## Native mobile experience
+
+The mobile app has its own DoForYou experience rather than copying the web dashboard layout. The design uses the familiar orange brand with a warmer, lighter background, clear task-first actions, compact mobile stats, and responsive cards. The backend remains the source of truth for permissions, task lifecycle, payments, escrow, disputes, verification, and payouts.
+
+Admin and operations workflows are intentionally excluded from the mobile navigation. Accounts identified by the backend as administrators are shown a short admin-access notice and must use the DoForYou web console for administrative work. This is a user-experience boundary, not a replacement for backend authorization.
