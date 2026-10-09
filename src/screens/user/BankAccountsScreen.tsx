@@ -22,7 +22,7 @@ export default function BankAccountsScreen() {
 
   const save=async()=>{if(!selected||!form.accountNumber||!form.accountHolderName){Alert.alert('Required','Select a bank and complete all fields.');return}
     setSaving(true);try{
-      const r=await bankingApi.addBankAccount({...form,bankGroupId:selected.bankGroupId,bankName:selected.name,branchCode:selected.branchCode})
+      const r=await bankingApi.addBankAccount({...form,bankCode:selected.bankCode,bankGroupId:selected.bankCode,bankName:selected.name,branchCode:selected.branchCode})
       if(!r.data?.success){Alert.alert('Bank account not verified',r.data?.message||'Verification failed.');return}
       Alert.alert('Success','Bank account verified and ready for direct runner payouts.')
       setForm({accountNumber:'',accountHolderName:'',accountType:'Savings'});setSelected(null);await load()
@@ -39,7 +39,7 @@ export default function BankAccountsScreen() {
     </View>
     <View style={s.card}><Text style={s.heading}>Add account</Text>
       <Text style={s.label}>Bank</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={s.chips}>{banks.map(b=><TouchableOpacity key={b.bankGroupId} onPress={()=>setSelected(b)} style={[s.chip,selected?.bankGroupId===b.bankGroupId&&s.chipActive]}><Text style={[s.chipText,selected?.bankGroupId===b.bankGroupId&&s.chipTextActive]}>{b.name}</Text></TouchableOpacity>)}</View></ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={s.chips}>{banks.map(b=><TouchableOpacity key={b.bankCode} onPress={()=>setSelected(b)} style={[s.chip,selected?.bankCode===b.bankCode&&s.chipActive]}><Text style={[s.chipText,selected?.bankCode===b.bankCode&&s.chipTextActive]}>{b.name}</Text></TouchableOpacity>)}</View></ScrollView>
       <Text style={s.label}>Account holder</Text><TextInput style={s.input} value={form.accountHolderName} onChangeText={v=>setForm(f=>({...f,accountHolderName:v}))}/>
       <Text style={s.label}>Account number</Text><TextInput style={s.input} value={form.accountNumber} onChangeText={v=>setForm(f=>({...f,accountNumber:v.replace(/\D/g,'')}))} keyboardType="numeric"/>
       <Text style={s.label}>Account type</Text><TextInput style={s.input} value={form.accountType} onChangeText={v=>setForm(f=>({...f,accountType:v}))}/>
