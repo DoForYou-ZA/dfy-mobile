@@ -1,18 +1,17 @@
 import React, { useState, useMemo } from 'react'
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
 import { useNotifications } from '../context/NotificationContext'
-import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../config/theme'
 import type { AppNotification } from '../types'
 
 const TYPE_ICON: Record<string, string> = {
-  task_claimed: '✋', task_completed: '✅', task_posted: '📢',
-  payment_received: '💰', payment_verified: '🛡️', new_message: '💬', system: '⚙️',
+  task_claimed: '↗', task_completed: '✓', task_posted: '+',
+  payment_received: 'R', payment_verified: '✓', payment_released: 'R', new_message: '··', system: 'i',
 }
 const TYPE_COLOR: Record<string, string> = {
-  task_claimed: '#F59E0B', task_completed: '#22C55E', task_posted: '#3B82F6',
-  payment_received: '#10B981', payment_verified: '#10B981', new_message: COLORS.primary, system: '#6B7280',
+  task_claimed: COLORS.accent, task_completed: COLORS.success, task_posted: COLORS.info,
+  payment_received: COLORS.teal, payment_verified: COLORS.success, payment_released: COLORS.teal, new_message: COLORS.primary, system: COLORS.secondary,
 }
 
 function timeAgo(ts: string) {
@@ -33,8 +32,6 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function NotificationsScreen({ navigation }: any) {
   const { notifications, unreadCount, loading, hasMore, loadMore, markRead, markAllRead, markTaskNotificationsRead, remove, clearRead } = useNotifications()
-  const { user } = useAuth()
-  const isAdmin = user?.roles?.includes('Admin')
   const [tab, setTab] = useState<Tab>('all')
   const [refreshing, setRefreshing] = useState(false)
   const { refresh } = useNotifications()
@@ -66,7 +63,8 @@ export default function NotificationsScreen({ navigation }: any) {
       if (n.relatedTaskStringId) navigation.navigate('TaskChat', { taskId: n.relatedTaskStringId, title: 'Task Chat' })
     } else {
       if (!n.isRead) await markRead(n.id)
-      if (n.type === 'payment_received') navigation.navigate('Wallet')
+      if (n.type === 'payment_released') navigation.navigate('MyCompletedTasks')
+      else if (n.type === 'payment_received' || n.type === 'payment_verified') navigation.navigate('MyPostedTasks')
       else if (n.relatedTaskStringId) navigation.navigate('MyPostedTasks')
     }
   }
