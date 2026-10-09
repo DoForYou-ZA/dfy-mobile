@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  typecheck:
+  typecheck-and-bundle:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,3 +24,5 @@ jobs:
         run: npm ci
       - name: TypeScript check
         run: npm run typecheck
+      - name: Export Android JavaScript bundle
+        run: npx expo export --platform android
