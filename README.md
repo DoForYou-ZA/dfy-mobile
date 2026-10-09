@@ -45,7 +45,7 @@ npm run typecheck
 npx expo export --platform android
 ```
 
-GitHub Actions runs the TypeScript check and Android JavaScript bundle export. The bundle export is not a signed APK or a substitute for installing the app on a device.
+GitHub Actions runs the TypeScript check, Android JavaScript bundle export, and a standalone arm64-v8a release APK build using the staging API and SignalR URLs. The APK is an installable staging build, not a Play Store-signed production release; device-level login and task-flow smoke tests are still required.
 
 ## Payment and task-state rules
 
