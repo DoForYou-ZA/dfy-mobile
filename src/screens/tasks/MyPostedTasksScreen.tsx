@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity,
   Alert, RefreshControl, Linking
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
-import { tasksApi, ratingsApi } from '../../api'
+import { tasksApi, ratingsApi, disputesApi } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import { LoadingScreen, EmptyState, SectionCard } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
@@ -28,6 +28,8 @@ export default function MyPostedTasksScreen({ navigation }: any) {
     pendingPayment: true, posted: true, claimed: true, completed: true, runnerPaid: false,
   })
   const [confirmModal, setConfirmModal] = useState<Task | null>(null)
+  const [disputeModal, setDisputeModal] = useState<Task | null>(null)
+  const [disputeIssue, setDisputeIssue] = useState('')
   const [cancelModal, setCancelModal] = useState<Task | null>(null)
   const [cancelMessage, setCancelMessage] = useState('')
   const [ratingModal, setRatingModal] = useState<Task | null>(null)
@@ -54,7 +56,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
     pendingPayment: tasks.filter(t => t.taskStatus?.toLowerCase() === 'pendingpayment' || t.paymentStatus?.toLowerCase() === 'pending'),
     posted: tasks.filter(t => t.taskStatus?.toLowerCase() === 'posted'),
     claimed: tasks.filter(t => ['claimed', 'in_progress'].includes(t.taskStatus?.toLowerCase() || '')),
-    completed: tasks.filter(t => t.taskStatus?.toLowerCase() === 'completed'),
+    completed: tasks.filter(t => ['completed', 'awaitingconfirmation', 'awaiting_confirmation'].includes(t.taskStatus?.toLowerCase() || '')),
     runnerPaid: tasks.filter(t => ['runnerpaid', 'runner_paid', 'confirmed'].includes(t.taskStatus?.toLowerCase() || '')),
   }
 
@@ -70,6 +72,29 @@ export default function MyPostedTasksScreen({ navigation }: any) {
       Alert.alert('Completion confirmed', 'Escrow was released and the runner payout has been queued. You will be notified when Paystack confirms the transfer.')
     } catch { Alert.alert('Error', 'Failed to confirm task.') }
     finally { setActionLoading(false) }
+  }
+
+  const handleRaiseDispute = async () => {
+    if (!disputeModal) return
+    const issue = disputeIssue.trim()
+    if (issue.length < 10) {
+      Alert.alert('More detail needed', 'Please describe the completion issue in at least 10 characters.')
+      return
+    }
+    setActionLoading(true)
+    try {
+      const result = await disputesApi.raise(disputeModal.taskId, issue, 'TaskCompletion')
+      if (!result.data?.success) {
+        Alert.alert('Unable to raise dispute', result.data?.message || 'The dispute could not be submitted.')
+        return
+      }
+      setDisputeModal(null)
+      setDisputeIssue('')
+      await loadTasks()
+      Alert.alert('Dispute submitted', 'Escrow is frozen while the dispute awaits admin review.')
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to submit the dispute.')
+    } finally { setActionLoading(false) }
   }
 
   const handleCancel = async () => {
@@ -195,7 +220,16 @@ export default function MyPostedTasksScreen({ navigation }: any) {
               )}
             </View>
             {sectionKey === 'completed' && (
-              <Button title="✅ Confirm & Pay Runner" onPress={() => setConfirmModal(task)} fullWidth size="sm" style={{ marginTop: 8 }} />
+              ['awaitingconfirmation', 'awaiting_confirmation'].includes(task.taskStatus?.toLowerCase() || '') ? (
+                ['disputepending'].includes(task.paymentStatus?.toLowerCase() || '') || task.escrowStatus?.toLowerCase() === 'disputed' ? (
+                  <View style={[s.infoBox, { marginTop: 8 }]}><Text style={s.infoText}>A dispute is open. Escrow remains frozen pending review.</Text></View>
+                ) : (
+                  <View style={{ marginTop: 8, gap: 8 }}>
+                    <Button title="✅ Confirm Completion" onPress={() => setConfirmModal(task)} fullWidth size="sm" />
+                    <Button title="Raise Dispute" onPress={() => { setDisputeModal(task); setDisputeIssue('') }} fullWidth size="sm" variant="outline" />
+                  </View>
+                )
+              ) : null
             )}
             {sectionKey === 'claimed' && (
               <View style={{ marginTop: 8, gap: 8 }}>
@@ -270,7 +304,36 @@ export default function MyPostedTasksScreen({ navigation }: any) {
           <View style={{ gap: 10 }}>
             <Text style={s.modalText}>Are you satisfied with the completion of:</Text>
             <Text style={s.modalBold}>{confirmModal.taskDescription}</Text>
-            <View style={s.infoBox}><Text style={s.infoText}>ℹ️ Confirming will release payment to the runner.</Text></View>
+            <View style={s.infoBox}><Text style={s.infoText}>ℹ️ Confirming releases escrow into the runner payout process. Paystack must still confirm the transfer before the runner is shown as paid.</Text></View>
+          </View>
+        )}
+      </AppModal>
+
+      {/* Creator dispute modal */}
+      <AppModal visible={!!disputeModal} onClose={() => { if (!actionLoading) { setDisputeModal(null); setDisputeIssue('') } }} title="Raise a Completion Dispute"
+        footer={
+          <>
+            <Button title="Cancel" onPress={() => { setDisputeModal(null); setDisputeIssue('') }} variant="secondary" style={{ flex: 1 }} disabled={actionLoading} />
+            <Button title="Submit Dispute" onPress={handleRaiseDispute} loading={actionLoading} style={{ flex: 1 }} />
+          </>
+        }
+      >
+        {disputeModal && (
+          <View style={{ gap: 10 }}>
+            <Text style={s.modalText}>Describe what is wrong with the runner's completed work. Submitting a dispute freezes escrow while an administrator reviews it.</Text>
+            <Text style={s.modalBold}>{disputeModal.taskName || disputeModal.taskDescription}</Text>
+            <TextInput
+              style={s.disputeInput}
+              value={disputeIssue}
+              onChangeText={setDisputeIssue}
+              placeholder="Explain the issue (at least 10 characters)"
+              placeholderTextColor={COLORS.textSecondary}
+              multiline
+              maxLength={1000}
+              textAlignVertical="top"
+              editable={!actionLoading}
+            />
+            <Text style={s.modalMeta}>{disputeIssue.trim().length}/1000 characters</Text>
           </View>
         )}
       </AppModal>
@@ -406,6 +469,7 @@ const s = StyleSheet.create({
   modalBold: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   modalMeta: { fontSize: 14, color: COLORS.textPrimary },
   infoBox: { backgroundColor: '#DBEAFE', borderRadius: RADIUS.md, padding: 12 },
+  disputeInput: { minHeight: 120, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, color: COLORS.textPrimary, backgroundColor: COLORS.background },
   infoText: { fontSize: 13, color: '#1E40AF' },
   starsRow: { flexDirection: 'row', gap: 8 },
   star: { fontSize: 32, color: COLORS.border },
