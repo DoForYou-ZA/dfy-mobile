@@ -22,6 +22,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+// Admin identity can be carried by the API user object or by a JWT role claim.
+function tokenHasAdminRole(token: string | null | undefined): boolean {
+  if (!token) return false
+  try {
+    const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = part + '=='.slice(0, (4 - part.length % 4) % 4)
+    const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+    const candidates = [
+      payload.role,
+      payload.roles,
+      payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+      payload.isAdmin === true ? 'Admin' : null,
+    ]
+    return candidates.some(value => {
+      const values = Array.isArray(value) ? value : [value]
+      return values.some(role => String(role ?? '').toLowerCase() === 'admin')
+    })
+  } catch {
+    return false
+  }
+}
+
+function isAdminIdentity(candidate: any, token?: string | null): boolean {
+  return candidate?.isAdmin === true
+    || (candidate?.roles || []).some((role: string) => String(role).toLowerCase() === 'admin')
+    || tokenHasAdminRole(token)
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
@@ -64,11 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!data.success || !data.token || !data.user) {
       throw new Error(data.message || 'Login failed')
     }
-    const isAdminUser = (candidate: any) =>
-      candidate?.isAdmin === true || (candidate?.roles || []).some((role: string) => String(role).toLowerCase() === 'admin')
-
     // Reject known admin accounts before creating a mobile session.
-    if (isAdminUser(data.user)) {
+    if (isAdminIdentity(data.user, data.token)) {
       throw new Error('Admin accounts cannot access DFY Mobile. Please use the DoForYou web admin dashboard.')
     }
 
@@ -82,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
 
     // Some API responses include role details only in the profile response.
-    if (isAdminUser(fullUser)) {
+    if (isAdminIdentity(fullUser, data.token)) {
       await clearAccessToken()
       await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
       setToken(null)
@@ -125,11 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch { return true } // if decode fails, assume valid and let API reject
   }, [token])
 
-  const isAdmin = useCallback(() => {
-    if (!user) return false
-    if (user.isAdmin === true) return true
-    return user.roles?.some(role => String(role).toLowerCase() === 'admin') ?? false
-  }, [user])
+  const isAdmin = useCallback(() => isAdminIdentity(user, token), [user, token])
 
   const isProfileComplete = useCallback(() => {
     if (!user) return false
