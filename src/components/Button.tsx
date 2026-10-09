@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     borderWidth: 0,
   },
   block: { width: '100%', justifyContent: 'center' },
@@ -65,13 +65,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     shadowColor: '#FF8A00',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.17,
     shadowRadius: 8,
     elevation: 4,
   },
   v_secondary: {
     backgroundColor: COLORS.backgroundDark,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: COLORS.border,
   },
   v_outline: {
@@ -88,9 +88,9 @@ const styles = StyleSheet.create({
   v_ghost: { backgroundColor: 'transparent' },
 
   // Sizes — match .btn-sm, .btn (default), .btn-lg
-  s_sm: { paddingHorizontal: 12, paddingVertical: 6 },
-  s_md: { paddingHorizontal: 20, paddingVertical: 10 },
-  s_lg: { paddingHorizontal: 28, paddingVertical: 14 },
+  s_sm: { paddingHorizontal: 13, paddingVertical: 8 },
+  s_md: { paddingHorizontal: 20, paddingVertical: 12 },
+  s_lg: { paddingHorizontal: 22, paddingVertical: 15 },
 
   // Text colors
   txt: { fontWeight: '600', textAlign: 'center' },
