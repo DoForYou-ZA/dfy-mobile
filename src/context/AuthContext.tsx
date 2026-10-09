@@ -20,6 +20,45 @@ interface AuthContextType {
   getProfileCompletion: () => number
 }
 
+function isAdminProfile(candidate: any): boolean {
+  if (!candidate || typeof candidate !== 'object') return false
+  if (candidate.isAdmin === true) return true
+  const roles: unknown[] = [
+    candidate.role,
+    candidate.userType,
+    ...(Array.isArray(candidate.roles) ? candidate.roles : []),
+  ]
+  return roles.some(role => String(role ?? '').trim().toLowerCase().includes('admin'))
+}
+
+function isAdminSession(candidate: any, accessToken?: string | null): boolean {
+  if (isAdminProfile(candidate)) return true
+  if (!accessToken) return false
+  try {
+    const encoded = accessToken.split('.')[1]
+    if (!encoded) return false
+    const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - base64.length % 4) % 4)
+    const claims = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+    const claimRoles = [
+      claims.role,
+      claims.roles,
+      claims.userType,
+      claims['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+      claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'],
+    ]
+    return claims.isAdmin === true || claimRoles.some(value =>
+      (Array.isArray(value) ? value : [value])
+        .some(role => String(role ?? '').trim().toLowerCase().includes('admin'))
+    )
+  } catch {
+    return false
+  }
+}
+
+const ADMIN_MOBILE_MESSAGE =
+  'Admin accounts use the DoForYou web admin console and cannot sign in to the mobile app.'
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -34,9 +73,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedToken && storedUser) {
         try {
           const parsed = JSON.parse(storedUser)
-          setToken(storedToken)
-          setUser(parsed)
-          if (!parsed.idNumber || !parsed.address) {
+          if (isAdminSession(parsed, storedToken)) {
+            // Mobile is a creator/runner client; stale admin sessions are cleared.
+            await clearAccessToken()
+            await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
+          } else {
+            setToken(storedToken)
+            setUser(parsed)
+          }
+          if (!isAdminSession(parsed, storedToken) && (!parsed.idNumber || !parsed.address)) {
             authApi.getProfile()
               .then(r => {
                 const d = r.data?.data || r.data
@@ -64,14 +109,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!data.success || !data.token || !data.user) {
       throw new Error(data.message || 'Login failed')
     }
+    if (isAdminSession(data.user, data.token)) {
+      throw new Error(ADMIN_MOBILE_MESSAGE)
+    }
     await setAccessToken(data.token)
-    setToken(data.token)
     let fullUser = data.user
     try {
       const profileRes = await authApi.getProfile()
       const profileData = profileRes.data?.data || profileRes.data
       if (profileData) fullUser = { ...data.user, ...profileData }
     } catch {}
+    if (isAdminSession(fullUser, data.token)) {
+      await clearAccessToken()
+      setToken(null)
+      setUser(null)
+      throw new Error(ADMIN_MOBILE_MESSAGE)
+    }
+    setToken(data.token)
     await AsyncStorage.setItem('currentUser', JSON.stringify(fullUser))
     if (fullUser.userType) {
       const prefs = {
@@ -107,11 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch { return true } // if decode fails, assume valid and let API reject
   }, [token])
 
-  const isAdmin = useCallback(() => {
-    if (!user) return false
-    if (typeof user.isAdmin === 'boolean') return user.isAdmin
-    return user.roles?.includes('Admin') ?? false
-  }, [user])
+  const isAdmin = useCallback(() => isAdminSession(user, token), [user, token])
 
   const isProfileComplete = useCallback(() => {
     if (!user) return false
