@@ -1,5 +1,6 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { clearAccessToken, getAccessToken } from '../core/tokenStorage'
 import ENV from '../config/env'
 
 const api = axios.create({
@@ -8,7 +9,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('token')
+  const token = await getAccessToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -17,7 +18,8 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     if (error.response?.status === 401) {
-      await AsyncStorage.multiRemove(['token', 'currentUser'])
+      await clearAccessToken()
+      await AsyncStorage.removeItem('currentUser')
     }
     return Promise.reject(error)
   }
