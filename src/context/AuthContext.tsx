@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { clearAccessToken, getAccessToken, setAccessToken } from '../core/tokenStorage'
 import type { User } from '../types'
 import { authApi } from '../api'
 
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const storedToken = await AsyncStorage.getItem('token')
+      const storedToken = await getAccessToken()
       const storedUser = await AsyncStorage.getItem('currentUser')
       if (storedToken && storedUser) {
         try {
@@ -48,7 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .catch(() => {})
           }
         } catch {
-          await AsyncStorage.multiRemove(['token', 'currentUser'])
+          await clearAccessToken()
+          await AsyncStorage.removeItem('currentUser')
         }
       }
       setLoading(false)
@@ -62,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!data.success || !data.token || !data.user) {
       throw new Error(data.message || 'Login failed')
     }
-    await AsyncStorage.setItem('token', data.token)
+    await setAccessToken(data.token)
     setToken(data.token)
     let fullUser = data.user
     try {
@@ -82,7 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    await AsyncStorage.multiRemove(['token', 'currentUser', 'refreshToken', 'userPreferences'])
+    await clearAccessToken()
+    await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
     setToken(null)
     setUser(null)
   }, [])
