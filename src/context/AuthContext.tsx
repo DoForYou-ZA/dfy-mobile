@@ -108,10 +108,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token])
 
   const isAdmin = useCallback(() => {
-    if (!user) return false
-    if (typeof user.isAdmin === 'boolean') return user.isAdmin
-    return user.roles?.includes('Admin') ?? false
-  }, [user])
+    // Treat any explicit admin signal as authoritative; do not let an isAdmin:false
+    // field override an Admin role returned by the API.
+    if (user?.isAdmin === true || user?.roles?.some(role => role.trim().toLowerCase() === 'admin')) {
+      return true
+    }
+
+    // Some JWTs carry role claims that are not repeated on the user profile object.
+    // This is a UI gate only; the API must continue enforcing every admin permission.
+    if (!token) return false
+    try {
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+      const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+      const claimValues = [
+        payload.role,
+        payload.roles,
+        payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'],
+      ]
+      return claimValues
+        .flatMap(value => Array.isArray(value) ? value : [value])
+        .some(value => typeof value === 'string' && value.trim().toLowerCase() === 'admin')
+    } catch {
+      return false
+    }
+  }, [user, token])
 
   const isProfileComplete = useCallback(() => {
     if (!user) return false
