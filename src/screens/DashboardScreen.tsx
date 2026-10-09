@@ -69,6 +69,8 @@ export default function DashboardScreen({ navigation }: any) {
         setRatingAverage(0)
         setRatingCount(0)
       }
+    } catch {
+      // Keep the dashboard usable when an optional stats endpoint is temporarily unavailable.
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -110,6 +112,13 @@ export default function DashboardScreen({ navigation }: any) {
           { label: 'Available tasks', value: stats?.availableTasks ?? 0, icon: '⌕', tone: 'purple' },
           { label: 'Total earnings', value: rand(stats?.totalEarnings), icon: 'R', tone: 'green' },
         ]
+
+  const metricToneStyles: Record<string, { background: any; text: any }> = {
+    orange: { background: styles.tone_orange, text: styles.toneText_orange },
+    blue: { background: styles.tone_blue, text: styles.toneText_blue },
+    purple: { background: styles.tone_purple, text: styles.toneText_purple },
+    green: { background: styles.tone_green, text: styles.toneText_green },
+  }
 
   return (
     <ScrollView
@@ -202,8 +211,8 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={styles.metricsGrid}>
         {metrics.map((metric, index) => (
           <View key={metric.label} style={styles.metricCard}>
-            <View style={[styles.metricIcon, styles[`tone_${metric.tone}`]]}>
-              <Text style={[styles.metricIconText, styles[`toneText_${metric.tone}`]]}>{metric.icon}</Text>
+            <View style={[styles.metricIcon, metricToneStyles[metric.tone]?.background]}>
+              <Text style={[styles.metricIconText, metricToneStyles[metric.tone]?.text]}>{metric.icon}</Text>
             </View>
             <Text style={styles.metricValue}>{metric.value}</Text>
             <Text style={styles.metricLabel}>{metric.label}</Text>
