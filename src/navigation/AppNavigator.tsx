@@ -1,11 +1,12 @@
-import React, { useRef } from 'react'
+import React, { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { NavigationContainer, NavigationContainerRef, useNavigationContainerRef } from '@react-navigation/native'
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
-import { COLORS, RADIUS } from '../config/theme'
+import { COLORS, RADIUS, SHADOW } from '../config/theme'
+import Button from '../components/Button'
 
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
@@ -21,8 +22,6 @@ import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
 
 const Stack = createNativeStackNavigator()
-
-const MAIN_ROUTES = ['Dashboard','BrowseErrands','PostErrand','MyPostedTasks','MyActiveTasks','MyCompletedTasks','BankAccounts','Profile','Notifications']
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
@@ -31,19 +30,22 @@ function TopNavbar({ navRef }: { navRef: any }) {
   return (
     <View style={[s.navbar, { paddingTop: insets.top }]}>
       <View style={s.navbarInner}>
-        <Text style={s.brand}>
-          <Text style={s.brandName}>DoForYou</Text>
-          <Text style={s.brandDot}>.</Text>
-        </Text>
+        <TouchableOpacity style={s.brandRow} onPress={() => navRef.current?.navigate('Dashboard' as never)} accessibilityRole="button" accessibilityLabel="Go to home">
+          <View style={s.logoMark}><Text style={s.logoLetter}>D</Text><View style={s.logoDot} /></View>
+          <View>
+            <Text style={s.brandName}>DoForYou</Text>
+            <Text style={s.brandCaption}>TASKS MADE EASIER</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={s.bellBtn}
           onPress={() => navRef.current?.navigate('Notifications' as never)}
+          accessibilityRole="button"
+          accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         >
-          <Text style={s.bellIcon}>🔔</Text>
+          <Text style={s.bellIcon}>♧</Text>
           {unreadCount > 0 && (
-            <View style={s.bellBadge}>
-              <Text style={s.bellBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-            </View>
+            <View style={s.bellBadge}><Text style={s.bellBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text></View>
           )}
         </TouchableOpacity>
       </View>
@@ -52,80 +54,79 @@ function TopNavbar({ navRef }: { navRef: any }) {
 }
 
 function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any }) {
-  const { isAuthenticated, isAdmin, canPostErrands, user } = useAuth()
+  const { isAuthenticated, canPostErrands, user } = useAuth()
   const insets = useSafeAreaInsets()
-  const userType = user?.userType || ''
-
   if (!isAuthenticated() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
 
+  const isActive = (routes: string[]) => routes.includes(currentRoute)
   const go = (route: string) => navRef.current?.navigate(route as never)
-  const isActive = (r: string) => currentRoute === r
-  const canPost = canPostErrands()
-
+  const tasksRoute = user?.userType === 'creator' ? 'MyPostedTasks' : 'MyActiveTasks'
+  const items = [
+    { route: 'Dashboard', label: 'Home', icon: '⌂', matches: ['Dashboard'] },
+    { route: 'BrowseErrands', label: 'Explore', icon: '⌕', matches: ['BrowseErrands'] },
+    { route: tasksRoute, label: 'My tasks', icon: '▤', matches: ['MyPostedTasks', 'MyActiveTasks', 'MyCompletedTasks'] },
+    { route: 'Profile', label: 'Profile', icon: '○', matches: ['Profile', 'BankAccounts'] },
+  ]
   return (
-    <View style={[s.bottomNav, { paddingBottom: insets.bottom || 8 }]}>
-      {/* Home */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Dashboard')}>
-        {isActive('Dashboard') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Dashboard') && s.navIconActive]}>🏠</Text>
-        <Text style={[s.navLabel, isActive('Dashboard') && s.navLabelActive]}>Home</Text>
-      </TouchableOpacity>
-
-      {/* Browse */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('BrowseErrands')}>
-        {isActive('BrowseErrands') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('BrowseErrands') && s.navIconActive]}>🔍</Text>
-        <Text style={[s.navLabel, isActive('BrowseErrands') && s.navLabelActive]}>Browse</Text>
-      </TouchableOpacity>
-
-      {/* FAB — Post (creator) or My Tasks (runner) */}
-      {canPost ? (
-        <TouchableOpacity style={s.navItem} onPress={() => go('PostErrand')}>
-          <View style={[s.fab, isActive('PostErrand') && s.fabActive]}>
-            <Text style={s.fabIcon}>+</Text>
-          </View>
-          <Text style={[s.navLabel, { marginTop: 2 }, isActive('PostErrand') && s.navLabelActive]}>Post</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={s.navItem} onPress={() => go('MyActiveTasks')}>
-          <View style={[s.fab, s.fabRunner, isActive('MyActiveTasks') && s.fabActive]}>
-            <Text style={s.fabIcon}>☰</Text>
-          </View>
-          <Text style={[s.navLabel, { marginTop: 2 }, isActive('MyActiveTasks') && s.navLabelActive]}>My Tasks</Text>
+    <View style={[s.bottomShell, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      <View style={s.bottomNav}>
+        {items.map((item) => {
+          const active = isActive(item.matches)
+          return (
+            <TouchableOpacity
+              key={item.label}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              style={s.navItem}
+              onPress={() => go(item.route)}
+              activeOpacity={0.76}
+            >
+              <View style={[s.navIconWrap, active && s.navIconWrapActive]}>
+                <Text style={[s.navIcon, active && s.navIconActive]}>{item.icon}</Text>
+              </View>
+              <Text style={[s.navLabel, active && s.navLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          )
+        })}
+      </View>
+      {canPostErrands() && (
+        <TouchableOpacity style={s.quickPost} onPress={() => go('PostErrand')} accessibilityRole="button" accessibilityLabel="Post a task">
+          <Text style={s.quickPostText}>＋</Text>
         </TouchableOpacity>
       )}
-
-      {/* Notifications */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Notifications')}>
-        {isActive('Notifications') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Notifications') && s.navIconActive]}>🔔</Text>
-        <Text style={[s.navLabel, isActive('Notifications') && s.navLabelActive]}>Alerts</Text>
-      </TouchableOpacity>
-
-      {/* Profile */}
-      <TouchableOpacity style={s.navItem} onPress={() => go('Profile')}>
-        {isActive('Profile') && <View style={s.activeBar} />}
-        <Text style={[s.navIcon, isActive('Profile') && s.navIconActive]}>👤</Text>
-        <Text style={[s.navLabel, isActive('Profile') && s.navLabelActive]}>Profile</Text>
-      </TouchableOpacity>
     </View>
   )
 }
 
-const orangeHeader = {
-  headerStyle: { backgroundColor: COLORS.primary },
-  headerTintColor: '#fff' as const,
-  headerTitleStyle: { fontWeight: '700' as const, fontSize: 17 },
+const screenHeader = {
+  headerStyle: { backgroundColor: COLORS.surface },
+  headerTintColor: COLORS.textPrimary,
+  headerTitleStyle: { fontWeight: '800' as const, fontSize: 16 },
   headerBackTitle: '',
+  headerShadowVisible: false,
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, isAdmin, logout, loading } = useAuth()
   const navRef = useNavigationContainerRef()
-  const [currentRoute, setCurrentRoute] = React.useState('Dashboard')
+  const [currentRoute, setCurrentRoute] = useState('Dashboard')
 
-  if (loading) return null
+  if (loading) return <View style={s.loadingSurface} />
 
+  // Admin operations stay in the web admin console. Admin accounts cannot enter the customer app.
+  if (isAuthenticated() && isAdmin()) {
+    return (
+      <View style={s.restrictedPage}>
+        <View style={s.restrictedMark}><Text style={s.restrictedMarkText}>D</Text></View>
+        <Text style={s.restrictedEyebrow}>DOFORYOU ADMIN</Text>
+        <Text style={s.restrictedTitle}>This space is for customers and task runners.</Text>
+        <Text style={s.restrictedBody}>Admin tools are not available in the mobile app. Please sign in to the DoForYou web admin dashboard to manage platform operations.</Text>
+        <Button title="Sign out of mobile" onPress={() => logout()} fullWidth size="lg" style={{ marginTop: 18 }} />
+      </View>
+    )
+  }
+
+  const authenticated = isAuthenticated()
   return (
     <NavigationContainer
       ref={navRef}
@@ -134,12 +135,11 @@ export default function AppNavigator() {
         if (route) setCurrentRoute(route)
       }}
     >
-      <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-        {isAuthenticated() && <TopNavbar navRef={navRef} />}
-
-        <View style={{ flex: 1 }}>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {!isAuthenticated() ? (
+      <View style={s.appShell}>
+        {authenticated && <TopNavbar navRef={navRef} />}
+        <View style={s.screenArea}>
+          <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}>
+            {!authenticated ? (
               <>
                 <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="Register" component={RegisterScreen} />
@@ -158,104 +158,60 @@ export default function AppNavigator() {
                 <Stack.Screen
                   name="TaskChat"
                   component={TaskChatScreen}
-                  options={{ headerShown: true, title: 'Task Chat', ...orangeHeader }}
+                  options={{ headerShown: true, title: 'Task chat', ...screenHeader }}
                 />
               </>
             )}
           </Stack.Navigator>
         </View>
-
-        {isAuthenticated() && (
-          <BottomNav currentRoute={currentRoute} navRef={navRef} />
-        )}
+        {authenticated && <BottomNav currentRoute={currentRoute} navRef={navRef} />}
       </View>
     </NavigationContainer>
   )
 }
 
 const s = StyleSheet.create({
-  // .navbar — white top bar
+  appShell: { flex: 1, backgroundColor: COLORS.background },
+  loadingSurface: { flex: 1, backgroundColor: COLORS.background },
+  screenArea: { flex: 1 },
   navbar: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    zIndex: 100,
+    borderBottomColor: COLORS.borderLight,
+    zIndex: 10,
   },
   navbarInner: {
-    height: 56,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
   },
-  brand: {},
-  brandName: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
-  brandDot: { fontSize: 20, fontWeight: '700', color: COLORS.primary },
-  bellBtn: {
-    position: 'relative', width: 38, height: 38,
-    alignItems: 'center', justifyContent: 'center', borderRadius: 19,
-  },
-  bellIcon: { fontSize: 20 },
-  bellBadge: {
-    position: 'absolute', top: 2, right: 2,
-    minWidth: 16, height: 16,
-    backgroundColor: COLORS.danger, borderRadius: 999,
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3,
-  },
-  bellBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
-
-  // .bottom-nav — white, border-top, 64px, shadow-up
-  bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 8,
-    height: 64,
-    paddingHorizontal: 4,
-    alignItems: 'stretch',
-  },
-
-  // .bnav-item
-  navItem: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    gap: 3, position: 'relative', minHeight: 44,
-  },
-
-  // .bnav-item.active::after — orange top bar
-  activeBar: {
-    position: 'absolute', top: 0, left: '25%', right: '25%',
-    height: 2, backgroundColor: COLORS.primary,
-    borderBottomLeftRadius: 2, borderBottomRightRadius: 2,
-  },
-
-  navIcon: { fontSize: 20, color: COLORS.textSecondary },
-  navIconActive: { color: COLORS.primary },
-  navLabel: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary },
-  navLabelActive: { color: COLORS.primary },
-
-  // .bnav-post-btn — orange FAB
-  fab: {
-    width: 46, height: 46, borderRadius: 23,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: -18,
-    shadowColor: '#FF8A00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  fabRunner: { backgroundColor: '#1F2937' },
-  fabActive: { transform: [{ scale: 1.08 }] },
-  fabIcon: { fontSize: 22, color: '#fff', fontWeight: '700' },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoMark: { width: 39, height: 39, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  logoLetter: { color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 27 },
+  logoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.accent, position: 'absolute', right: 6, bottom: 6 },
+  brandName: { fontSize: 16, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -0.3 },
+  brandCaption: { fontSize: 8, color: COLORS.textSecondary, fontWeight: '800', letterSpacing: 1.3, marginTop: 2 },
+  bellBtn: { width: 43, height: 43, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
+  bellIcon: { color: COLORS.textPrimary, fontSize: 24, lineHeight: 26, transform: [{ rotate: '-25deg' }] },
+  bellBadge: { position: 'absolute', top: 3, right: 3, minWidth: 17, height: 17, backgroundColor: COLORS.danger, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: COLORS.surface },
+  bellBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '900' },
+  bottomShell: { backgroundColor: COLORS.surface, paddingTop: 7, borderTopWidth: 1, borderTopColor: COLORS.borderLight, position: 'relative' },
+  bottomNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 9 },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 54 },
+  navIconWrap: { width: 42, height: 30, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  navIconWrapActive: { backgroundColor: COLORS.primaryLight },
+  navIcon: { fontSize: 23, color: COLORS.textMuted, fontWeight: '700' },
+  navIconActive: { color: COLORS.primaryDark },
+  navLabel: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '700' },
+  navLabelActive: { color: COLORS.primaryDark, fontWeight: '900' },
+  quickPost: { position: 'absolute', top: -26, right: 22, width: 48, height: 48, borderRadius: 18, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: COLORS.surface, ...SHADOW.primary },
+  quickPostText: { color: '#FFFFFF', fontSize: 25, fontWeight: '500', lineHeight: 29 },
+  restrictedPage: { flex: 1, paddingHorizontal: 28, justifyContent: 'center', backgroundColor: COLORS.background },
+  restrictedMark: { alignSelf: 'flex-start', width: 57, height: 57, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 26, ...SHADOW.primary },
+  restrictedMarkText: { color: '#FFFFFF', fontSize: 35, fontWeight: '900' },
+  restrictedEyebrow: { color: COLORS.primaryDark, fontWeight: '900', fontSize: 10, letterSpacing: 2, marginBottom: 10 },
+  restrictedTitle: { color: COLORS.textPrimary, fontWeight: '900', fontSize: 29, lineHeight: 35, letterSpacing: -0.8 },
+  restrictedBody: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22, marginTop: 13 },
 })
