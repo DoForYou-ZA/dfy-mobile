@@ -122,9 +122,9 @@ export default function PostErrandScreen({ navigation, route }: any) {
     >
       {/* Hero */}
       <View style={styles.hero}>
-        <Text style={styles.heroIcon}>✨</Text>
+        <Text style={styles.heroIcon}>d</Text>
         <Text style={styles.heroTitle}>{isEdit ? 'Edit Your Task' : 'Create Your Task'}</Text>
-        <Text style={styles.heroSub}>{isEdit ? 'Update your task details' : 'Transform your to-do into someone else\'s opportunity'}</Text>
+        <Text style={styles.heroSub}>{isEdit ? 'Update your task details' : 'Turn your to-do into an opportunity for someone in your community'}</Text>
         {user && (
           <View style={styles.userWelcome}>
             <View style={styles.userAvatar}>
@@ -162,7 +162,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
         {/* Step 1 */}
         {step === 1 && (
           <View style={{ gap: 14 }}>
-            <Text style={styles.stepTitle}>📋 What do you need done?</Text>
+            <Text style={styles.stepTitle}>What do you need done?</Text>
 
             <View>
               <Text style={styles.label}>Task Name * <Text style={styles.hint}>(max 60 chars)</Text></Text>
@@ -361,7 +361,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingBottom: 40 },
-  hero: { backgroundColor: COLORS.primary, padding: SPACING.lg, paddingTop: 24, paddingBottom: 32, alignItems: 'center' },
+  hero: { backgroundColor: COLORS.ink, padding: SPACING.lg, paddingTop: 24, paddingBottom: 32, alignItems: 'center' },
   heroIcon: { fontSize: 36, marginBottom: 8 },
   heroTitle: { fontSize: 24, fontWeight: '700', color: COLORS.white, marginBottom: 6 },
   heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'center', lineHeight: 20, marginBottom: 16 },
