@@ -1,115 +1,52 @@
-// Exact 1:1 match of DoForYou web CSS variables
+// Native DoForYou visual system: bright, warm, and readable while retaining the brand orange.
 export const COLORS = {
   primary: '#FF8A00',
-  primaryDark: '#E67A00',
-  primaryLight: '#FFE3C2',
-  success: '#22C55E',
-  successDark: '#16A34A',
-  danger: '#EF4444',
-  dangerDark: '#DC2626',
-  warning: '#F59E0B',
-  warningDark: '#D97706',
-  info: '#3B82F6',
-  infoDark: '#2563EB',
-  secondary: '#6B7280',
-  secondaryDark: '#4B5563',
-  background: '#F9FAFB',
-  backgroundDark: '#F3F4F6',
+  primaryDark: '#E87500',
+  primaryLight: '#FFF0DC',
+  primaryTint: '#FFF8EF',
+  success: '#16A66A',
+  successDark: '#128455',
+  successLight: '#E7F8EF',
+  danger: '#E5484D',
+  dangerDark: '#C9363B',
+  dangerLight: '#FFF0F0',
+  warning: '#EAA000',
+  warningDark: '#B97800',
+  warningLight: '#FFF6D9',
+  info: '#3182CE',
+  infoDark: '#245EA8',
+  infoLight: '#EAF4FF',
+  secondary: '#64748B',
+  secondaryDark: '#475569',
+  background: '#FFF9F2',
+  backgroundDark: '#F4F6F8',
   surface: '#FFFFFF',
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
+  border: '#E8EAF0',
+  borderLight: '#F2F3F6',
+  textPrimary: '#202A38',
+  textSecondary: '#657184',
+  textMuted: '#98A2B3',
   white: '#FFFFFF',
   black: '#000000',
-  overlay: 'rgba(0,0,0,0.5)',
-  starColor: '#F59E0B',
+  overlay: 'rgba(22, 32, 48, 0.48)',
+  starColor: '#F5A623',
 }
 
-export const RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  full: 999,
-}
-
-export const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-}
-
+export const RADIUS = { sm: 8, md: 12, lg: 18, xl: 24, full: 999 }
+export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }
 export const SHADOW = {
-  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 },
-  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 6 },
-  xl: { shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.1, shadowRadius: 25, elevation: 10 },
-  primary: { shadowColor: '#FF8A00', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  sm: { shadowColor: '#263247', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 5, elevation: 1 },
+  md: { shadowColor: '#263247', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 3 },
+  lg: { shadowColor: '#263247', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.09, shadowRadius: 22, elevation: 5 },
+  xl: { shadowColor: '#263247', shadowOffset: { width: 0, height: 18 }, shadowOpacity: 0.12, shadowRadius: 30, elevation: 8 },
+  primary: { shadowColor: '#FF8A00', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 4 },
 }
 
-// Shared reusable style objects — mirrors global.css patterns
+// Shared primitives retained while existing task flows are modernised.
 export const GLOBAL = {
-  // .card
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    padding: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  // .section-card
-  sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  // .form-input
-  input: {
-    width: '100%' as const,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: RADIUS.md,
-    fontSize: 15,
-    color: '#1F2937',
-    backgroundColor: '#FFFFFF',
-  },
-  // .form-label
-  label: {
-    fontSize: 14,
-    fontWeight: '500' as const,
-    color: '#1F2937',
-    marginBottom: 6,
-  },
-  // .task-card
-  taskCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    overflow: 'hidden' as const,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
+  card: { backgroundColor: '#FFFFFF', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: '#F0EDE8', padding: SPACING.md, shadowColor: '#263247', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 2 },
+  sectionCard: { backgroundColor: '#FFFFFF', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: '#F0EDE8', padding: SPACING.md, marginBottom: SPACING.md, shadowColor: '#263247', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  input: { width: '100%' as const, paddingHorizontal: 16, paddingVertical: 13, borderWidth: 1.5, borderColor: '#E4E7EC', borderRadius: RADIUS.md, fontSize: 15, color: '#202A38', backgroundColor: '#FFFFFF' },
+  label: { fontSize: 14, fontWeight: '600' as const, color: '#202A38', marginBottom: 7 },
+  taskCard: { backgroundColor: '#FFFFFF', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: '#F0EDE8', overflow: 'hidden' as const, shadowColor: '#263247', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
 }
