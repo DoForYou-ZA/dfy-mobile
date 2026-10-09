@@ -3,7 +3,7 @@ import {
   TouchableOpacity, Text, StyleSheet, ActivityIndicator,
   ViewStyle, TextStyle
 } from 'react-native'
-import { COLORS, RADIUS } from '../config/theme'
+import { COLORS, RADIUS, SHADOW } from '../config/theme'
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'outline-secondary' | 'danger' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
@@ -27,6 +27,8 @@ export default function Button({
   const isDisabled = disabled || loading
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
       style={[
         styles.btn,
         styles[`v_${variant}`],
@@ -63,25 +65,21 @@ const styles = StyleSheet.create({
   // Variants — match .btn-primary, .btn-secondary etc from global.css
   v_primary: {
     backgroundColor: COLORS.primary,
-    shadowColor: '#FF8A00',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.17,
-    shadowRadius: 8,
-    elevation: 4,
+    ...SHADOW.primary,
   },
   v_secondary: {
-    backgroundColor: COLORS.backgroundDark,
+    backgroundColor: '#FFF4E8',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   v_outline: {
     backgroundColor: COLORS.white,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: COLORS.primary,
   },
   'v_outline-secondary': {
     backgroundColor: COLORS.white,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: COLORS.border,
   },
   v_danger: { backgroundColor: COLORS.danger },
