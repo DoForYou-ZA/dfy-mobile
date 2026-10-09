@@ -16,16 +16,13 @@ export default function LoginScreen({ navigation }: any) {
   const [error, setError] = useState('')
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      setError('Enter your email address and password to continue.')
-      return
-    }
+    if (!email || !password) { setError('Please fill in all fields'); return }
     setError('')
     setLoading(true)
     try {
       await login(email.trim(), password)
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'We could not sign you in. Please try again.')
+      setError(err.response?.data?.message || err.message || 'Login failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -34,33 +31,29 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={styles.brandHeader}>
+        <View style={styles.top}>
           <View style={styles.brandRow}>
-            <View style={styles.brandMark}><Text style={styles.brandMarkText}>dfy</Text></View>
+            <View style={styles.brandMark}><Text style={styles.brandMarkText}>D</Text></View>
             <Text style={styles.brandName}>DoForYou<Text style={styles.brandDot}>.</Text></Text>
           </View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.eyebrow}>YOUR TASKS. YOUR COMMUNITY.</Text>
-            <Text style={styles.heroTitle}>Make room for what matters.</Text>
-            <Text style={styles.heroSubtitle}>
-              Find a helping hand, or turn your skills into your next opportunity.
-            </Text>
+          <View style={styles.hero}>
+            <View style={styles.heroDecor} />
+            <Text style={styles.eyebrow}>A LITTLE HELP GOES A LONG WAY</Text>
+            <Text style={styles.heroTitle}>Your day, made easier.</Text>
+            <Text style={styles.heroSubtitle}>Find a helping hand or earn by helping someone else.</Text>
+            <View style={styles.featureRow}>
+              <View style={styles.featureChip}><Text style={styles.featureIcon}>✓</Text><Text style={styles.featureLabel}>Trusted tasks</Text></View>
+              <View style={styles.featureChip}><Text style={styles.featureIcon}>↗</Text><Text style={styles.featureLabel}>Local community</Text></View>
+            </View>
           </View>
-          <View style={styles.orbitOne} />
-          <View style={styles.orbitTwo} />
         </View>
 
         <View style={styles.formCard}>
-          <View style={styles.formHeading}>
-            <Text style={styles.formTitle}>Welcome back</Text>
-            <Text style={styles.formSubtitle}>Sign in to pick up where you left off.</Text>
-          </View>
+          <Text style={styles.formTitle}>Welcome back</Text>
+          <Text style={styles.formSubtitle}>Sign in to pick up where you left off.</Text>
 
           {error ? (
-            <View style={styles.errorBanner} accessibilityRole="alert">
-              <Text style={styles.errorMark}>!</Text>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
+            <View style={styles.errorBanner}><Text style={styles.errorText}>⚠  {error}</Text></View>
           ) : null}
 
           <View style={styles.inputGroup}>
@@ -73,7 +66,6 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              autoCorrect={false}
               autoComplete="email"
               textContentType="emailAddress"
               returnKeyType="next"
@@ -90,43 +82,23 @@ export default function LoginScreen({ navigation }: any) {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                autoComplete="current-password"
+                autoComplete="password"
                 textContentType="password"
-                returnKeyType="done"
                 onSubmitEditing={handleLogin}
+                returnKeyType="go"
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(v => !v)}
-                accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              >
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} style={styles.eyeBtn} onPress={() => setShowPassword(v => !v)}>
                 <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <Button
-            title="Sign in"
-            onPress={handleLogin}
-            loading={loading}
-            disabled={!email.trim() || !password}
-            fullWidth
-            size="lg"
-            style={styles.submitButton}
-          />
+          <Button title="Sign in  →" onPress={handleLogin} loading={loading} disabled={!email || !password} fullWidth size="lg" style={styles.submitButton} />
 
-          <View style={styles.switchRow}>
-            <Text style={styles.switchText}>New to DoForYou? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.switchLink}>Create an account</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.trustRow}>
-            <View style={styles.trustDot} />
-            <Text style={styles.trustText}>Made for everyday tasks across South Africa</Text>
-          </View>
+          <TouchableOpacity style={styles.switchRow} onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.switchText}>New to DoForYou? <Text style={styles.switchLink}>Create an account</Text></Text>
+          </TouchableOpacity>
+          <Text style={styles.secureNote}>Your account is protected. Your task journey starts here.</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -135,59 +107,37 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { flexGrow: 1, paddingBottom: 24 },
-  brandHeader: {
-    backgroundColor: COLORS.background, minHeight: 292,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: Platform.OS === 'android' ? 30 : 42,
-    paddingBottom: 48, overflow: 'hidden', position: 'relative',
-  },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 1 },
-  brandMark: {
-    width: 42, height: 42, borderRadius: 15, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-5deg' }],
-    ...SHADOW.primary,
-  },
-  brandMarkText: { color: COLORS.white, fontSize: 16, fontWeight: '900', letterSpacing: -0.5 },
-  brandName: { fontSize: 21, color: COLORS.textPrimary, fontWeight: '800', letterSpacing: -0.6 },
+  scroll: { flexGrow: 1, paddingBottom: 20 },
+  top: { paddingHorizontal: SPACING.md, paddingTop: 18 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, marginBottom: 20 },
+  brandMark: { width: 38, height: 38, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.primary },
+  brandMarkText: { color: '#FFFFFF', fontSize: 21, fontWeight: '900' },
+  brandName: { color: COLORS.textPrimary, fontSize: 21, fontWeight: '900', letterSpacing: -0.7 },
   brandDot: { color: COLORS.primary },
-  heroCopy: { marginTop: 34, maxWidth: 350, zIndex: 1 },
-  eyebrow: { fontSize: 10, letterSpacing: 1.6, color: COLORS.primaryDark, fontWeight: '800', marginBottom: 12 },
-  heroTitle: { fontSize: 34, lineHeight: 39, color: COLORS.textPrimary, fontWeight: '800', letterSpacing: -1 },
-  heroSubtitle: { marginTop: 12, fontSize: 15, lineHeight: 23, color: COLORS.textSecondary, maxWidth: 320 },
-  orbitOne: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: '#FFE8D1', right: -56, top: 118, opacity: 0.75 },
-  orbitTwo: { position: 'absolute', width: 82, height: 82, borderRadius: 41, backgroundColor: '#DFF6EF', right: 24, top: 186, opacity: 0.9 },
-  formCard: {
-    flexGrow: 1, marginTop: -24, marginHorizontal: SPACING.md, padding: SPACING.lg,
-    paddingTop: 26, backgroundColor: COLORS.surface, borderWidth: 1,
-    borderColor: COLORS.borderLight, borderRadius: 26, ...SHADOW.md,
-  },
-  formHeading: { marginBottom: 24 },
-  formTitle: { fontSize: 25, fontWeight: '800', letterSpacing: -0.5, color: COLORS.textPrimary },
-  formSubtitle: { fontSize: 14, lineHeight: 21, color: COLORS.textSecondary, marginTop: 6 },
-  errorBanner: {
-    backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: '#F8D5D8',
-    borderRadius: RADIUS.md, padding: 12, marginBottom: 18,
-    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-  },
-  errorMark: { overflow: 'hidden', color: COLORS.danger, fontWeight: '800', borderWidth: 1.5, borderColor: COLORS.danger, borderRadius: 10, width: 20, height: 20, textAlign: 'center', lineHeight: 17 },
-  errorText: { color: '#A43340', fontSize: 13, lineHeight: 19, flex: 1 },
+  hero: { position: 'relative', overflow: 'hidden', backgroundColor: COLORS.primary, borderRadius: 27, padding: 22, paddingTop: 23, paddingBottom: 21, marginBottom: 22 },
+  heroDecor: { position: 'absolute', width: 150, height: 150, borderRadius: 75, right: -60, top: -62, backgroundColor: 'rgba(255,255,255,0.12)' },
+  eyebrow: { color: '#FFE9D7', fontSize: 9, fontWeight: '900', letterSpacing: 1.35, marginBottom: 12 },
+  heroTitle: { color: '#FFFFFF', fontSize: 29, lineHeight: 34, fontWeight: '900', letterSpacing: -0.7, marginBottom: 8, maxWidth: 280 },
+  heroSubtitle: { color: '#FFF5ED', fontSize: 14, lineHeight: 21, maxWidth: 290 },
+  featureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 19 },
+  featureChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: 'rgba(255,255,255,0.16)' },
+  featureIcon: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
+  featureLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  formCard: { flex: 1, backgroundColor: COLORS.surface, borderRadius: 25, borderWidth: 1, borderColor: COLORS.borderLight, padding: 22, marginHorizontal: SPACING.md, ...SHADOW.md },
+  formTitle: { fontSize: 25, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -0.5, marginBottom: 5 },
+  formSubtitle: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 23, lineHeight: 20 },
+  errorBanner: { backgroundColor: COLORS.dangerLight, borderWidth: 1, borderColor: '#F8CACA', borderRadius: RADIUS.md, padding: 12, marginBottom: 16 },
+  errorText: { color: COLORS.dangerDark, fontSize: 13, lineHeight: 19 },
   inputGroup: { marginBottom: 17 },
-  label: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
-  input: {
-    minHeight: 52, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14,
-    paddingHorizontal: 15, paddingVertical: 12, fontSize: 15,
-    color: COLORS.textPrimary, backgroundColor: '#FFFCF9',
-  },
-  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  passwordInput: { flex: 1, paddingRight: 8 },
-  eyeButton: { minHeight: 48, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: COLORS.backgroundDark },
-  eyeText: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
-  submitButton: { marginTop: 5, minHeight: 52, borderRadius: 15 },
-  switchRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 23 },
-  switchText: { fontSize: 13, color: COLORS.textSecondary },
-  switchLink: { fontSize: 13, fontWeight: '800', color: COLORS.primaryDark },
-  trustRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 26 },
-  trustDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.accent },
-  trustText: { fontSize: 11, color: COLORS.textMuted },
+  label: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
+  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 14, fontSize: 15, color: COLORS.textPrimary, backgroundColor: '#FFFEFC' },
+  passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  passwordInput: { flex: 1, minWidth: 0 },
+  eyeBtn: { paddingHorizontal: 12, paddingVertical: 14, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md, backgroundColor: COLORS.background },
+  eyeText: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary },
+  submitButton: { marginTop: 4, borderRadius: RADIUS.md, paddingVertical: 15 },
+  switchRow: { marginTop: 21, alignItems: 'center' },
+  switchText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' },
+  switchLink: { color: COLORS.primaryDark, fontWeight: '900' },
+  secureNote: { color: COLORS.textMuted, fontSize: 11, lineHeight: 16, textAlign: 'center', marginTop: 18 },
 })
