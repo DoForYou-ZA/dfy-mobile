@@ -99,16 +99,18 @@ const s = StyleSheet.create({
   },
   alertText: { fontSize: 14, lineHeight: 20, flex: 1 },
 
-  // .page-header — orange gradient
+  // Light mobile page heading; orange remains an accent, not the whole screen.
   pageHeader: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#FFF0E0',
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.lg,
     marginBottom: SPACING.lg,
+    borderBottomLeftRadius: RADIUS.xl,
+    borderBottomRightRadius: RADIUS.xl,
   },
-  pageHeaderTitle: { fontSize: 28, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  pageHeaderSub: { fontSize: 15, color: 'rgba(255,255,255,0.85)' },
+  pageHeaderTitle: { fontSize: 26, lineHeight: 32, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 5, letterSpacing: -0.5 },
+  pageHeaderSub: { fontSize: 14, lineHeight: 21, color: COLORS.textSecondary },
 
   // .section-card
   sectionCard: {
@@ -118,10 +120,10 @@ const s = StyleSheet.create({
     borderColor: COLORS.border,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowColor: '#8B6A4F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 1,
   },
 
