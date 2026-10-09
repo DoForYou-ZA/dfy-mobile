@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, Alert
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
@@ -16,59 +16,67 @@ export default function LoginScreen({ navigation }: any) {
   const [error, setError] = useState('')
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Please fill in all fields'); return }
-    setError(''); setLoading(true)
+    if (!email.trim() || !password) {
+      setError('Enter your email address and password to continue.')
+      return
+    }
+    setError('')
+    setLoading(true)
     try {
       await login(email.trim(), password)
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed. Please try again.')
-    } finally { setLoading(false) }
+      setError(err.response?.data?.message || err.message || 'We could not sign you in. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Orange gradient panel */}
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Welcome Back!</Text>
-          <Text style={styles.panelSub}>Sign in to continue your DoForYou journey</Text>
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🔒</Text>
-              <Text style={styles.featureLabel}>Secure</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>⚡</Text>
-              <Text style={styles.featureLabel}>Fast</Text>
-            </View>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <View style={styles.brandHeader}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandMark}><Text style={styles.brandMarkText}>dfy</Text></View>
+            <Text style={styles.brandName}>DoForYou<Text style={styles.brandDot}>.</Text></Text>
           </View>
+          <View style={styles.heroCopy}>
+            <Text style={styles.eyebrow}>YOUR TASKS. YOUR COMMUNITY.</Text>
+            <Text style={styles.heroTitle}>Make room for what matters.</Text>
+            <Text style={styles.heroSubtitle}>
+              Find a helping hand, or turn your skills into your next opportunity.
+            </Text>
+          </View>
+          <View style={styles.orbitOne} />
+          <View style={styles.orbitTwo} />
         </View>
 
-        {/* White form card */}
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Sign In</Text>
-          <Text style={styles.formSubtitle}>Enter your credentials to access your account</Text>
+          <View style={styles.formHeading}>
+            <Text style={styles.formTitle}>Welcome back</Text>
+            <Text style={styles.formSubtitle}>Sign in to pick up where you left off.</Text>
+          </View>
 
           {error ? (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>⚠️ {error}</Text>
+            <View style={styles.errorBanner} accessibilityRole="alert">
+              <Text style={styles.errorMark}>!</Text>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>Email address</Text>
             <TextInput
               style={styles.input}
-              placeholder="your@email.com"
+              placeholder="you@example.com"
               placeholderTextColor={COLORS.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
               autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="next"
             />
           </View>
 
@@ -76,41 +84,49 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.label}>Password</Text>
             <View style={styles.passwordRow}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="••••••••"
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Enter your password"
                 placeholderTextColor={COLORS.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                autoComplete="current-password"
+                textContentType="password"
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
               />
               <TouchableOpacity
-                style={styles.eyeBtn}
+                style={styles.eyeButton}
                 onPress={() => setShowPassword(v => !v)}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <Button
-            title="Sign In"
+            title="Sign in"
             onPress={handleLogin}
             loading={loading}
-            disabled={!email || !password}
+            disabled={!email.trim() || !password}
             fullWidth
             size="lg"
-            style={{ marginTop: 8 }}
+            style={styles.submitButton}
           />
 
-          <TouchableOpacity
-            style={styles.switchRow}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.switchText}>
-              Don't have an account?{' '}
-              <Text style={styles.switchLink}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchText}>New to DoForYou? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.switchLink}>Create an account</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.trustRow}>
+            <View style={styles.trustDot} />
+            <Text style={styles.trustText}>Made for everyday tasks across South Africa</Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -118,96 +134,60 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.primary },
-  scroll: { flexGrow: 1 },
-  panel: {
-    backgroundColor: COLORS.primary,
-    padding: SPACING.lg,
-    paddingTop: 60,
-    paddingBottom: 40,
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { flexGrow: 1, paddingBottom: 24 },
+  brandHeader: {
+    backgroundColor: COLORS.background, minHeight: 292,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: Platform.OS === 'android' ? 30 : 42,
+    paddingBottom: 48, overflow: 'hidden', position: 'relative',
   },
-  panelTitle: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: COLORS.white,
-    marginBottom: 8,
-    textAlign: 'center',
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 1 },
+  brandMark: {
+    width: 42, height: 42, borderRadius: 15, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-5deg' }],
+    ...SHADOW.primary,
   },
-  panelSub: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  features: { flexDirection: 'row', gap: 16 },
-  featureItem: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: RADIUS.lg,
-    padding: 16,
-    minWidth: 80,
-    gap: 8,
-  },
-  featureIcon: { fontSize: 24 },
-  featureLabel: { fontSize: 13, fontWeight: '500', color: COLORS.white },
+  brandMarkText: { color: COLORS.white, fontSize: 16, fontWeight: '900', letterSpacing: -0.5 },
+  brandName: { fontSize: 21, color: COLORS.textPrimary, fontWeight: '800', letterSpacing: -0.6 },
+  brandDot: { color: COLORS.primary },
+  heroCopy: { marginTop: 34, maxWidth: 350, zIndex: 1 },
+  eyebrow: { fontSize: 10, letterSpacing: 1.6, color: COLORS.primaryDark, fontWeight: '800', marginBottom: 12 },
+  heroTitle: { fontSize: 34, lineHeight: 39, color: COLORS.textPrimary, fontWeight: '800', letterSpacing: -1 },
+  heroSubtitle: { marginTop: 12, fontSize: 15, lineHeight: 23, color: COLORS.textSecondary, maxWidth: 320 },
+  orbitOne: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: '#FFE8D1', right: -56, top: 118, opacity: 0.75 },
+  orbitTwo: { position: 'absolute', width: 82, height: 82, borderRadius: 41, backgroundColor: '#DFF6EF', right: 24, top: 186, opacity: 0.9 },
   formCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 32,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    padding: SPACING.lg,
-    paddingTop: 28,
-    flex: 1,
-    marginTop: -20,
-    ...SHADOW.lg,
+    flexGrow: 1, marginTop: -24, marginHorizontal: SPACING.md, padding: SPACING.lg,
+    paddingTop: 26, backgroundColor: COLORS.surface, borderWidth: 1,
+    borderColor: COLORS.borderLight, borderRadius: 26, ...SHADOW.md,
   },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  formSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
-  },
+  formHeading: { marginBottom: 24 },
+  formTitle: { fontSize: 25, fontWeight: '800', letterSpacing: -0.5, color: COLORS.textPrimary },
+  formSubtitle: { fontSize: 14, lineHeight: 21, color: COLORS.textSecondary, marginTop: 6 },
   errorBanner: {
-    backgroundColor: '#FEE2E2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: RADIUS.md,
-    padding: 12,
-    marginBottom: 16,
+    backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: '#F8D5D8',
+    borderRadius: RADIUS.md, padding: 12, marginBottom: 18,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
   },
-  errorText: { color: '#991B1B', fontSize: 14 },
-  inputGroup: { marginBottom: 16 },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-    marginBottom: 6,
-  },
+  errorMark: { overflow: 'hidden', color: COLORS.danger, fontWeight: '800', borderWidth: 1.5, borderColor: COLORS.danger, borderRadius: 10, width: 20, height: 20, textAlign: 'center', lineHeight: 17 },
+  errorText: { color: '#A43340', fontSize: 13, lineHeight: 19, flex: 1 },
+  inputGroup: { marginBottom: 17 },
+  label: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
   input: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    padding: 12,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.white,
+    minHeight: 52, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14,
+    paddingHorizontal: 15, paddingVertical: 12, fontSize: 15,
+    color: COLORS.textPrimary, backgroundColor: '#FFFCF9',
   },
-  passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: {
-    padding: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-  },
-  eyeText: { fontSize: 16 },
-  switchRow: { marginTop: SPACING.lg, alignItems: 'center' },
-  switchText: { fontSize: 14, color: COLORS.textSecondary },
-  switchLink: { color: COLORS.primary, fontWeight: '600' },
+  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  passwordInput: { flex: 1, paddingRight: 8 },
+  eyeButton: { minHeight: 48, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: COLORS.backgroundDark },
+  eyeText: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
+  submitButton: { marginTop: 5, minHeight: 52, borderRadius: 15 },
+  switchRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 23 },
+  switchText: { fontSize: 13, color: COLORS.textSecondary },
+  switchLink: { fontSize: 13, fontWeight: '800', color: COLORS.primaryDark },
+  trustRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 26 },
+  trustDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.accent },
+  trustText: { fontSize: 11, color: COLORS.textMuted },
 })
