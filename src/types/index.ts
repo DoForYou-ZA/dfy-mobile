@@ -22,8 +22,8 @@ export type PaymentStatus =
 export type TaskStatus =
   | 'PendingPayment' | 'Posted' | 'Claimed' | 'InProgress' | 'Completed'
   | 'Confirmed' | 'RunnerPaid' | 'PayoutPending' | 'PayoutFailed'
-  | 'DisputePending' | 'RefundPending' | 'Cancelled'
-  | 'draft' | 'posted' | 'claimed' | 'in_progress' | 'completed' | 'confirmed' | 'runner_paid' | 'cancelled' | 'disputed'
+  | 'AwaitingConfirmation' | 'DisputePending' | 'RefundPending' | 'Cancelled'
+  | 'draft' | 'posted' | 'claimed' | 'in_progress' | 'completed' | 'awaiting_confirmation' | 'confirmed' | 'runner_paid' | 'cancelled' | 'disputed'
 export type Priority = 'standard' | 'urgent' | 'low'
 export interface Task {
   id: number; taskId: string; timestamp?: string; userName: string; userContact: string
