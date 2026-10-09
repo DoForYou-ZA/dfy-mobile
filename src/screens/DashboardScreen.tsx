@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { tasksApi, ratingsApi } from '../api'
 import { LoadingScreen } from '../components/Common'
 import Button from '../components/Button'
-import { COLORS, RADIUS, SPACING, SHADOW } from '../config/theme'
+import { COLORS, RADIUS, SHADOW } from '../config/theme'
 import type { DashboardStats } from '../types'
 
 export default function DashboardScreen({ navigation }: any) {
