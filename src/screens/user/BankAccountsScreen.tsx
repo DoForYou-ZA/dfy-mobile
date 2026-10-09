@@ -20,6 +20,12 @@ export default function BankAccountsScreen() {
   }catch{Alert.alert('Error','Unable to load banking details.')}finally{setLoading(false)}}
   useEffect(()=>{load()},[])
 
+  const setDefault=async(id:number)=>{try{
+    const r=await bankingApi.setDefaultPayoutAccount(id)
+    if(!r.data?.success){Alert.alert('Unable to update default',r.data?.message||'The account could not be selected.');return}
+    Alert.alert('Default payout updated','New runner payouts will use this verified account.');await load()
+  }catch(e:any){Alert.alert('Error',e.response?.data?.message||'Failed to update the default payout account.')}}
+
   const save=async()=>{if(!selected||!form.accountNumber||!form.accountHolderName){Alert.alert('Required','Select a bank and complete all fields.');return}
     setSaving(true);try{
       const r=await bankingApi.addBankAccount({...form,bankCode:selected.bankCode,bankGroupId:selected.bankCode,bankName:selected.name,branchCode:selected.branchCode})
@@ -35,7 +41,7 @@ export default function BankAccountsScreen() {
     <View style={s.header}><Text style={s.title}>Bank Accounts</Text><Text style={s.sub}>Verified accounts receive direct task payouts. Wallet withdrawals are retired.</Text></View>
     <View style={s.card}><Text style={s.heading}>Your accounts</Text>
       {accounts.length===0?<EmptyState icon="🏦" title="No bank account" subtitle="Add and verify a bank account for runner payouts."/>:
-      accounts.map(a=><View key={a.id} style={s.account}><Text style={s.bank}>{a.bankName}</Text><Text style={s.meta}>{a.accountHolderName} · {a.accountNumber}</Text><Text style={[s.verified,{color:a.isVerified?COLORS.success:COLORS.danger}]}>{a.isVerified?'✓ Verified':'Not verified'}</Text></View>)}
+      accounts.map(a=><View key={a.id} style={s.account}><Text style={s.bank}>{a.bankName}</Text><Text style={s.meta}>{a.accountHolderName} · {a.accountNumber}</Text><Text style={[s.verified,{color:a.isVerified?COLORS.success:COLORS.danger}]}>{a.isVerified?'✓ Verified':'Not verified'}</Text>{a.isDefaultPayout?<Text style={s.defaultLabel}>Default payout account</Text>:a.isVerified?<TouchableOpacity onPress={()=>setDefault(a.id)} style={s.defaultAction}><Text style={s.defaultActionText}>Set as default payout</Text></TouchableOpacity>:null}</View>)}
     </View>
     <View style={s.card}><Text style={s.heading}>Add account</Text>
       <Text style={s.label}>Bank</Text>
@@ -51,7 +57,7 @@ const s=StyleSheet.create({
  page:{flex:1,backgroundColor:COLORS.background},content:{paddingBottom:32},
  header:{backgroundColor:COLORS.primary,padding:SPACING.lg},title:{fontSize:26,fontWeight:'700',color:'#fff'},sub:{fontSize:14,color:'rgba(255,255,255,.85)',marginTop:4},
  card:{backgroundColor:COLORS.surface,borderRadius:RADIUS.xl,padding:SPACING.md,margin:SPACING.md,...SHADOW.sm},heading:{fontSize:18,fontWeight:'700',color:COLORS.textPrimary,marginBottom:12},
- account:{borderTopWidth:1,borderTopColor:COLORS.border,paddingVertical:12},bank:{fontSize:15,fontWeight:'700',color:COLORS.textPrimary},meta:{fontSize:13,color:COLORS.textSecondary,marginTop:3},verified:{fontSize:12,fontWeight:'700',marginTop:5},
+ account:{borderTopWidth:1,borderTopColor:COLORS.border,paddingVertical:12},bank:{fontSize:15,fontWeight:'700',color:COLORS.textPrimary},meta:{fontSize:13,color:COLORS.textSecondary,marginTop:3},verified:{fontSize:12,fontWeight:'700',marginTop:5},defaultLabel:{fontSize:12,fontWeight:'700',color:COLORS.success,marginTop:6},defaultAction:{alignSelf:'flex-start',marginTop:8,paddingVertical:6,paddingHorizontal:10,borderRadius:RADIUS.md,borderWidth:1,borderColor:COLORS.primary},defaultActionText:{fontSize:12,fontWeight:'700',color:COLORS.primary},
  label:{fontSize:13,fontWeight:'600',color:COLORS.textPrimary,marginTop:10,marginBottom:6},input:{borderWidth:1.5,borderColor:COLORS.border,borderRadius:RADIUS.md,padding:12,fontSize:15,color:COLORS.textPrimary,backgroundColor:COLORS.background},
  chips:{flexDirection:'row',gap:8},chip:{paddingHorizontal:12,paddingVertical:8,borderWidth:1,borderColor:COLORS.border,borderRadius:RADIUS.full},chipActive:{backgroundColor:COLORS.primary,borderColor:COLORS.primary},chipText:{fontSize:12,color:COLORS.textSecondary},chipTextActive:{color:'#fff',fontWeight:'600'}
 })
