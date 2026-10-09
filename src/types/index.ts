@@ -45,11 +45,11 @@ export interface WalletBalance {
   availableBalance: number; pendingPayouts: number; totalEarned: number; totalWithdrawn: number
 }
 export interface BankAccount {
-  id: number; bankName: string; bankGroupId?: string; accountNumber: string
+  id: number; bankName: string; bankCode?: string; accountNumber: string
   accountHolderName: string; accountType: string; branchCode?: string
-  isVerified: boolean; isDefault?: boolean; createdAt?: string
+  isVerified: boolean; isDefault?: boolean; isDefaultPayout?: boolean; verificationMessage?: string; createdAt?: string
 }
-export interface SupportedBank { bankGroupId: string; name: string; branchCode: string }
+export interface SupportedBank { bankCode: string; bankGroupId?: string; name: string; branchCode?: string | null }
 export interface AppNotification {
   id: number; type: string; title: string; message: string; isRead: boolean
   createdAt: string; updatedAt: string; count: number
