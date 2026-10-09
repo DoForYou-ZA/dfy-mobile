@@ -38,7 +38,6 @@ export const tasksApi = {
   getRecentActivity: (limit = 5) => api.get(`/tasks/dashboard/activity?limit=${limit}`),
   getPaymentHistory: () => api.get('/tasks/payment-history'),
   getPaymentUrl: (id: string) => api.get(`/tasks/${id}/payment-url`),
-  initiatePayment: (taskId: string) => api.post('/payment/initiate', { taskId }),
   getFilters: () => api.get('/tasks/filters'),
 }
 
