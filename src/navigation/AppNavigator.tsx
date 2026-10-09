@@ -58,20 +58,24 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
   const insets = useSafeAreaInsets()
   if (!isAuthenticated() || HIDE_BOTTOM_NAV.includes(currentRoute)) return null
 
+  const canPost = canPostErrands()
   const isActive = (routes: string[]) => routes.includes(currentRoute)
   const go = (route: string) => navRef.current?.navigate(route as never)
   const tasksRoute = user?.userType === 'creator' ? 'MyPostedTasks' : 'MyActiveTasks'
   const items = [
     { route: 'Dashboard', label: 'Home', icon: '⌂', matches: ['Dashboard'] },
     { route: 'BrowseErrands', label: 'Explore', icon: '⌕', matches: ['BrowseErrands'] },
+    ...(canPost ? [{ route: 'PostErrand', label: 'Post', icon: '＋', matches: ['PostErrand'] }] : []),
     { route: tasksRoute, label: 'My tasks', icon: '▤', matches: ['MyPostedTasks', 'MyActiveTasks', 'MyCompletedTasks'] },
     { route: 'Profile', label: 'Profile', icon: '○', matches: ['Profile', 'BankAccounts'] },
   ]
+
   return (
     <View style={[s.bottomShell, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       <View style={s.bottomNav}>
         {items.map((item) => {
           const active = isActive(item.matches)
+          const isPost = item.route === 'PostErrand'
           return (
             <TouchableOpacity
               key={item.label}
@@ -81,19 +85,22 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
               onPress={() => go(item.route)}
               activeOpacity={0.76}
             >
-              <View style={[s.navIconWrap, active && s.navIconWrapActive]}>
-                <Text style={[s.navIcon, active && s.navIconActive]}>{item.icon}</Text>
+              <View style={[
+                s.navIconWrap,
+                active && s.navIconWrapActive,
+                isPost && s.postNavIconWrap,
+              ]}>
+                <Text style={[
+                  s.navIcon,
+                  active && s.navIconActive,
+                  isPost && s.postNavIcon,
+                ]}>{item.icon}</Text>
               </View>
-              <Text style={[s.navLabel, active && s.navLabelActive]}>{item.label}</Text>
+              <Text style={[s.navLabel, active && s.navLabelActive, isPost && s.postNavLabel]}>{item.label}</Text>
             </TouchableOpacity>
           )
         })}
       </View>
-      {canPostErrands() && (
-        <TouchableOpacity style={s.quickPost} onPress={() => go('PostErrand')} accessibilityRole="button" accessibilityLabel="Post a task">
-          <Text style={s.quickPostText}>＋</Text>
-        </TouchableOpacity>
-      )}
     </View>
   )
 }
@@ -206,8 +213,9 @@ const s = StyleSheet.create({
   navIconActive: { color: COLORS.primaryDark },
   navLabel: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '700' },
   navLabelActive: { color: COLORS.primaryDark, fontWeight: '900' },
-  quickPost: { position: 'absolute', top: -26, right: 22, width: 48, height: 48, borderRadius: 18, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: COLORS.surface, ...SHADOW.primary },
-  quickPostText: { color: '#FFFFFF', fontSize: 25, fontWeight: '500', lineHeight: 29 },
+  postNavIconWrap: { backgroundColor: COLORS.primary, ...SHADOW.primary },
+  postNavIcon: { color: '#FFFFFF', fontSize: 22, lineHeight: 25 },
+  postNavLabel: { color: COLORS.primaryDark, fontWeight: '900' },
   restrictedPage: { flex: 1, paddingHorizontal: 28, justifyContent: 'center', backgroundColor: COLORS.background },
   restrictedMark: { alignSelf: 'flex-start', width: 57, height: 57, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 26, ...SHADOW.primary },
   restrictedMarkText: { color: '#FFFFFF', fontSize: 35, fontWeight: '900' },
