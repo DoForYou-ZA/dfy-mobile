@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
-import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
+import { COLORS, SHADOW } from '../../config/theme'
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth()
