@@ -57,6 +57,12 @@ test('capture existing staging runner experience without claiming tasks', async 
     await capture(page, 'dfy-mobile-runner-browse-tasks.png')
   }
 
+  // Return to the dashboard before opening the read-only active-task list.
+  const home = page.getByText('Home', { exact: true })
+  if (await home.count()) {
+    await home.last().click()
+  }
+
   const myTasks = page.getByText('My Active Tasks', { exact: true })
   if (await myTasks.count()) {
     await myTasks.first().click()
