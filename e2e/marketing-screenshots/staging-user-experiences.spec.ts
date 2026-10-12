@@ -29,7 +29,7 @@ async function capture(page: Page, name: string) {
 
 test('capture existing staging creator experience without submitting changes', async ({ page }) => {
   test.skip(!creatorEmail || !creatorPassword, 'Creator credentials are available only in the DFY-FE workflow')
-  await signIn(page, creatorEmail!, creatorPassword!, 'Task Creator Dashboard')
+  await signIn(page, creatorEmail!, creatorPassword!, 'My Dashboard')
   await capture(page, 'dfy-mobile-creator-dashboard.png')
 
   const postedTasks = page.getByText('My Posted Tasks', { exact: true })
@@ -48,7 +48,7 @@ test('capture existing staging creator experience without submitting changes', a
 
 test('capture existing staging runner experience without claiming tasks', async ({ page }) => {
   test.skip(!runnerEmail || !runnerPassword, 'Runner credentials are available only in the DFY-FE workflow')
-  await signIn(page, runnerEmail!, runnerPassword!, 'Task Runner Dashboard')
+  await signIn(page, runnerEmail!, runnerPassword!, 'My Dashboard')
   await capture(page, 'dfy-mobile-runner-dashboard.png')
 
   const browse = page.getByText('Browse', { exact: true })
@@ -57,9 +57,9 @@ test('capture existing staging runner experience without claiming tasks', async 
     await capture(page, 'dfy-mobile-runner-browse-tasks.png')
   }
 
-  const myTasks = page.getByText('My Tasks', { exact: true })
+  const myTasks = page.getByText('My Active Tasks', { exact: true })
   if (await myTasks.count()) {
     await myTasks.first().click()
-    await capture(page, 'dfy-mobile-runner-my-tasks.png')
+    await capture(page, 'dfy-mobile-runner-my-active-tasks.png')
   }
 })
