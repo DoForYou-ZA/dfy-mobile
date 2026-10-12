@@ -18,8 +18,10 @@ export default defineConfig({
   },
   outputDir: 'test-results/marketing-screenshots',
   webServer: {
-    command: 'npx expo start --web --port 8081 --clear',
-    url: 'http://127.0.0.1:8081',
+    // The local proxy serves Expo and forwards only /api/v1 to the fixed staging API.
+    // This keeps browser API calls same-origin, avoiding staging CORS restrictions.
+    command: 'node scripts/marketing-proxy.mjs',
+    url: 'http://127.0.0.1:8081/',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     env: { CI: '1' },
