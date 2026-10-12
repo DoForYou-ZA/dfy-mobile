@@ -14,7 +14,7 @@ export default defineConfig({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     screenshot: 'only-on-failure',
-    trace: 'retain-on-failure',
+    trace: 'off',
   },
   outputDir: 'test-results/marketing-screenshots',
   webServer: {
