@@ -61,7 +61,7 @@ test('capture existing staging runner experience without claiming tasks', async 
   const home = page.getByText('Home', { exact: true })
   await expect(home.last()).toBeVisible()
   await home.last().click()
-  await expect(page.getByText('My Dashboard', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('My Dashboard', { exact: true }).filter({ visible: true }).first()).toBeVisible({ timeout: 15_000 })
 
   const myTasks = page.getByText('My Active Tasks', { exact: true }).filter({ visible: true })
   await expect(myTasks.first()).toBeVisible({ timeout: 15_000 })
