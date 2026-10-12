@@ -10,8 +10,7 @@ const creatorPassword = process.env.DFY_CREATOR_PASSWORD
 const runnerEmail = process.env.DFY_RUNNER_EMAIL
 const runnerPassword = process.env.DFY_RUNNER_PASSWORD
 
-async function signIn(page: Page, email: string | undefined, password: string | undefined, roleHeading: string) {
-  if (!email || !password) throw new Error('Missing required DFY staging login secrets')
+async function signIn(page: Page, email: string, password: string, roleHeading: string) {
   await page.goto('/')
   await expect(page.getByText('Welcome Back!', { exact: true })).toBeVisible({ timeout: 45_000 })
   await page.locator('input[placeholder="your@email.com"]').fill(email)
@@ -29,13 +28,13 @@ async function capture(page: Page, name: string) {
 }
 
 test('capture existing staging creator experience without submitting changes', async ({ page }) => {
-  await signIn(page, creatorEmail, creatorPassword, 'Task Creator Dashboard')
+  test.skip(!creatorEmail || !creatorPassword, 'Creator credentials are available only in the DFY-FE workflow')
+  await signIn(page, creatorEmail!, creatorPassword!, 'Task Creator Dashboard')
   await capture(page, 'dfy-mobile-creator-dashboard.png')
 
   const postedTasks = page.getByText('My Posted Tasks', { exact: true })
   if (await postedTasks.count()) {
     await postedTasks.first().click()
-    await expect(page.getByText(/posted tasks/i).first()).toBeVisible({ timeout: 30_000 }).catch(() => {})
     await capture(page, 'dfy-mobile-creator-posted-tasks.png')
   }
 
@@ -43,19 +42,18 @@ test('capture existing staging creator experience without submitting changes', a
   const postAction = page.getByText('Post', { exact: true })
   if (await postAction.count()) {
     await postAction.first().click()
-    await expect(page.getByText(/post.*task|task details|create task/i).first()).toBeVisible({ timeout: 30_000 }).catch(() => {})
     await capture(page, 'dfy-mobile-creator-post-task.png')
   }
 })
 
 test('capture existing staging runner experience without claiming tasks', async ({ page }) => {
-  await signIn(page, runnerEmail, runnerPassword, 'Task Runner Dashboard')
+  test.skip(!runnerEmail || !runnerPassword, 'Runner credentials are available only in the DFY-FE workflow')
+  await signIn(page, runnerEmail!, runnerPassword!, 'Task Runner Dashboard')
   await capture(page, 'dfy-mobile-runner-dashboard.png')
 
   const browse = page.getByText('Browse', { exact: true })
   if (await browse.count()) {
     await browse.first().click()
-    await expect(page.getByText(/available tasks|browse tasks|find tasks/i).first()).toBeVisible({ timeout: 30_000 }).catch(() => {})
     await capture(page, 'dfy-mobile-runner-browse-tasks.png')
   }
 
