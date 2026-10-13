@@ -149,8 +149,6 @@ export default function ProfileScreen({ navigation }: any) {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-
         <TouchableOpacity style={styles.actionRequiredLink} onPress={() => navigation.navigate('ActionRequired')} accessibilityRole="button"><Text style={styles.actionRequiredTitle}>Action required</Text><Text style={styles.accountLinkSub}>Payments and completion reviews waiting for you</Text></TouchableOpacity>
       </View>
 
