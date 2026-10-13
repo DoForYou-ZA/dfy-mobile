@@ -21,14 +21,12 @@ import BankAccountsScreen from '../screens/user/BankAccountsScreen'
 import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
 import MessagesHubScreen from '../screens/MessagesHubScreen'
-import MessagesHubScreen from '../screens/MessagesHubScreen'
 
 const Stack = createNativeStackNavigator()
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
   const { unreadCount } = useNotifications()
-  const { logout } = useAuth()
   const { logout } = useAuth()
   const insets = useSafeAreaInsets()
 
