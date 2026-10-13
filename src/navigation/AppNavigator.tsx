@@ -22,6 +22,7 @@ import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
 import MessagesHubScreen from '../screens/MessagesHubScreen'
 import AccountToolsScreen from '../screens/AccountToolsScreen'
+import ActionRequiredScreen from '../screens/ActionRequiredScreen'
 
 const Stack = createNativeStackNavigator()
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
@@ -195,6 +196,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 <Stack.Screen name="MessagesHub" component={MessagesHubScreen} />
                 <Stack.Screen name="AccountTools" component={AccountToolsScreen} options={{ headerShown: true, title: 'Your account', ...orangeHeader }} />
+                <Stack.Screen name="ActionRequired" component={ActionRequiredScreen} options={{ headerShown: true, title: 'Action required', ...orangeHeader }} />
                 <Stack.Screen
                   name="TaskChat"
                   component={TaskChatScreen}
