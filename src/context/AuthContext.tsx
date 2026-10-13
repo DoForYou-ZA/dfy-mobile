@@ -152,10 +152,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const refreshUser = useCallback(async () => {
+    try {
+      const response = await authApi.getProfile()
+      const fresh = response.data?.data || response.data
+      if (fresh && typeof fresh === 'object') {
+        const stored = await AsyncStorage.getItem('currentUser')
+        const previous = stored ? JSON.parse(stored) : {}
+        const merged = { ...previous, ...fresh }
+        await AsyncStorage.setItem('currentUser', JSON.stringify(merged))
+        setUser(merged)
+        return
+      }
+    } catch {}
     const stored = await AsyncStorage.getItem('currentUser')
-    if (stored) {
-      try { setUser(JSON.parse(stored)) } catch {}
-    }
+    if (stored) { try { setUser(JSON.parse(stored)) } catch {} }
   }, [])
 
   const isAuthenticated = useCallback(() => {
@@ -175,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isProfileComplete = useCallback(() => {
     if (!user) return false
     const phone = user.contact || user.phoneNumber
+    if (user.profileCompleted === true || (typeof user.profileCompletion === 'number' && user.profileCompletion >= 100)) return true
     return !!(user.firstName && user.lastName && user.email && phone
       && user.userType && user.idNumber && user.address)
   }, [user])
