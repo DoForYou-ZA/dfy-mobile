@@ -1,0 +1,51 @@
+name: Mobile marketing screenshots
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'App.tsx'
+      - 'src/**'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.marketing.config.ts'
+      - 'e2e/marketing-screenshots/**'
+      - '.github/workflows/mobile-marketing-screenshots.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  capture-screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install app dependencies
+        run: npm ci
+      - name: Add Expo Web platform dependencies
+        run: npx expo install react-dom react-native-web
+      - name: Install Playwright
+        run: npm install --no-save @playwright/test
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Capture mobile app screens
+        run: npx playwright test --config=playwright.marketing.config.ts
+      - name: Upload website-ready screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfy-mobile-website-screenshots
+          path: |
+            website-assets/mobile-app/*.png
+            test-results/marketing-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
