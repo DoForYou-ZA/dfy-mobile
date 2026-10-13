@@ -159,7 +159,18 @@ export default function AppNavigator() {
   const navRef = useNavigationContainerRef()
   const [currentRoute, setCurrentRoute] = React.useState('Dashboard')
 
-  if (loading) return null
+  if (loading) {
+    return (
+      <View style={styles.loadingSplash} accessibilityLabel="DoForYou is starting">
+        <View style={styles.loadingSplashMark}>
+          <Text style={styles.loadingSplashMarkText}>D</Text>
+          <View style={styles.brandMarkDot} />
+        </View>
+        <Text style={styles.loadingSplashName}>DoForYou</Text>
+        <Text style={styles.loadingSplashCaption}>HELPING YOUR COMMUNITY MOVE</Text>
+      </View>
+    )
+  }
 
   // Defensive UI guard for old/stale sessions: an admin never enters customer routes.
   if (isAuthenticated() && isAdmin()) {
@@ -213,6 +224,17 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  loadingSplash: {
+    flex: 1, backgroundColor: '#FFF9F2', alignItems: 'center',
+    justifyContent: 'center', paddingHorizontal: 24,
+  },
+  loadingSplashMark: {
+    width: 56, height: 56, borderRadius: 19, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 14, ...SHADOW.primary,
+  },
+  loadingSplashMarkText: { color: COLORS.white, fontSize: 31, fontWeight: '900', marginTop: -2 },
+  loadingSplashName: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', letterSpacing: -0.6 },
+  loadingSplashCaption: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 5 },
   appShell: { flex: 1, backgroundColor: COLORS.background },
   screenBody: { flex: 1, backgroundColor: COLORS.background },
   navbar: {
