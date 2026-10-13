@@ -21,12 +21,14 @@ import BankAccountsScreen from '../screens/user/BankAccountsScreen'
 import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
 import MessagesHubScreen from '../screens/MessagesHubScreen'
+import MessagesHubScreen from '../screens/MessagesHubScreen'
 
 const Stack = createNativeStackNavigator()
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
   const { unreadCount } = useNotifications()
+  const { logout } = useAuth()
   const { logout } = useAuth()
   const insets = useSafeAreaInsets()
 
@@ -51,6 +53,8 @@ function TopNavbar({ navRef }: { navRef: any }) {
           accessibilityRole="button"
           accessibilityLabel="Sign out"
         ><Text style={styles.signOutIcon}>↪</Text></TouchableOpacity>
+        <View style={styles.navActions}>
+        <TouchableOpacity style={styles.accountButton} onPress={() => Alert.alert('Sign out?', 'You will need to sign in again to access your account.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', style: 'destructive', onPress: () => { void logout() } }])} accessibilityRole="button" accessibilityLabel="Sign out"><Text style={styles.signOutIcon}>↪</Text></TouchableOpacity>
         <TouchableOpacity
           style={styles.bellButton}
           onPress={() => navRef.current?.navigate('Notifications' as never)}
@@ -188,6 +192,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="Profile" component={ProfileScreen} />
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 <Stack.Screen name="MessagesHub" component={MessagesHubScreen} />
+                <Stack.Screen name="MessagesHub" component={MessagesHubScreen} />
                 <Stack.Screen
                   name="TaskChat"
                   component={TaskChatScreen}
@@ -228,6 +233,9 @@ const styles = StyleSheet.create({
   brandMarkDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFE4B8', position: 'absolute', right: 7, bottom: 7 },
   brandName: { color: COLORS.textPrimary, fontSize: 17, lineHeight: 21, fontWeight: '900', letterSpacing: -0.4 },
   brandCaption: { color: COLORS.textMuted, fontSize: 7, fontWeight: '800', letterSpacing: 0.7, marginTop: 2 },
+  navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
+  signOutIcon: { color: COLORS.primaryDark, fontSize: 22, fontWeight: '900' },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
   signOutIcon: { color: COLORS.primaryDark, fontSize: 22, fontWeight: '900' },
