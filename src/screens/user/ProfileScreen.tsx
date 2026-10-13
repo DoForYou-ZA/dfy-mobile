@@ -151,6 +151,9 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
       </View>
 
+        <TouchableOpacity style={styles.actionRequiredLink} onPress={() => navigation.navigate('ActionRequired')} accessibilityRole="button"><Text style={styles.actionRequiredTitle}>Action required</Text><Text style={styles.accountLinkSub}>Payments and completion reviews waiting for you</Text></TouchableOpacity>
+      </View>
+
       {/* Tabs */}
       <View style={styles.tabs}>
         {TABS.map(t => (
@@ -228,6 +231,8 @@ const styles = StyleSheet.create({
   accountLinks: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border },
   accountLinksTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '800', marginBottom: 10 },
   accountLinksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  actionRequiredLink: { marginTop: 9, padding: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
+  actionRequiredTitle: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '900' },
   accountLink: { width: '48%', padding: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.borderLight },
   accountLinkTitle: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
   accountLinkSub: { color: COLORS.textSecondary, fontSize: 10, lineHeight: 15, marginTop: 4 },
