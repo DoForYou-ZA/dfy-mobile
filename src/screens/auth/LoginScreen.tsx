@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -168,15 +168,15 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 22 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 28 },
+  scroll: { flexGrow: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 },
   brandMark: {
-    width: 46, height: 46, borderRadius: 16, backgroundColor: COLORS.primary,
+    width: 40, height: 40, borderRadius: 16, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
   },
   brandMarkLetter: { color: COLORS.white, fontSize: 27, fontWeight: '900', marginTop: -2 },
   brandMarkDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFE4B8', position: 'absolute', right: 9, bottom: 8 },
-  brandName: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+  brandName: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
   brandTagline: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 3 },
   hero: { marginBottom: 24, position: 'relative', overflow: 'hidden' },
   heroKicker: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, marginBottom: 13, zIndex: 1 },
