@@ -48,7 +48,7 @@ export default function DashboardScreen({ navigation }: any) {
   const canCreate = canPostErrands()
   const canRun = userType === 'runner' || userType === 'both'
   const firstName = user?.firstName?.trim() || user?.name?.split(' ')[0] || 'there'
-  const profileCompletion = Math.min(100, Math.max(0, Number(user?.profileCompletion ?? (user?.profileCompleted ? 100 : 0))))
+  const profileCompletion = Math.min(100, Math.max(0, Number(user?.profileCompletion ?? (user?.profileCompleted ? 100 : (isProfileIncomplete() ? 0 : 100)))))
 
   const load = useCallback(async () => {
     try {
