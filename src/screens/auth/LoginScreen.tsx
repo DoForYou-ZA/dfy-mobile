@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
 import { COLORS, RADIUS, SHADOW } from '../../config/theme'
@@ -32,6 +33,7 @@ export default function LoginScreen({ navigation }: any) {
   }
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -163,18 +165,20 @@ export default function LoginScreen({ navigation }: any) {
         <Text style={styles.footer}>Small tasks. Stronger communities.</Text>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flexGrow: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 },
   brandMark: {
-    width: 40, height: 40, borderRadius: 16, backgroundColor: COLORS.primary,
+    width: 36, height: 36, borderRadius: 13, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
   },
-  brandMarkLetter: { color: COLORS.white, fontSize: 27, fontWeight: '900', marginTop: -2 },
+  brandMarkLetter: { color: COLORS.white, fontSize: 23, fontWeight: '900', marginTop: -2 },
   brandMarkDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFE4B8', position: 'absolute', right: 9, bottom: 8 },
   brandName: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
   brandTagline: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 3 },
