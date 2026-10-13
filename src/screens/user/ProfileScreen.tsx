@@ -123,7 +123,7 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={[styles.typeBadge, { backgroundColor: form.userType === 'creator' ? '#DBEAFE' : form.userType === 'runner' ? '#D1FAE5' : '#EDE9FE' }]}>
           <Text style={[styles.typeBadgeText, { color: form.userType === 'creator' ? '#1D4ED8' : form.userType === 'runner' ? '#065F46' : '#5B21B6' }]}>{form.userType || 'Not set'}</Text>
         </View>
-        {completion > 0 && (
+        {(
           <View style={styles.completionBar}>
             <View style={styles.completionHeader}>
               <Text style={styles.completionLabel}>Profile Completion</Text>
