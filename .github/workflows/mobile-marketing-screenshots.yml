@@ -38,6 +38,8 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Capture mobile app screens
+        env:
+          EXPO_PUBLIC_DFY_API_URL: http://127.0.0.1:8081/api/v1
         run: npx playwright test --config=playwright.marketing.config.ts
       - name: Upload website-ready screenshots
         if: always()
