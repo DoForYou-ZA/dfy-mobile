@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -20,12 +20,14 @@ import TaskChatScreen from '../screens/tasks/TaskChatScreen'
 import BankAccountsScreen from '../screens/user/BankAccountsScreen'
 import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
+import MessagesHubScreen from '../screens/MessagesHubScreen'
 
 const Stack = createNativeStackNavigator()
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
   const { unreadCount } = useNotifications()
+  const { logout } = useAuth()
   const insets = useSafeAreaInsets()
 
   return (
@@ -41,6 +43,14 @@ function TopNavbar({ navRef }: { navRef: any }) {
             <Text style={styles.brandCaption}>EVERYDAY HELP, MADE EASIER</Text>
           </View>
         </View>
+        <View style={styles.navActions}>
+        <TouchableOpacity
+          style={styles.accountButton}
+          onPress={() => Alert.alert('Sign out?', 'You will need to sign in again to access your account.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', style: 'destructive', onPress: () => { void logout() } }])}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+        ><Text style={styles.signOutIcon}>↪</Text></TouchableOpacity>
         <TouchableOpacity
           style={styles.bellButton}
           onPress={() => navRef.current?.navigate('Notifications' as never)}
@@ -55,6 +65,7 @@ function TopNavbar({ navRef }: { navRef: any }) {
             </View>
           )}
         </TouchableOpacity>
+        </View>
       </View>
     </View>
   )
@@ -109,7 +120,7 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
           {canPost ? 'Post task' : 'My tasks'}
         </Text>
       </TouchableOpacity>
-      {item('Notifications', '◉', 'Alerts')}
+      {item('MessagesHub', '✉', 'Messages')}
       {item('Profile', '○', 'Profile')}
     </View>
   )
@@ -176,6 +187,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                <Stack.Screen name="MessagesHub" component={MessagesHubScreen} />
                 <Stack.Screen
                   name="TaskChat"
                   component={TaskChatScreen}
@@ -216,6 +228,9 @@ const styles = StyleSheet.create({
   brandMarkDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFE4B8', position: 'absolute', right: 7, bottom: 7 },
   brandName: { color: COLORS.textPrimary, fontSize: 17, lineHeight: 21, fontWeight: '900', letterSpacing: -0.4 },
   brandCaption: { color: COLORS.textMuted, fontSize: 7, fontWeight: '800', letterSpacing: 0.7, marginTop: 2 },
+  navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
+  signOutIcon: { color: COLORS.primaryDark, fontSize: 22, fontWeight: '900' },
   bellButton: {
     position: 'relative', width: 42, height: 42, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
