@@ -7,7 +7,7 @@ fs.mkdirSync(outputDir, { recursive: true })
 
 test('capture sign-in and registration screens for website use', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('Welcome Back!', { exact: true })).toBeVisible({ timeout: 45_000 })
+  await expect(page.getByText('Welcome back', { exact: true })).toBeVisible({ timeout: 45_000 })
 
   // These are real app screens rendered through Expo Web at a phone viewport.
   // They are suitable for marketing previews, but are not native Android emulator captures.
@@ -17,8 +17,8 @@ test('capture sign-in and registration screens for website use', async ({ page }
     animations: 'disabled',
   })
 
-  await page.getByText('Sign Up', { exact: true }).click()
-  await expect(page.getByText('Join DoForYou', { exact: true })).toBeVisible()
+  await page.getByText('Create an account', { exact: true }).click()
+  await expect(page.getByText('Create Account', { exact: true })).toBeVisible()
 
   await page.screenshot({
     path: path.join(outputDir, 'dfy-mobile-registration.png'),
