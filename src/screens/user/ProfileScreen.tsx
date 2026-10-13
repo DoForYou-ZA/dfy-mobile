@@ -134,6 +134,23 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
       </View>
 
+      <View style={styles.accountLinks}>
+        <Text style={styles.accountLinksTitle}>Your account tools</Text>
+        <View style={styles.accountLinksGrid}>
+          {[
+            { title: 'Payment history', subtitle: 'Payments and status', kind: 'payments' },
+            { title: 'My disputes', subtitle: 'Track raised disputes', kind: 'disputes' },
+            { title: 'Help & support', subtitle: 'Contact the support team', kind: 'support' },
+            { title: 'Activity', subtitle: 'Recent task updates', kind: 'activity' },
+          ].map(item => (
+            <TouchableOpacity key={item.kind} style={styles.accountLink} onPress={() => navigation.navigate('AccountTools', { kind: item.kind })} accessibilityRole="button">
+              <Text style={styles.accountLinkTitle}>{item.title}</Text>
+              <Text style={styles.accountLinkSub}>{item.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
       {/* Tabs */}
       <View style={styles.tabs}>
         {TABS.map(t => (
@@ -208,6 +225,12 @@ export default function ProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: SPACING.md, paddingBottom: 40, gap: 16 },
+  accountLinks: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border },
+  accountLinksTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '800', marginBottom: 10 },
+  accountLinksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  accountLink: { width: '48%', padding: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.borderLight },
+  accountLinkTitle: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
+  accountLinkSub: { color: COLORS.textSecondary, fontSize: 10, lineHeight: 15, marginTop: 4 },
   profileCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: SPACING.lg, alignItems: 'center', ...SHADOW.sm },
   avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   avatarText: { fontSize: 28, fontWeight: '800', color: COLORS.white },
