@@ -75,19 +75,18 @@ export default function RegisterScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Join DoForYou</Text>
-          <Text style={styles.panelSub}>Connect with your community through tasks and services</Text>
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📋</Text>
-              <Text style={styles.featureLabel}>Post Tasks</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🤝</Text>
-              <Text style={styles.featureLabel}>Earn Money</Text>
-            </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 28 }}>
+          <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.primary }}>
+            <Text style={{ color: COLORS.white, fontSize: 27, fontWeight: '900' }}>D</Text>
           </View>
+          <View>
+            <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: '900' }}>DoForYou</Text>
+            <Text style={{ color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1, marginTop: 3 }}>HELPING YOUR COMMUNITY MOVE</Text>
+          </View>
+        </View>
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Join your community.</Text>
+          <Text style={styles.panelSub}>Create one account to post tasks, find work, and get things moving.</Text>
         </View>
 
         <View style={styles.formCard}>
@@ -198,44 +197,44 @@ export default function RegisterScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.primary },
-  scroll: { flexGrow: 1 },
-  panel: { backgroundColor: COLORS.primary, padding: SPACING.lg, paddingTop: 60, paddingBottom: 40, alignItems: 'center' },
-  panelTitle: { fontSize: 28, fontWeight: '300', color: COLORS.white, marginBottom: 8, textAlign: 'center' },
-  panelSub: { fontSize: 14, color: 'rgba(255,255,255,0.9)', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  features: { flexDirection: 'row', gap: 16 },
-  featureItem: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: RADIUS.lg, padding: 16, minWidth: 80, gap: 6 },
-  featureIcon: { fontSize: 24 },
-  featureLabel: { fontSize: 13, fontWeight: '500', color: COLORS.white },
-  formCard: { backgroundColor: COLORS.white, borderRadius: 32, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, padding: SPACING.lg, paddingTop: 28, flex: 1, marginTop: -20, ...SHADOW.lg },
-  formTitle: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 26 },
+  panel: { backgroundColor: 'transparent', paddingVertical: 0, marginBottom: 22, alignItems: 'flex-start' },
+  panelTitle: { fontSize: 31, lineHeight: 36, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 7, letterSpacing: -0.8 },
+  panelSub: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 21, marginBottom: 0 },
+  features: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  featureItem: { alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, minWidth: 80, gap: 6, borderWidth: 1, borderColor: COLORS.border },
+  featureIcon: { fontSize: 22, color: COLORS.primaryDark },
+  featureLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  formCard: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 25, padding: 20, ...SHADOW.md },
+  formTitle: { fontSize: 23, fontWeight: '900', color: COLORS.textPrimary, marginBottom: SPACING.md, letterSpacing: -0.4 },
   stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
   stepItem: { flex: 1, alignItems: 'center', position: 'relative' },
-  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  stepCircle: { width: 30, height: 30, borderRadius: 12, backgroundColor: COLORS.backgroundDark, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
   stepActive: { backgroundColor: COLORS.primary },
   stepDone: { backgroundColor: COLORS.success },
   stepNum: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   stepNumActive: { color: COLORS.white },
   stepLabel: { fontSize: 10, color: COLORS.textMuted, textAlign: 'center' },
-  stepLabelActive: { color: COLORS.primary, fontWeight: '600' },
+  stepLabelActive: { color: COLORS.primaryDark, fontWeight: '800' },
   stepLine: { position: 'absolute', top: 14, left: '60%', right: '-40%', height: 2, backgroundColor: COLORS.border },
   stepLineDone: { backgroundColor: COLORS.success },
-  errorBanner: { backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FECACA', borderRadius: RADIUS.md, padding: 12, marginBottom: 16 },
-  errorText: { color: '#991B1B', fontSize: 13 },
+  errorBanner: { backgroundColor: '#FFF0EE', borderWidth: 1, borderColor: '#F8D2CE', borderRadius: RADIUS.md, padding: 12, marginBottom: 16 },
+  errorText: { color: '#AD2922', fontSize: 13, lineHeight: 18 },
   row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 14, fontWeight: '500', color: COLORS.textPrimary, marginBottom: 6 },
+  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 7 },
   hint: { fontSize: 12, color: COLORS.textSecondary },
-  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, fontSize: 15, color: COLORS.textPrimary, backgroundColor: COLORS.white },
-  roleCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14 },
+  input: { minHeight: 49, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 13, paddingVertical: 11, fontSize: 14, color: COLORS.textPrimary, backgroundColor: '#FFFEFC' },
+  roleCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14 },
   roleCardSelected: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
   roleIcon: { fontSize: 24 },
   roleLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
-  roleLabelSelected: { color: COLORS.primary },
+  roleLabelSelected: { color: COLORS.primaryDark },
   roleDesc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   navRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: { padding: 12, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md },
+  eyeBtn: { paddingHorizontal: 13, paddingVertical: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.background },
   switchRow: { marginTop: SPACING.lg, alignItems: 'center' },
   switchText: { fontSize: 14, color: COLORS.textSecondary },
-  switchLink: { color: COLORS.primary, fontWeight: '600' },
+  switchLink: { color: COLORS.primaryDark, fontWeight: '800' },
 })

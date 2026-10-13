@@ -2,6 +2,14 @@
 
 Expo / React Native client for the DoForYou South African task marketplace. The backend remains authoritative for task status, payment verification, escrow, disputes, bank verification, and payouts.
 
+## Mobile app scope and design
+
+DFY Mobile is the customer app for task creators and runners. It provides a role-aware home screen, task discovery and posting, task progress, notifications, chat, profile and bank-account setup. The interface uses a lighter warm-neutral canvas with DoForYou orange accents and mobile-first actions rather than copying the web dashboard layout.
+
+**Admin access is web-only.** Accounts identified as administrators are blocked from signing in to DFY Mobile, stale admin sessions are cleared, and the app contains no admin dashboard or moderation routes. Use the DFY web admin console for administration, moderation and platform operations.
+
+The mobile UI does not own task, payment, escrow, dispute, bank-verification or payout rules. Those remain authoritative in DFY-BE, including the creator's 24-hour completion-confirmation window and provider-confirmed payout state.
+
 ## Requirements
 
 - Node.js 22
@@ -37,7 +45,7 @@ npm run typecheck
 npx expo export --platform android
 ```
 
-GitHub Actions runs the TypeScript check and Android JavaScript bundle export. The bundle export is not a signed APK or a substitute for installing the app on a device.
+GitHub Actions runs the TypeScript check, Android JavaScript bundle export, and a standalone arm64-v8a release APK build using the staging API and SignalR URLs. The APK is an installable staging build, not a Play Store-signed production release; device-level login and task-flow smoke tests are still required.
 
 ## Payment and task-state rules
 

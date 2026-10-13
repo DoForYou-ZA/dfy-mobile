@@ -23,6 +23,81 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: TypeScript check
-        run: npm run typecheck
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee typecheck.log
       - name: Export Android JavaScript bundle
-        run: npx expo export --platform android
+        run: |
+          set -o pipefail
+          npx expo export --platform android 2>&1 | tee expo-export.log
+      - name: Upload CI diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfy-mobile-ci-diagnostics
+          path: |
+            typecheck.log
+            expo-export.log
+          if-no-files-found: ignore
+
+  android-release-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Expo public variables are embedded in the client bundle at build time.
+    # Keep these staging URLs here so the installed APK targets the staging API.
+    env:
+      EXPO_PUBLIC_DFY_API_URL: https://dfy-be-staging.onrender.com/api/v1
+      EXPO_PUBLIC_DFY_SIGNALR_URL: https://dfy-be-staging.onrender.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Show runner disk space before build
+        run: df -h
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Configure Gradle and cache dependencies
+        uses: gradle/actions/setup-gradle@v4
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Android platform and build tools
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - name: Generate native Android project
+        run: CI=1 npx expo prebuild --platform android --no-install
+      - name: Limit native build to 64-bit ARM devices
+        run: |
+          sed -i '/^reactNativeArchitectures=/d' android/gradle.properties
+          echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
+          grep '^reactNativeArchitectures=' android/gradle.properties
+          df -h
+      - name: Build standalone release APK (embeds JavaScript; no Metro required)
+        working-directory: android
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee ../android-build.log
+      - name: Show runner disk space after build
+        if: always()
+        run: df -h
+      - name: Upload Android build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfy-mobile-android-build-diagnostics
+          path: android-build.log
+          if-no-files-found: ignore
+      - name: Upload standalone release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfy-mobile-android-release
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

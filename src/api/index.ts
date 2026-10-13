@@ -38,7 +38,6 @@ export const tasksApi = {
   getRecentActivity: (limit = 5) => api.get(`/tasks/dashboard/activity?limit=${limit}`),
   getPaymentHistory: () => api.get('/tasks/payment-history'),
   getPaymentUrl: (id: string) => api.get(`/tasks/${id}/payment-url`),
-  initiatePayment: (taskId: string) => api.post('/payment/initiate', { taskId }),
   getFilters: () => api.get('/tasks/filters'),
 }
 
@@ -86,26 +85,4 @@ export const categoryApi = { getAll: () => api.get('/categories') }
 export const userPreferencesApi = {
   get: () => api.get('/user/preferences'),
   update: (data: object) => api.put('/user/preferences', data),
-}
-
-export const adminApi = {
-  getDashboard: () => api.get('/admin/dashboard'),
-  getPayments: () => api.get('/admin/payments'),
-  getTasks: (params?: object) => api.get('/admin/tasks', { params }),
-  verifyPayment: (id: string, reason: string) => api.patch(`/admin/tasks/${id}/verify`, { reason }),
-  unverifyPayment: (id: string, reason: string) => api.patch(`/admin/tasks/${id}/unverify`, { reason }),
-  bulkVerify: (ids: string[], reason: string) => api.patch('/admin/tasks/bulk-verify', { taskIds: ids, reason }),
-  forceReleaseEscrow: (id: string, reason: string) => api.patch(`/admin/tasks/${id}/force-release-escrow`, { reason }),
-  getUsers: (params?: object) => api.get('/admin/users', { params }),
-  updateUserStatus: (id: number, isVerified: boolean, reason: string) => api.patch(`/admin/users/${id}/status`, { isVerified, reason }),
-  updateUserRole: (id: number, role: string, reason: string) => api.patch(`/admin/users/${id}/role`, { role, reason }),
-  getUserTaskHistory: (id: number) => api.get(`/admin/users/${id}/tasks`),
-  getAuditLogs: (page = 1, pageSize = 20) => api.get(`/admin/audit-logs?page=${page}&pageSize=${pageSize}`),
-  getBankAccounts: (unverifiedOnly?: boolean) => api.get('/admin/bank-accounts', { params: { unverifiedOnly } }),
-  verifyBankAccount: (id: number) => api.patch(`/admin/bank-accounts/${id}/verify`, {}),
-  getDisputes: (params?: object) => api.get('/disputes', { params }),
-  resolveDispute: (id: number, resolution: string, action: string, reason: string) => api.patch(`/disputes/${id}/resolve`, { resolution, action, reason }),
-  deleteTask: (taskId: string) => api.delete(`/admin/tasks/${taskId}`),
-  deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
-  getTaskMessages: (taskId: string) => api.get(`/admin/tasks/${taskId}/messages`),
 }
