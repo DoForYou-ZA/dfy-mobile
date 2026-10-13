@@ -47,6 +47,12 @@ export const bankingApi = {
   addBankAccount: (data: object) => api.post('/banking/accounts', data),
   verifyBankAccount: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
   setDefaultPayoutAccount: (id: number) => api.put(`/banking/bank-accounts/${id}/default`, {}),
+  retryVerification: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
+  removeBankAccount: (id: number) => api.delete(`/banking/bank-accounts/${id}`),
+}
+
+export const messagesApi = {
+  getConversations: () => api.get('/messages/conversations'),
 }
 
 export const supportApi = {
