@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView, Alert
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { authApi } from '../../api'
 import Button from '../../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
@@ -70,14 +71,15 @@ export default function RegisterScreen({ navigation }: any) {
   ]
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 }}>
-          <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.primary }}>
-            <Text style={{ color: COLORS.white, fontSize: 27, fontWeight: '900' }}>D</Text>
+          <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.primary }}>
+            <Text style={{ color: COLORS.white, fontSize: 23, fontWeight: '900' }}>D</Text>
           </View>
           <View>
             <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: '900' }}>DoForYou</Text>
@@ -193,10 +195,12 @@ export default function RegisterScreen({ navigation }: any) {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flexGrow: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
   panel: { backgroundColor: 'transparent', paddingVertical: 0, marginBottom: 12, alignItems: 'flex-start' },
