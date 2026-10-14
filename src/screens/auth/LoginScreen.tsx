@@ -53,11 +53,7 @@ export default function LoginScreen({ navigation }: any) {
         </View>
 
         <View style={styles.hero}>
-          <View style={styles.heroKicker}>
-            <View style={styles.liveDot} />
-            <Text style={styles.heroKickerText}>LOCAL HELP. REAL OPPORTUNITY.</Text>
-          </View>
-          <Text style={styles.heroTitle}>Good things happen when we help.</Text>
+                    <Text style={styles.heroTitle}>Good things happen when we help.</Text>
           <Text style={styles.heroSubtitle}>
             Find a helping hand, offer your skills, and get everyday things moving.
           </Text>
@@ -158,11 +154,8 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 },
     brandName: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
-  brandTagline: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 3 },
+  brandTagline: { color: COLORS.textSecondary, fontSize: 8, fontWeight: '800', letterSpacing: 0.8, marginTop: 3 },
   hero: { marginBottom: 12, position: 'relative', overflow: 'hidden' },
-  heroKicker: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, marginBottom: 7, zIndex: 1 },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.success },
-  heroKickerText: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: COLORS.secondary },
   heroTitle: {
     color: COLORS.textPrimary, fontSize: 27, lineHeight: 31, fontWeight: '900',
     letterSpacing: -0.7, marginBottom: 6, maxWidth: 390, zIndex: 1,
