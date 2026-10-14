@@ -42,7 +42,7 @@ export default function RegisterScreen({ navigation }: any) {
     setForm(f => ({ ...f, idNumber: val, dateOfBirth: extractDobFromId(val) }))
 
   const canNext = () => {
-    if (step === 1) return !!(form.firstName.trim() && form.lastName.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.phoneNumber.replace(/\D/g, '').length === 10)
+    if (step === 1) return !!(form.firstName.trim() && form.lastName.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && isValidSouthAfricanMobile(form.phoneNumber))
     if (step === 2) return !!(form.userType && /^\d{13}$/.test(form.idNumber) && form.address.trim())
     return false
   }
@@ -145,7 +145,7 @@ export default function RegisterScreen({ navigation }: any) {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Phone number (South Africa) *</Text>
                 <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="e.g. 081 234 5678 or +27 81 234 5678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" maxLength={16} />
-                {!!form.phoneNumber && form.phoneNumber.replace(/\D/g, '').length !== 10 && <Text style={styles.validationHint}>Enter a 10-digit South African mobile number.</Text>}
+                {!!form.phoneNumber && !isValidSouthAfricanMobile(form.phoneNumber) && <Text style={styles.validationHint}>Enter a valid SA mobile number, starting with 06–08 or +27.</Text>}
               </View>
               <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={styles.stepPrimaryAction} />
             </View>
