@@ -305,6 +305,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 placeholderTextColor={COLORS.textMuted}
                 multiline
                 numberOfLines={4}
+                maxLength={500}
                 textAlignVertical="top"
               />
               <Text style={styles.hint}>Be specific — the more details, the better matches! Use 20–500 characters. {form.taskDescription.trim().length}/500</Text>
@@ -415,10 +416,15 @@ export default function PostErrandScreen({ navigation, route }: any) {
                   <Text style={styles.breakdownLabel}>DFY platform fee (15%):</Text>
                   <Text style={[styles.breakdownValue, { color: COLORS.danger }]}>-R{commission.commission.toFixed(2)}</Text>
                 </View>
-                <View style={[styles.breakdownRow, styles.breakdownTotal]}>
-                  <Text style={[styles.breakdownLabel, { fontWeight: '700' }]}>Runner Receives:</Text>
-                  <Text style={[styles.breakdownValue, { color: COLORS.primary, fontWeight: '700' }]}>R{commission.payout.toFixed(2)}</Text>
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownLabel}>Runner payout:</Text>
+                  <Text style={[styles.breakdownValue, { color: COLORS.primary }]}>R{commission.payout.toFixed(2)}</Text>
                 </View>
+                <View style={[styles.breakdownRow, styles.breakdownTotal]}>
+                  <Text style={[styles.breakdownLabel, { fontWeight: '700' }]}>You pay:</Text>
+                  <Text style={[styles.breakdownValue, { fontWeight: '700' }]}>R{commission.total.toFixed(2)}</Text>
+                </View>
+                <Text style={styles.hint}>The DFY fee is deducted from the task budget. No separate platform fee is added at checkout.</Text>
               </View>
             )}
 
