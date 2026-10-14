@@ -224,7 +224,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
   useEffect(() => {
     if (!pendingScrollField) return
     const position = fieldPositions.current[pendingScrollField]
-    if (position != null) scrollRef.current?.scrollTo({ y: Math.max(position - 24, 0), animated: true })
+    if (position != null) scrollRef.current?.scrollTo({ y: Math.max(position + 240, 0), animated: true })
     setPendingScrollField('')
   }, [step, pendingScrollField])
 
@@ -237,7 +237,6 @@ export default function PostErrandScreen({ navigation, route }: any) {
     setForm(f => ({ ...f, [field]: val }))
     if (touched[field]) {
       const updated = { ...form, [field]: val }
-      const oldForm = form
       // Validate the edited field immediately after it has been touched.
       const amount = Number(updated.budget)
       const date = updated.dateNeeded ? new Date(updated.dateNeeded) : null
@@ -409,7 +408,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 placeholder="e.g. Car Wash Vereeniging, Grocery Run Sandton"
                 placeholderTextColor={COLORS.textMuted}
                 maxLength={60}
-                onBlur={() => { setTouched(current => ({ ...current, taskName: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                onBlur={() => { setTouched(current => ({ ...current, taskName: true })); setFieldErrors(validateForm()) }}
                 style={[styles.input, isFieldInvalid('taskName') && styles.inputInvalid]}
               />
               <Text style={styles.charCount}>{form.taskName.length}/60</Text>
@@ -419,7 +418,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
             <View onLayout={event => { fieldPositions.current.taskDescription = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Describe your task *</Text>
               <TextInput
-                style={[styles.input, styles.textarea]}
+                style={[styles.input, styles.textarea, isFieldInvalid('taskDescription') && styles.inputInvalid]}
                 value={form.taskDescription}
                 onChangeText={set('taskDescription')}
                 placeholder="Tell us what you need help with..."
@@ -428,8 +427,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 numberOfLines={4}
                 maxLength={500}
                 textAlignVertical="top"
-                onBlur={() => { setTouched(current => ({ ...current, taskDescription: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
-                style={[styles.input, styles.textarea, isFieldInvalid('taskDescription') && styles.inputInvalid]}
+                onBlur={() => { setTouched(current => ({ ...current, taskDescription: true })); setFieldErrors(validateForm()) }}
               />
               <Text style={styles.hint}>Be specific — the more details, the better matches! Use 20–500 characters. {form.taskDescription.trim().length}/500</Text>
               {fieldHint('taskDescription')}
@@ -443,7 +441,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                     <TouchableOpacity
                       key={c}
                       style={[styles.catChip, form.category === c && styles.catChipActive]}
-                      onPress={() => { set('category')(c); setTouched(current => ({ ...current, category: true, customCategory: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                      onPress={() => { set('category')(c); setTouched(current => ({ ...current, category: true, customCategory: true })); setFieldErrors(validateForm()) }}
                     >
                       <Text style={[styles.catChipText, form.category === c && styles.catChipTextActive]}>{c}</Text>
                     </TouchableOpacity>
@@ -452,14 +450,13 @@ export default function PostErrandScreen({ navigation, route }: any) {
               </ScrollView>
               {form.category === 'Other' && (
                 <TextInput
-                  style={[styles.input, { marginTop: 10 }]}
+                  style={[styles.input, { marginTop: 10 }, isFieldInvalid('customCategory') && styles.inputInvalid]}
                   value={form.customCategory}
                   onChangeText={set('customCategory')}
                   placeholder="Enter custom category..."
                   placeholderTextColor={COLORS.textMuted}
                   maxLength={80}
-                  onBlur={() => { setTouched(current => ({ ...current, customCategory: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
-                  style={[styles.input, { marginTop: 10 }, isFieldInvalid('customCategory') && styles.inputInvalid]}
+                  onBlur={() => { setTouched(current => ({ ...current, customCategory: true })); setFieldErrors(validateForm()) }}
                 />
               )}
               {fieldHint(form.category === 'Other' ? 'customCategory' : 'category')}
@@ -526,14 +523,13 @@ export default function PostErrandScreen({ navigation, route }: any) {
                   <Text style={styles.currencyText}>R</Text>
                 </View>
                 <TextInput
-                  style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }]}
+                  style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }, isFieldInvalid('budget') && styles.inputInvalid]}
                   value={form.budget}
                   onChangeText={set('budget')}
                   placeholder="100.00"
                   placeholderTextColor={COLORS.textMuted}
                   keyboardType="decimal-pad"
                   onBlur={() => { setTouched(current => ({ ...current, budget: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
-                  style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }, isFieldInvalid('budget') && styles.inputInvalid]}
                 />
               </View>
               {fieldHint('budget')}
