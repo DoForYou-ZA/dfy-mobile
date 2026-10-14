@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import * as Linking from 'expo-linking'
 import {
   View, Text, ScrollView, TextInput, StyleSheet, Modal,
   TouchableOpacity, Alert, Switch
@@ -213,7 +212,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
           // Use an auth session so the Paystack callback can deep-link back into
           // the installed app and close the browser. A redirect is not proof of payment:
           // the backend webhook and task API remain authoritative.
-          const returnUrl = Linking.createURL('payment-return')
+          const returnUrl = 'doforyou://payment-return'
           const checkoutResult = await WebBrowser.openAuthSessionAsync(payUrl, returnUrl)
           navigation.navigate('MyPostedTasks')
           if (checkoutResult.type === 'success') {
