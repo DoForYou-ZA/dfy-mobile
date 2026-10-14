@@ -7,9 +7,8 @@
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "imageWidth": 180,
+      "image": "./assets/splash-cream.png",
+      "resizeMode": "cover",
       "backgroundColor": "#FFF9F2"
     },
     "ios": {
@@ -25,9 +24,8 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.chrismokolare.dfymobile",
       "splash": {
-        "image": "./assets/icon.png",
-        "resizeMode": "contain",
-        "imageWidth": 180,
+        "image": "./assets/splash-cream.png",
+        "resizeMode": "cover",
         "backgroundColor": "#FFF9F2"
       }
     },
@@ -43,9 +41,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icon.png",
-          "imageWidth": 180,
-          "resizeMode": "contain",
+          "image": "./assets/splash-cream.png",
+          "resizeMode": "cover",
           "backgroundColor": "#FFF9F2",
           "dark": {
             "backgroundColor": "#FFF9F2"

@@ -26,7 +26,25 @@ import MessagesHubScreen from '../screens/MessagesHubScreen'
 import AccountToolsScreen from '../screens/AccountToolsScreen'
 import ActionRequiredScreen from '../screens/ActionRequiredScreen'
 
-const Stack = createNativeStackNavigator()
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Dashboard: undefined
+  BrowseErrands: undefined
+  PostErrand: { editId?: string } | undefined
+  MyPostedTasks: undefined
+  MyActiveTasks: undefined
+  MyCompletedTasks: undefined
+  BankAccounts: undefined
+  Profile: undefined
+  Notifications: undefined
+  MessagesHub: undefined
+  AccountTools: { kind?: string } | undefined
+  ActionRequired: undefined
+  TaskChat: { taskId: string; title?: string }
+}
+
+const Stack = createNativeStackNavigator<RootStackParamList>()
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
@@ -57,7 +75,7 @@ function TopNavbar({ navRef }: { navRef: any }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.bellButton}
-            onPress={() => navRef.current?.navigate('Notifications' as never)}
+            onPress={() => navRef.current?.navigate('Notifications')}
             activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
@@ -161,7 +179,7 @@ function AdminMobileNotice({ onSignOut }: { onSignOut: () => void }) {
 
 export default function AppNavigator() {
   const { isAuthenticated, isAdmin, logout, loading } = useAuth()
-  const navRef = useNavigationContainerRef()
+  const navRef = useNavigationContainerRef<RootStackParamList>()
   const [currentRoute, setCurrentRoute] = React.useState('Dashboard')
 
   if (loading) {

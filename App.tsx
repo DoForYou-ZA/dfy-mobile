@@ -26,7 +26,7 @@ function Root() {
   // Mount the branded splash immediately. Keep it visible until its animation,
   // the saved-session check, and font loading have all finished.
   if (splashDone && !loading && fontsReady) return <AppNavigator />
-  return <AnimatedSplash fontsReady={fontsReady} onDone={() => setSplashDone(true)} />
+  return <AnimatedSplash fontsReady={fontsReady} fontError={!!fontError} onDone={() => setSplashDone(true)} />
 }
 
 export default function App() {

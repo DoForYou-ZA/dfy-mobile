@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -12,10 +12,13 @@ import Animated, {
 import * as SplashScreen from 'expo-splash-screen';
 import { colors, fonts } from '../theme';
 
-type Props = { fontsReady: boolean; onDone: () => void };
+// fontError: true only when the font load definitively failed.
+// Never apply the fallback style just because fonts are still loading —
+// that causes a flash from Special Elite → system font → Special Elite
+// on warm launches where the font is already cached.
+type Props = { fontError: boolean; onDone: () => void };
+type AnimatedSplashProps = Props & { fontsReady: boolean };
 
-// Letters D, F, Y each arrive their own way. The dot is drawn (not a font glyph)
-// so it keeps the same size on every phone and can bounce + ripple on its own.
 const LETTERS = [
   { char: 'D', delay: 50, fromX: 0, fromY: -340, fromRot: 0 },
   { char: 'F', delay: 250, fromX: -230, fromY: 0, fromRot: -35 },
@@ -23,14 +26,14 @@ const LETTERS = [
 ];
 
 const TAGLINE = [
-  { text: 'Let’s', delay: 1900 },
+  { text: 'Let\u2019s', delay: 1900 },
   { text: 'get', delay: 2000 },
   { text: 'it', delay: 2100 },
 ];
 
 function Letter({
-  char, delay, fromX, fromY, fromRot, fontsReady,
-}: (typeof LETTERS)[number] & { fontsReady: boolean }) {
+  char, delay, fromX, fromY, fromRot, fontError,
+}: (typeof LETTERS)[number] & { fontError: boolean }) {
   const x = useSharedValue(fromX);
   const y = useSharedValue(fromY);
   const rot = useSharedValue(fromRot);
@@ -63,7 +66,7 @@ function Letter({
   }));
 
   return (
-    <Animated.Text style={[styles.letter, !fontsReady && styles.fallbackLetter, style]}>
+    <Animated.Text style={[styles.letter, fontError && styles.fallbackLetter, style]}>
       {char}
     </Animated.Text>
   );
@@ -99,7 +102,7 @@ function Dot() {
   );
 }
 
-function Word({ text, delay, fontsReady }: { text: string; delay: number; fontsReady: boolean }) {
+function Word({ text, delay, fontError }: { text: string; delay: number; fontError: boolean }) {
   const opacity = useSharedValue(0);
   const y = useSharedValue(14);
 
@@ -113,9 +116,8 @@ function Word({ text, delay, fontsReady }: { text: string; delay: number; fontsR
     transform: [{ translateY: y.value }],
   }));
 
-  // No trailing space: React Native trims it. Spacing comes from `gap` on the row.
   return (
-    <Animated.Text style={[styles.tagline, !fontsReady && styles.fallbackTagline, style]}>
+    <Animated.Text style={[styles.tagline, fontError && styles.fallbackTagline, style]}>
       {text}
     </Animated.Text>
   );
@@ -139,17 +141,12 @@ function Period() {
   return <Animated.Text style={[styles.tagline, styles.period, style]}>.</Animated.Text>;
 }
 
-function MotionSplash({ fontsReady, onDone }: Props) {
+function MotionSplash({ fontError, onDone }: Props) {
   const pulse = useSharedValue(1);
   const onDoneRef = useRef(onDone);
   useEffect(() => { onDoneRef.current = onDone; });
 
   useEffect(() => {
-    // Hide the native splash after the first paint, not during the layout pass.
-    // onLayout fires before the frame is committed on Android new arch, causing
-    // a white gap between the native splash disappearing and React painting cream.
-    SplashScreen.hideAsync();
-
     pulse.value = withDelay(
       1500,
       withSequence(withTiming(1.05, { duration: 200 }), withTiming(1, { duration: 300 })),
@@ -164,18 +161,17 @@ function MotionSplash({ fontsReady, onDone }: Props) {
     <View style={styles.root}>
       <Animated.View style={[styles.row, rowStyle]}>
         {LETTERS.map((l) => (
-          <Letter key={l.char} {...l} fontsReady={fontsReady} />
+          <Letter key={l.char} {...l} fontError={fontError} />
         ))}
         <Dot />
       </Animated.View>
 
       <View style={styles.taglineRow}>
         {TAGLINE.map((w) => (
-          <Word key={w.text} {...w} fontsReady={fontsReady} />
+          <Word key={w.text} {...w} fontError={fontError} />
         ))}
-        {/* "done" + the orange full stop stay together so it reads "done." */}
         <View style={styles.lastWord}>
-          <Word text="done" delay={2200} fontsReady={fontsReady} />
+          <Word text="done" delay={2200} fontError={fontError} />
           <Period />
         </View>
       </View>
@@ -183,31 +179,43 @@ function MotionSplash({ fontsReady, onDone }: Props) {
   );
 }
 
-/** Used when the phone has "reduce motion" turned on: same logo, no movement. */
-function StaticSplash({ fontsReady, onDone }: Props) {
+function StaticSplash({ fontError, onDone }: Props) {
   useEffect(() => {
-    SplashScreen.hideAsync();
     const timer = setTimeout(onDone, 900);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.root}>
-      <Text style={[styles.letter, !fontsReady && styles.fallbackLetter]}>
+      <Text style={[styles.letter, fontError && styles.fallbackLetter]}>
         DFY<Text style={{ color: colors.orange }}>.</Text>
       </Text>
-      <Text style={[styles.tagline, !fontsReady && styles.fallbackTagline, { marginTop: 18 }]}>
-        Let’s get it done<Text style={styles.period}>.</Text>
+      <Text style={[styles.tagline, fontError && styles.fallbackTagline, { marginTop: 18 }]}>
+        Let&apos;s get it done<Text style={styles.period}>.</Text>
       </Text>
     </View>
   );
 }
 
-export default function AnimatedSplash({ fontsReady, onDone }: Props) {
+export default function AnimatedSplash({ fontsReady, fontError, onDone }: AnimatedSplashProps) {
   const reduceMotion = useReducedMotion();
+  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
+
+  useEffect(() => {
+    if (!fontsReady) return;
+    let mounted = true;
+    void SplashScreen.hideAsync().then(() => {
+      if (mounted) setNativeSplashHidden(true);
+    });
+    return () => { mounted = false; };
+  }, [fontsReady]);
+
+  // Keep the native cream screen up until fonts are ready, then reveal only
+  // after the native splash has been dismissed to avoid overlapping logos.
+  if (!fontsReady || !nativeSplashHidden) return <View style={styles.root} />;
   return reduceMotion
-    ? <StaticSplash fontsReady={fontsReady} onDone={onDone} />
-    : <MotionSplash fontsReady={fontsReady} onDone={onDone} />;
+    ? <StaticSplash fontError={fontError} onDone={onDone} />
+    : <MotionSplash fontError={fontError} onDone={onDone} />;
 }
 
 const styles = StyleSheet.create({
@@ -221,7 +229,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end' },
   letter: { fontFamily: fonts.brand, fontSize: 64, letterSpacing: 0, color: colors.text },
   fallbackLetter: { fontFamily: undefined },
-  // Tweak marginBottom if the dot sits too high/low against the letters.
   dotWrap: { width: 12, height: 12, marginLeft: 4, marginBottom: 10 },
   dot: { ...StyleSheet.absoluteFillObject, borderRadius: 6, backgroundColor: colors.orange },
   ring: {

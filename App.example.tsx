@@ -39,7 +39,7 @@ export default function App() {
         // <YourExistingRoot />
         null
       ) : (
-        <AnimatedSplash fontsReady={fontsReady} onDone={() => setSplashDone(true)} />
+        <AnimatedSplash fontsReady={fontsReady} fontError={!!fontError} onDone={() => setSplashDone(true)} />
       )}
     </SafeAreaProvider>
   );

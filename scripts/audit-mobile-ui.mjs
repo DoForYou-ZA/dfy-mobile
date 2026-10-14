@@ -78,28 +78,30 @@ check('Android adaptive icon uses dedicated artwork',
 const splashImage = app.expo?.splash?.image;
 const androidSplashImage = app.expo?.android?.splash?.image;
 check('Splash artwork paths exist',
-  typeof splashImage === 'string' && exists(splashImage.replace(/^\.\//, '')) &&
-  typeof androidSplashImage === 'string' && exists(androidSplashImage.replace(/^\.\//, '')),
-  'Both Expo and Android splash images should resolve to repository assets.');
+  typeof splashImage === 'string' && exists(splashImage.replace(/^\.\//,'')) &&
+  typeof androidSplashImage === 'string' && exists(androidSplashImage.replace(/^\.\//,'')),
+  'Both Expo and Android splash images should resolve to repository assets (plain cream PNG, no logo).');
 const splashPlugin = app.expo?.plugins?.find(
   (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
 );
 check('Native splash uses cream background and brand artwork',
-  splashImage === './assets/icon.png' &&
-  androidSplashImage === './assets/icon.png' &&
-  splashPlugin?.[1]?.image === './assets/icon.png' &&
+  splashImage === './assets/splash-cream.png' &&
+  androidSplashImage === './assets/splash-cream.png' &&
+  splashPlugin?.[1]?.image === './assets/splash-cream.png' &&
   splashPlugin?.[1]?.backgroundColor === '#FFF9F2',
-  'Configure the native splash plugin and both Expo splash targets to show the DFY artwork on cream.');
+  'Native splash must be plain cream only — no logo. The animated React splash provides the DFY reveal.');
 check('Cream splash/adaptive backgrounds configured',
   app.expo?.splash?.backgroundColor === '#FFF9F2' &&
   app.expo?.android?.splash?.backgroundColor === '#FFF9F2' &&
   app.expo?.android?.adaptiveIcon?.backgroundColor === '#FFF9F2',
   'Keep the splash and adaptive icon backgrounds aligned with DFY cream.');
-check('Animated splash mounts while fonts load',
-  !/if\s*\(\s*!fontsLoaded\s*\)\s*return\s+null/.test(appSource) &&
-  /<AnimatedSplash fontsReady=/.test(appSource) &&
+check('Animated splash waits for brand fonts',
+  /<AnimatedSplash fontsReady=\{fontsReady\}/.test(appSource) &&
+  /<AnimatedSplash[^>]*fontError=/.test(appSource) &&
+  /SplashScreen\.hideAsync\(\)/.test(animatedSplash) &&
+  /if\s*\(!fontsReady\s*\|\|\s*!nativeSplashHidden\)\s*return\s+<View style=\{styles\.root\}\s*\/>/.test(animatedSplash) &&
   /fallbackLetter/.test(animatedSplash) && /fallbackTagline/.test(animatedSplash),
-  'Render the branded splash immediately with system-font fallbacks instead of waiting on custom fonts.');
+  'Keep the native cream screen visible while fonts load; start the React splash only with loaded fonts or a real font error.');
 
 const sourceFiles = walk('src');
 const letterPlaceholderMatches = [];
