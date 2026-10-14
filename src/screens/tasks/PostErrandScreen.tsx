@@ -435,7 +435,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                     <TouchableOpacity
                       key={c}
                       style={[styles.catChip, form.category === c && styles.catChipActive]}
-                      onPress={() => { set('category')(c); setTouched(current => ({ ...current, category: true, customCategory: true })); setFieldErrors(validateForm()) }}
+                      onPress={() => { set('category')(c); setTouched(current => ({ ...current, category: true, customCategory: true })); setFieldErrors(current => ({ ...current, category: '', customCategory: c === 'Other' && !form.customCategory.trim() ? 'Enter a custom category.' : '' })) }}
                     >
                       <Text style={[styles.catChipText, form.category === c && styles.catChipTextActive]}>{c}</Text>
                     </TouchableOpacity>
@@ -504,7 +504,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 
             <View onLayout={event => { fieldPositions.current.dateNeeded = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Deadline *</Text>
-              <DateTimePickerField value={form.dateNeeded} onChange={value => { set('dateNeeded')(value); setTouched(current => ({ ...current, dateNeeded: true })); setFieldErrors(validateForm()) }} />
+              <DateTimePickerField value={form.dateNeeded} onChange={value => { set('dateNeeded')(value); setTouched(current => ({ ...current, dateNeeded: true })); const date = value ? new Date(value) : null; const now = new Date(); const message = !date || Number.isNaN(date.getTime()) ? 'Choose a valid deadline.' : date.getTime() <= now.getTime() + 30 * 60 * 1000 ? 'Deadline must be at least 30 minutes from now.' : date.getTime() > now.getTime() + 365 * 24 * 60 * 60 * 1000 ? 'Deadline cannot be more than 365 days away.' : ''; setFieldErrors(current => ({ ...current, dateNeeded: message })) }} />
               {fieldHint('dateNeeded')}
             </View>
 
