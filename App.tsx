@@ -10,28 +10,26 @@ import { NotificationProvider } from './src/context/NotificationContext'
 import AppNavigator from './src/navigation/AppNavigator'
 import AnimatedSplash from './src/components/AnimatedSplash'
 
-// Keep the native splash (plain cream) up until the fonts are ready.
+// Keep the native cream splash up until the React splash has mounted.
 SplashScreen.preventAutoHideAsync()
 
 function Root() {
   const { loading } = useAuth()
   const [splashDone, setSplashDone] = useState(false)
-
-  // The logo stays on screen until BOTH the animation and the saved-session
-  // check have finished, so there is never a blank flash between them.
-  if (splashDone && !loading) return <AppNavigator />
-  return <AnimatedSplash onDone={() => setSplashDone(true)} />
-}
-
-export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     SpecialElite_400Regular,
     Inter_400Regular,
     Inter_500Medium,
   })
+  const fontsReady = fontsLoaded || !!fontError
 
-  if (!fontsLoaded) return null
+  // Mount the branded splash immediately. Keep it visible until its animation,
+  // the saved-session check, and font loading have all finished.
+  if (splashDone && !loading && fontsReady) return <AppNavigator />
+  return <AnimatedSplash fontsReady={fontsReady} onDone={() => setSplashDone(true)} />
+}
 
+export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>

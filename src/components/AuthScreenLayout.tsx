@@ -4,15 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 
 type Props = {
-  children: ReactNode; // top block: header, heading, card
-  footer?: ReactNode; // bottom block: pinned above the safe area
+  children: ReactNode;
+  footer?: ReactNode;
 };
 
 /**
  * Shared layout for the auth screens.
- * - one centred column (same side margins for every element)
- * - content stays at the top, `footer` is pushed to the bottom (no dead space)
- * - still scrolls when the keyboard is open
+ * The screen contents stay together and are vertically centered when they fit.
+ * On shorter screens or with the keyboard open, the column grows and scrolls.
  */
 export default function AuthScreenLayout({ children, footer }: Props) {
   return (
@@ -28,8 +27,7 @@ export default function AuthScreenLayout({ children, footer }: Props) {
         >
           <View style={styles.column}>
             {children}
-            <View style={styles.spacer} />
-            {footer}
+            {footer ? <View style={styles.footer}>{footer}</View> : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -41,6 +39,12 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  column: { flex: 1, width: '100%', maxWidth: 440, alignSelf: 'center' },
-  spacer: { flex: 1, minHeight: 16 },
+  column: {
+    flexGrow: 1,
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  footer: { marginTop: 16 },
 });

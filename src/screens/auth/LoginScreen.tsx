@@ -60,7 +60,7 @@ export default function LoginScreen({ navigation }: any) {
   const footer = (
     <View>
       <Pressable
-        style={({ pressed }) => [styles.button, pressed && !loading && styles.pressed, loading && styles.loading]}
+        style={({ pressed }: { pressed: boolean }) => [styles.button, pressed && !loading && styles.pressed, loading && styles.loading]}
         onPress={handleSignIn}
         disabled={loading}
         accessibilityRole="button"
@@ -99,7 +99,7 @@ export default function LoginScreen({ navigation }: any) {
     <AuthScreenLayout footer={footer}>
       <AuthBrandHeader />
 
-      <Text style={styles.heading}>Good things happen when we help each other.</Text>
+      <Text style={styles.heading}>Help your community thrive.</Text>
       <Text style={styles.subtitle}>
         Find a helping hand, offer your skills, and get everyday things moving.
       </Text>

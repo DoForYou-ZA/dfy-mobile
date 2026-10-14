@@ -31,6 +31,8 @@ const app = JSON.parse(read('app.json') || '{}');
 const login = read('src/screens/auth/LoginScreen.tsx') || '';
 const register = read('src/screens/auth/RegisterScreen.tsx') || '';
 const authLayout = read('src/components/AuthScreenLayout.tsx') || '';
+const appSource = read('App.tsx') || '';
+const animatedSplash = read('src/components/AnimatedSplash.tsx') || '';
 const brand = read('src/components/BrandLogo.tsx') || '';
 const authHeader = read('src/components/AuthBrandHeader.tsx') || '';
 
@@ -46,13 +48,20 @@ check('Registration uses shared auth branding',
 check('Sign-in has password-help action',
   /Forgot password\?/.test(login) && /mailto:/.test(login),
   'Confirm password-help action is present; this is a support email flow, not proof of automated reset.');
+check('Sign-in uses an icon password toggle',
+  /eye-outline/.test(login) && !/revealText/.test(login),
+  'Use an accessible eye icon instead of a low-contrast Show/Hide text control.');
 check('Registration has terms/privacy consent',
-  /acceptedTerms/.test(register) && /Terms & Conditions/.test(register) && /Privacy Policy/.test(register),
+  /TERMS_URL/.test(register) && /Privacy Policy/.test(register) && /Terms/.test(register),
   'Consent must gate account creation and link to terms and privacy information.');
+check('Registration shows South African phone prefix',
+  /prefix=["']\+27["']/.test(register) && /placeholder=["']81 234 5678["']/.test(register),
+  'Show the +27 country prefix and a local-number example separately.');
 check('Auth screens allow content to grow and scroll',
   /AuthScreenLayout/.test(login) && /AuthScreenLayout/.test(register) &&
-  /flexGrow:\s*1/.test(authLayout) && /keyboardShouldPersistTaps="handled"/.test(authLayout),
-  'Both auth screens should use the shared flex-growing, keyboard-friendly layout.');
+  /flexGrow:\s*1/.test(authLayout) && /justifyContent:\s*['"]center['"]/.test(authLayout) &&
+  /keyboardShouldPersistTaps="handled"/.test(authLayout) && !/styles\.spacer/.test(authLayout),
+  'Keep auth content grouped and centered without a large spacer; allow it to scroll for keyboards.');
 check('Non-functional sign-in pills absent',
   !/Post a task|Find work/.test(login),
   'These labels should not be displayed as inert controls on the sign-in screen.');
@@ -62,17 +71,35 @@ check('Launcher icon asset exists',
 check('Android adaptive icon asset exists',
   exists('assets/adaptive-icon.png'),
   'Android adaptiveIcon.foregroundImage must exist.');
+check('Android adaptive icon uses dedicated artwork',
+  exists('assets/icon.png') && exists('assets/adaptive-icon.png') &&
+  !fs.readFileSync(path.join(root, 'assets/icon.png')).equals(fs.readFileSync(path.join(root, 'assets/adaptive-icon.png'))),
+  'The adaptive foreground should be separately padded rather than reusing the full app icon.');
 const splashImage = app.expo?.splash?.image;
 const androidSplashImage = app.expo?.android?.splash?.image;
 check('Splash artwork paths exist',
   typeof splashImage === 'string' && exists(splashImage.replace(/^\.\//, '')) &&
   typeof androidSplashImage === 'string' && exists(androidSplashImage.replace(/^\.\//, '')),
   'Both Expo and Android splash images should resolve to repository assets.');
+const splashPlugin = app.expo?.plugins?.find(
+  (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
+);
+check('Native splash uses cream background and brand artwork',
+  splashImage === './assets/icon.png' &&
+  androidSplashImage === './assets/icon.png' &&
+  splashPlugin?.[1]?.image === './assets/icon.png' &&
+  splashPlugin?.[1]?.backgroundColor === '#FFF9F2',
+  'Configure the native splash plugin and both Expo splash targets to show the DFY artwork on cream.');
 check('Cream splash/adaptive backgrounds configured',
   app.expo?.splash?.backgroundColor === '#FFF9F2' &&
   app.expo?.android?.splash?.backgroundColor === '#FFF9F2' &&
   app.expo?.android?.adaptiveIcon?.backgroundColor === '#FFF9F2',
   'Keep the splash and adaptive icon backgrounds aligned with DFY cream.');
+check('Animated splash mounts while fonts load',
+  !/if\s*\(\s*!fontsLoaded\s*\)\s*return\s+null/.test(appSource) &&
+  /<AnimatedSplash fontsReady=/.test(appSource) &&
+  /fallbackLetter/.test(animatedSplash) && /fallbackTagline/.test(animatedSplash),
+  'Render the branded splash immediately with system-font fallbacks instead of waiting on custom fonts.');
 
 const sourceFiles = walk('src');
 const letterPlaceholderMatches = [];
@@ -86,7 +113,7 @@ check('No obvious standalone D text placeholders',
     'No simple <Text>D</Text> / <Text>D.</Text> placeholder found in src. Review visual logo usage as well.');
 
 warn('Bottom whitespace and vertical balance',
-  'Requires screenshot comparison at small and tall device sizes; flexGrow alone cannot prove the layout looks balanced.');
+  'Verify centered auth content against device screenshots at small and tall viewport sizes.');
 warn('Launcher icon safe-zone and perceived logo size',
   'Inspect a built Android launcher screenshot; static config cannot measure the visual padding inside the PNG.');
 warn('Splash animation and transition timing',

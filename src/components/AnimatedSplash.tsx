@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -12,7 +12,7 @@ import Animated, {
 import * as SplashScreen from 'expo-splash-screen';
 import { colors, fonts } from '../theme';
 
-type Props = { onDone: () => void };
+type Props = { fontsReady: boolean; onDone: () => void };
 
 // Letters D, F, Y each arrive their own way. The dot is drawn (not a font glyph)
 // so it keeps the same size on every phone and can bounce + ripple on its own.
@@ -28,7 +28,9 @@ const TAGLINE = [
   { text: 'it', delay: 2100 },
 ];
 
-function Letter({ char, delay, fromX, fromY, fromRot }: (typeof LETTERS)[number]) {
+function Letter({
+  char, delay, fromX, fromY, fromRot, fontsReady,
+}: (typeof LETTERS)[number] & { fontsReady: boolean }) {
   const x = useSharedValue(fromX);
   const y = useSharedValue(fromY);
   const rot = useSharedValue(fromRot);
@@ -47,18 +49,24 @@ function Letter({ char, delay, fromX, fromY, fromRot }: (typeof LETTERS)[number]
     );
   }, []);
 
+  // transformOrigin is CSS-only and ignored in React Native. Compensate for
+  // the scaleY anchor by translating Y so the bottom edge stays fixed:
+  // offset = (1 - scale) * halfHeight. At fontSize 64, halfHeight ≈ 32.
   const style = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transformOrigin: 'bottom',
     transform: [
       { translateX: x.value },
-      { translateY: y.value },
+      { translateY: y.value + (1 - squash.value) * 32 },
       { rotate: `${rot.value}deg` },
       { scaleY: squash.value },
     ],
   }));
 
-  return <Animated.Text style={[styles.letter, style]}>{char}</Animated.Text>;
+  return (
+    <Animated.Text style={[styles.letter, !fontsReady && styles.fallbackLetter, style]}>
+      {char}
+    </Animated.Text>
+  );
 }
 
 function Dot() {
@@ -91,7 +99,7 @@ function Dot() {
   );
 }
 
-function Word({ text, delay }: { text: string; delay: number }) {
+function Word({ text, delay, fontsReady }: { text: string; delay: number; fontsReady: boolean }) {
   const opacity = useSharedValue(0);
   const y = useSharedValue(14);
 
@@ -106,7 +114,11 @@ function Word({ text, delay }: { text: string; delay: number }) {
   }));
 
   // No trailing space: React Native trims it. Spacing comes from `gap` on the row.
-  return <Animated.Text style={[styles.tagline, style]}>{text}</Animated.Text>;
+  return (
+    <Animated.Text style={[styles.tagline, !fontsReady && styles.fallbackTagline, style]}>
+      {text}
+    </Animated.Text>
+  );
 }
 
 function Period() {
@@ -127,36 +139,43 @@ function Period() {
   return <Animated.Text style={[styles.tagline, styles.period, style]}>.</Animated.Text>;
 }
 
-function MotionSplash({ onDone }: Props) {
+function MotionSplash({ fontsReady, onDone }: Props) {
   const pulse = useSharedValue(1);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; });
 
   useEffect(() => {
+    // Hide the native splash after the first paint, not during the layout pass.
+    // onLayout fires before the frame is committed on Android new arch, causing
+    // a white gap between the native splash disappearing and React painting cream.
+    SplashScreen.hideAsync();
+
     pulse.value = withDelay(
       1500,
       withSequence(withTiming(1.05, { duration: 200 }), withTiming(1, { duration: 300 })),
     );
-    const timer = setTimeout(onDone, 5000);
+    const timer = setTimeout(() => onDoneRef.current(), 7000);
     return () => clearTimeout(timer);
   }, []);
 
   const rowStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   return (
-    <View style={styles.root} onLayout={() => SplashScreen.hideAsync()}>
+    <View style={styles.root}>
       <Animated.View style={[styles.row, rowStyle]}>
         {LETTERS.map((l) => (
-          <Letter key={l.char} {...l} />
+          <Letter key={l.char} {...l} fontsReady={fontsReady} />
         ))}
         <Dot />
       </Animated.View>
 
       <View style={styles.taglineRow}>
         {TAGLINE.map((w) => (
-          <Word key={w.text} {...w} />
+          <Word key={w.text} {...w} fontsReady={fontsReady} />
         ))}
         {/* "done" + the orange full stop stay together so it reads "done." */}
         <View style={styles.lastWord}>
-          <Word text="done" delay={2200} />
+          <Word text="done" delay={2200} fontsReady={fontsReady} />
           <Period />
         </View>
       </View>
@@ -165,27 +184,30 @@ function MotionSplash({ onDone }: Props) {
 }
 
 /** Used when the phone has "reduce motion" turned on: same logo, no movement. */
-function StaticSplash({ onDone }: Props) {
+function StaticSplash({ fontsReady, onDone }: Props) {
   useEffect(() => {
+    SplashScreen.hideAsync();
     const timer = setTimeout(onDone, 900);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View style={styles.root} onLayout={() => SplashScreen.hideAsync()}>
-      <Text style={styles.letter}>
+    <View style={styles.root}>
+      <Text style={[styles.letter, !fontsReady && styles.fallbackLetter]}>
         DFY<Text style={{ color: colors.orange }}>.</Text>
       </Text>
-      <Text style={[styles.tagline, { marginTop: 18 }]}>
+      <Text style={[styles.tagline, !fontsReady && styles.fallbackTagline, { marginTop: 18 }]}>
         Let’s get it done<Text style={styles.period}>.</Text>
       </Text>
     </View>
   );
 }
 
-export default function AnimatedSplash({ onDone }: Props) {
+export default function AnimatedSplash({ fontsReady, onDone }: Props) {
   const reduceMotion = useReducedMotion();
-  return reduceMotion ? <StaticSplash onDone={onDone} /> : <MotionSplash onDone={onDone} />;
+  return reduceMotion
+    ? <StaticSplash fontsReady={fontsReady} onDone={onDone} />
+    : <MotionSplash fontsReady={fontsReady} onDone={onDone} />;
 }
 
 const styles = StyleSheet.create({
@@ -198,6 +220,7 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'flex-end' },
   letter: { fontFamily: fonts.brand, fontSize: 64, letterSpacing: 0, color: colors.text },
+  fallbackLetter: { fontFamily: undefined },
   // Tweak marginBottom if the dot sits too high/low against the letters.
   dotWrap: { width: 12, height: 12, marginLeft: 4, marginBottom: 10 },
   dot: { ...StyleSheet.absoluteFillObject, borderRadius: 6, backgroundColor: colors.orange },
@@ -210,5 +233,6 @@ const styles = StyleSheet.create({
   taglineRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 18 },
   lastWord: { flexDirection: 'row', alignItems: 'baseline' },
   tagline: { fontFamily: fonts.regular, fontSize: 16, color: colors.textSecondary },
+  fallbackTagline: { fontFamily: undefined },
   period: { color: colors.orange },
 });

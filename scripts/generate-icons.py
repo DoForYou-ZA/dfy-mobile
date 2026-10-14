@@ -11,8 +11,6 @@ Download the font from https://fonts.google.com/specimen/Special+Elite
 Writes into ./assets:
     icon.png           1024x1024, opaque cream background (iOS + general icon)
     adaptive-icon.png  1024x1024, transparent, logo kept inside the Android safe zone
-    splash-blank.png   transparent (the native splash is plain cream; the animation
-                       is drawn by AnimatedSplash)
     favicon.png        48x48
 """
 import os
@@ -63,9 +61,8 @@ def main():
     draw_logo(fg, font_path, 0.56)
     fg.save("assets/adaptive-icon.png")
 
-    Image.new("RGBA", (200, 200), (0, 0, 0, 0)).save("assets/splash-blank.png")
     icon.convert("RGB").resize((48, 48), Image.LANCZOS).save("assets/favicon.png")
-    print("Wrote icon.png, adaptive-icon.png, splash-blank.png, favicon.png to ./assets")
+    print("Wrote icon.png, adaptive-icon.png, favicon.png to ./assets")
 
 
 if __name__ == "__main__":

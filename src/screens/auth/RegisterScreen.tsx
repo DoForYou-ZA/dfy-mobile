@@ -205,8 +205,9 @@ export default function RegisterScreen({ navigation }: any) {
 
   return (
     <AuthScreenLayout footer={footer}>
-      <View>
-        <AuthBrandHeader />
+      <AuthBrandHeader />
+
+      <View style={styles.headingRow}>
         <Pressable
           onPress={goBack}
           style={styles.back}
@@ -216,9 +217,9 @@ export default function RegisterScreen({ navigation }: any) {
         >
           <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
+        <Text style={styles.heading}>Join your community.</Text>
       </View>
 
-      <Text style={styles.heading}>Join your community.</Text>
       <Text style={styles.subtitle}>Create one account to post tasks, find work, and get things moving.</Text>
 
       <View style={styles.card}>
@@ -403,11 +404,12 @@ export default function RegisterScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   back: {
-    position: 'absolute', left: 0, top: 1, width: 44, height: 44, borderRadius: 22,
+    position: 'absolute', left: 0, top: 0, zIndex: 1, width: 44, height: 44, borderRadius: 22,
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.cardBorder,
     alignItems: 'center', justifyContent: 'center',
   },
-  heading: { fontFamily: fonts.medium, fontSize: 22, lineHeight: 28, color: colors.text, textAlign: 'center', marginTop: 20 },
+  headingRow: { position: 'relative', minHeight: 44, justifyContent: 'center', marginTop: 20 },
+  heading: { fontFamily: fonts.medium, fontSize: 22, lineHeight: 28, color: colors.text, textAlign: 'center', paddingHorizontal: 44 },
   subtitle: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.textSecondary, textAlign: 'center', marginTop: 8 },
   card: {
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.cardBorder,

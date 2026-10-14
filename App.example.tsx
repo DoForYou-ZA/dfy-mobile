@@ -9,7 +9,7 @@ import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import AnimatedSplash from './src/components/AnimatedSplash';
 
-// Keep the native splash (plain cream) up until fonts are ready.
+// Keep the native cream splash up until the React splash has mounted.
 SplashScreen.preventAutoHideAsync();
 
 // Replace with your real check (e.g. read the token from expo-secure-store).
@@ -18,7 +18,7 @@ async function restoreSession(): Promise<void> {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     SpecialElite_400Regular,
     Inter_400Regular,
     Inter_500Medium,
@@ -31,15 +31,15 @@ export default function App() {
     restoreSession().finally(() => setSessionChecked(true));
   }, []);
 
-  if (!fontsLoaded) return null;
+  const fontsReady = fontsLoaded || !!fontError;
 
   return (
     <SafeAreaProvider>
-      {splashDone && sessionChecked ? (
+      {splashDone && sessionChecked && fontsReady ? (
         // <YourExistingRoot />
         null
       ) : (
-        <AnimatedSplash onDone={() => setSplashDone(true)} />
+        <AnimatedSplash fontsReady={fontsReady} onDone={() => setSplashDone(true)} />
       )}
     </SafeAreaProvider>
   );
