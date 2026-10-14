@@ -173,9 +173,6 @@ export default function PostErrandScreen({ navigation, route }: any) {
     }
   }, [editId])
 
-  const set = (field: string) => (val: string | boolean) =>
-    setForm(f => ({ ...f, [field]: val }))
-
   const validateForm = () => {
     const amount = Number(form.budget)
     const date = form.dateNeeded ? new Date(form.dateNeeded) : null
@@ -402,14 +399,13 @@ export default function PostErrandScreen({ navigation, route }: any) {
             <View onLayout={event => { fieldPositions.current.taskName = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Task Name * <Text style={styles.hint}>(max 60 chars)</Text></Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isFieldInvalid('taskName') && styles.inputInvalid]}
                 value={form.taskName}
                 onChangeText={set('taskName')}
                 placeholder="e.g. Car Wash Vereeniging, Grocery Run Sandton"
                 placeholderTextColor={COLORS.textMuted}
                 maxLength={60}
                 onBlur={() => { setTouched(current => ({ ...current, taskName: true })); setFieldErrors(validateForm()) }}
-                style={[styles.input, isFieldInvalid('taskName') && styles.inputInvalid]}
               />
               <Text style={styles.charCount}>{form.taskName.length}/60</Text>
               {fieldHint('taskName')}
@@ -465,13 +461,12 @@ export default function PostErrandScreen({ navigation, route }: any) {
             <View onLayout={event => { fieldPositions.current.area = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Location *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isFieldInvalid('area') && styles.inputInvalid]}
                 value={form.area}
                 onChangeText={set('area')}
                 placeholder="Area / Suburb"
                 placeholderTextColor={COLORS.textMuted}
-                onBlur={() => { setTouched(current => ({ ...current, area: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
-                style={[styles.input, isFieldInvalid('area') && styles.inputInvalid]}
+                onBlur={() => { setTouched(current => ({ ...current, area: true })); setFieldErrors(validateForm()) }}
               />
               {fieldHint('area')}
             </View>
