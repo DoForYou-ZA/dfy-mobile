@@ -16,6 +16,7 @@ export default function LoginScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resetRequested, setResetRequested] = useState(false)
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -117,6 +118,22 @@ export default function LoginScreen({ navigation }: any) {
             </View>
           </View>
 
+          <TouchableOpacity
+            style={styles.forgotRow}
+            onPress={() => {
+              if (!email.trim()) {
+                setError('Enter your email address first, then contact support to reset your password.')
+                return
+              }
+              setResetRequested(true)
+              setError('Password reset is not available in the app yet. Please contact DoForYou support for help.')
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Forgot password"
+          >
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+
           <Button
             title="Sign in to DFY  →"
             onPress={handleLogin}
@@ -191,6 +208,8 @@ const styles = StyleSheet.create({
   revealButton: { paddingHorizontal: 14, paddingVertical: 10 },
   revealText: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
   signInButton: { marginTop: 2, borderRadius: RADIUS.md, minHeight: 52 },
+  forgotRow: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  forgotText: { color: COLORS.primaryDark, fontSize: 13, fontWeight: '800' },
   switchRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 12, paddingVertical: 4 },
   switchText: { color: COLORS.textSecondary, fontSize: 12 },
   switchLink: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '900' },
