@@ -182,7 +182,6 @@ export default function PostErrandScreen({ navigation, route }: any) {
     const description = form.taskDescription.trim()
     const category = form.category === 'Other' ? form.customCategory.trim() : form.category.trim()
     if (!name) next.taskName = 'Enter a task name.'
-    else if (name.length < 3) next.taskName = 'Task name must be at least 3 characters.'
     else if (name.length > 60) next.taskName = 'Task name must be 60 characters or fewer.'
     if (!description) next.taskDescription = 'Describe what needs to be done.'
     else if (description.length < 20) next.taskDescription = `Add more detail (at least 20 characters; currently ${description.length}).`
@@ -241,7 +240,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
       let message = ''
       if (field === 'taskName') {
         const value = String(val).trim()
-        message = !value ? 'Enter a task name.' : value.length < 3 ? 'Task name must be at least 3 characters.' : value.length > 60 ? 'Task name must be 60 characters or fewer.' : ''
+        message = !value ? 'Enter a task name.' : value.length > 60 ? 'Task name must be 60 characters or fewer.' : ''
       } else if (field === 'taskDescription') {
         const value = String(val).trim()
         message = !value ? 'Describe what needs to be done.' : value.length < 20 ? `Add more detail (at least 20 characters; currently ${value.length}).` : value.length > 500 ? 'Description must be 500 characters or fewer.' : ''
