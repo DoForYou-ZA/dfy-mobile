@@ -1,0 +1,49 @@
+name: Mobile UI regression audit
+
+on:
+  push:
+    branches:
+      - feat/mobile-feature-parity-audit-fixes
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/audit-mobile-ui.mjs'
+      - '.github/workflows/mobile-ui-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-ui-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Static UI audit and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run mobile UI regression audit
+        run: npm run audit:ui
+
+      - name: Run TypeScript checks
+        run: npm run typecheck

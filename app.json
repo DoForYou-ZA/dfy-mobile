@@ -5,31 +5,50 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/splash-cream.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#FFF9F2"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "userInterfaceStyle": "light"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFF9F2"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.chrismokolare.dfymobile"
+      "package": "com.chrismokolare.dfymobile",
+      "splash": {
+        "image": "./assets/splash-cream.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#FFF9F2"
+      }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "backgroundColor": "#FFF9F2"
     },
     "plugins": [
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font",
+      "expo-system-ui",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-cream.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#FFF9F2",
+          "dark": {
+            "backgroundColor": "#FFF9F2"
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

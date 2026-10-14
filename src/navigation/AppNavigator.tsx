@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { COLORS, RADIUS, SHADOW } from '../config/theme'
 import Button from '../components/Button'
+import BrandLogo from '../components/BrandLogo'
+import SignOutDialog from '../components/SignOutDialog'
 
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
@@ -20,42 +22,81 @@ import TaskChatScreen from '../screens/tasks/TaskChatScreen'
 import BankAccountsScreen from '../screens/user/BankAccountsScreen'
 import ProfileScreen from '../screens/user/ProfileScreen'
 import NotificationsScreen from '../screens/NotificationsScreen'
+import MessagesHubScreen from '../screens/MessagesHubScreen'
+import AccountToolsScreen from '../screens/AccountToolsScreen'
+import ActionRequiredScreen from '../screens/ActionRequiredScreen'
 
-const Stack = createNativeStackNavigator()
+type RootStackParamList = {
+  Login: undefined
+  Register: undefined
+  Dashboard: undefined
+  BrowseErrands: undefined
+  PostErrand: { editId?: string } | undefined
+  MyPostedTasks: undefined
+  MyActiveTasks: undefined
+  MyCompletedTasks: undefined
+  BankAccounts: undefined
+  Profile: undefined
+  Notifications: undefined
+  MessagesHub: undefined
+  AccountTools: { kind?: string } | undefined
+  ActionRequired: undefined
+  TaskChat: { taskId: string; title?: string }
+}
+
+const Stack = createNativeStackNavigator<RootStackParamList>()
 const HIDE_BOTTOM_NAV = ['TaskChat', 'Login', 'Register']
 
 function TopNavbar({ navRef }: { navRef: any }) {
   const { unreadCount } = useNotifications()
+  const { logout } = useAuth()
   const insets = useSafeAreaInsets()
+  const [signOutVisible, setSignOutVisible] = React.useState(false)
 
   return (
     <View style={[styles.navbar, { paddingTop: insets.top }]}>
       <View style={styles.navbarInner}>
         <View style={styles.brandGroup}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>D</Text>
-            <View style={styles.brandMarkDot} />
-          </View>
+          <BrandLogo size={38} />
           <View>
             <Text style={styles.brandName}>DoForYou</Text>
-            <Text style={styles.brandCaption}>EVERYDAY HELP, MADE EASIER</Text>
+            <Text style={styles.brandCaption}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.bellButton}
-          onPress={() => navRef.current?.navigate('Notifications' as never)}
-          activeOpacity={0.75}
-          accessibilityRole="button"
-          accessibilityLabel={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
-        >
-          <Text style={styles.bellIcon}>🔔</Text>
-          {unreadCount > 0 && (
-            <View style={styles.bellBadge}>
-              <Text style={styles.bellBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.navActions}>
+          <TouchableOpacity
+            style={styles.accountButton}
+            onPress={() => setSignOutVisible(true)}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+          >
+            <Text style={styles.signOutIcon}>↪</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.bellButton}
+            onPress={() => navRef.current?.navigate('Notifications')}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
+          >
+            <Text style={styles.bellIcon}>🔔</Text>
+            {unreadCount > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
+      <SignOutDialog
+        visible={signOutVisible}
+        onCancel={() => setSignOutVisible(false)}
+        onConfirm={() => {
+          setSignOutVisible(false)
+          void logout()
+        }}
+      />
     </View>
   )
 }
@@ -109,7 +150,7 @@ function BottomNav({ currentRoute, navRef }: { currentRoute: string; navRef: any
           {canPost ? 'Post task' : 'My tasks'}
         </Text>
       </TouchableOpacity>
-      {item('Notifications', '◉', 'Alerts')}
+      {item('MessagesHub', '✉', 'Messages')}
       {item('Profile', '○', 'Profile')}
     </View>
   )
@@ -125,7 +166,7 @@ const orangeHeader = {
 function AdminMobileNotice({ onSignOut }: { onSignOut: () => void }) {
   return (
     <View style={styles.adminNoticePage}>
-      <View style={styles.adminNoticeMark}><Text style={styles.adminNoticeMarkText}>D</Text></View>
+      <BrandLogo size={56} />
       <Text style={styles.adminNoticeEyebrow}>DOFORYOU WORKSPACE</Text>
       <Text style={styles.adminNoticeTitle}>Admin tools live on the web.</Text>
       <Text style={styles.adminNoticeText}>
@@ -138,10 +179,18 @@ function AdminMobileNotice({ onSignOut }: { onSignOut: () => void }) {
 
 export default function AppNavigator() {
   const { isAuthenticated, isAdmin, logout, loading } = useAuth()
-  const navRef = useNavigationContainerRef()
+  const navRef = useNavigationContainerRef<RootStackParamList>()
   const [currentRoute, setCurrentRoute] = React.useState('Dashboard')
 
-  if (loading) return null
+  if (loading) {
+    return (
+      <View style={styles.loadingSplash} accessibilityLabel="DoForYou is starting">
+        <BrandLogo size={64} />
+        <Text style={styles.loadingSplashName}>DoForYou</Text>
+        <Text style={styles.loadingSplashCaption}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
+      </View>
+    )
+  }
 
   // Defensive UI guard for old/stale sessions: an admin never enters customer routes.
   if (isAuthenticated() && isAdmin()) {
@@ -176,6 +225,9 @@ export default function AppNavigator() {
                 <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                <Stack.Screen name="MessagesHub" component={MessagesHubScreen} />
+                <Stack.Screen name="AccountTools" component={AccountToolsScreen} options={{ headerShown: true, title: 'Your account', ...orangeHeader }} />
+                <Stack.Screen name="ActionRequired" component={ActionRequiredScreen} options={{ headerShown: true, title: 'Action required', ...orangeHeader }} />
                 <Stack.Screen
                   name="TaskChat"
                   component={TaskChatScreen}
@@ -192,6 +244,13 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  loadingSplash: {
+    flex: 1, backgroundColor: '#FFF9F2', alignItems: 'center',
+    justifyContent: 'center', paddingHorizontal: 24,
+  },
+  loadingSplashMark: { marginBottom: 14 },
+  loadingSplashName: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', letterSpacing: -0.6 },
+  loadingSplashCaption: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 5 },
   appShell: { flex: 1, backgroundColor: COLORS.background },
   screenBody: { flex: 1, backgroundColor: COLORS.background },
   navbar: {
@@ -212,10 +271,12 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 13, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
   },
-  brandMarkText: { color: COLORS.white, fontSize: 22, fontWeight: '900', marginTop: -2 },
   brandMarkDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFE4B8', position: 'absolute', right: 7, bottom: 7 },
   brandName: { color: COLORS.textPrimary, fontSize: 17, lineHeight: 21, fontWeight: '900', letterSpacing: -0.4 },
   brandCaption: { color: COLORS.textMuted, fontSize: 7, fontWeight: '800', letterSpacing: 0.7, marginTop: 2 },
+  navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
+  signOutIcon: { color: COLORS.primaryDark, fontSize: 22, fontWeight: '900' },
   bellButton: {
     position: 'relative', width: 42, height: 42, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
@@ -254,11 +315,6 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: COLORS.background, justifyContent: 'center',
     padding: 28, alignItems: 'center',
   },
-  adminNoticeMark: {
-    width: 62, height: 62, borderRadius: 22, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 22, ...SHADOW.primary,
-  },
-  adminNoticeMarkText: { color: COLORS.white, fontSize: 34, fontWeight: '900' },
   adminNoticeEyebrow: { color: COLORS.primaryDark, fontSize: 10, fontWeight: '900', letterSpacing: 1.5, marginBottom: 10 },
   adminNoticeTitle: { color: COLORS.textPrimary, fontSize: 28, lineHeight: 34, textAlign: 'center', fontWeight: '900', letterSpacing: -0.8, marginBottom: 12 },
   adminNoticeText: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 24, maxWidth: 330 },

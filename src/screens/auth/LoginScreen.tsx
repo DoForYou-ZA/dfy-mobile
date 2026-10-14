@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
-import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native'
+import React, { useRef, useState } from 'react'
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
-import Button from '../../components/Button'
-import { COLORS, RADIUS, SHADOW } from '../../config/theme'
+import AuthBrandHeader from '../../components/AuthBrandHeader'
+import AuthScreenLayout from '../../components/AuthScreenLayout'
+import FormField from '../../components/FormField'
+import { colors, fonts, radii } from '../../theme'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth()
@@ -13,229 +15,230 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [formError, setFormError] = useState('')
+  const passwordRef = useRef<TextInput>(null)
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      setError('Enter your email address and password to continue.')
-      return
-    }
-    setError('')
+  const requestPasswordReset = () => {
+    const subject = encodeURIComponent('Password reset assistance')
+    const accountEmail = email.trim() || '(please add the email address for my account)'
+    const body = encodeURIComponent(
+      `Hello DoForYou Support,\n\nI need help regaining access to my account. Please advise me on the secure next steps to reset my password.\n\nAccount email: ${accountEmail}\n\nThank you.`,
+    )
+    void Linking.openURL(`mailto:info@doforyou.co.za?subject=${subject}&body=${body}`).catch(() => {
+      Alert.alert(
+        'Contact DoForYou support',
+        'We could not open your email app. Please email info@doforyou.co.za with the subject “Password reset assistance”.',
+      )
+    })
+  }
+
+  const handleSignIn = async () => {
+    if (loading) return
+    const trimmedEmail = email.trim()
+
+    const nextEmailError = EMAIL_RE.test(trimmedEmail) ? '' : 'Enter a valid email address.'
+    const nextPasswordError = password ? '' : 'Enter your password.'
+    setEmailError(nextEmailError)
+    setPasswordError(nextPasswordError)
+    setFormError('')
+    if (nextEmailError || nextPasswordError) return
+
     setLoading(true)
     try {
-      await login(email.trim(), password)
+      await login(trimmedEmail, password)
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'We could not sign you in. Please try again.')
+      setFormError(
+        err.response?.data?.message || err.message || 'We could not sign you in. Please try again.',
+      )
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+  const footer = (
+    <View>
+      <Pressable
+        style={({ pressed }: { pressed: boolean }) => [styles.button, pressed && !loading && styles.pressed, loading && styles.loading]}
+        onPress={handleSignIn}
+        disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel="Sign in to DFY"
       >
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkLetter}>D</Text>
-            <View style={styles.brandMarkDot} />
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <View style={styles.buttonInner}>
+            <Text style={styles.buttonText}>Sign in to DFY</Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
           </View>
-          <View>
-            <Text style={styles.brandName}>DoForYou</Text>
-            <Text style={styles.brandTagline}>HELPING YOUR COMMUNITY MOVE</Text>
-          </View>
-        </View>
+        )}
+      </Pressable>
 
-        <View style={styles.hero}>
-          <View style={styles.heroKicker}>
-            <View style={styles.liveDot} />
-            <Text style={styles.heroKickerText}>LOCAL HELP. REAL OPPORTUNITY.</Text>
-          </View>
-          <Text style={styles.heroTitle}>Good things happen when we help each other.</Text>
-          <Text style={styles.heroSubtitle}>
-            Find a helping hand, offer your skills, and get everyday things moving.
-          </Text>
-          <View style={styles.valueRow}>
-            <View style={styles.valuePill}>
-              <View style={[styles.valueIcon, styles.valueIconOrange]}>
-                <Text style={styles.valueIconText}>＋</Text>
-              </View>
-              <Text style={styles.valueLabel}>Post a task</Text>
-            </View>
-            <View style={styles.valuePill}>
-              <View style={[styles.valueIcon, styles.valueIconGreen]}>
-                <Text style={styles.valueIconTextGreen}>↗</Text>
-              </View>
-              <Text style={styles.valueLabel}>Find work</Text>
-            </View>
-          </View>
-          <View style={styles.heroOrb} />
-          <View style={styles.heroOrbSmall} />
-        </View>
+      <View style={styles.switchRow}>
+        <Text style={styles.switchText}>New to DoForYou?</Text>
+        <Pressable
+          onPress={() => navigation.navigate('Register')}
+          hitSlop={8}
+          accessibilityRole="link"
+          style={styles.switchLink}
+        >
+          <Text style={styles.link}>Create an account</Text>
+        </Pressable>
+      </View>
 
-        <View style={styles.formCard}>
-          <View style={styles.formHeading}>
-            <Text style={styles.formTitle}>Welcome back</Text>
-            <Text style={styles.formSubtitle}>Sign in to pick up where you left off.</Text>
+      <View style={styles.secureRow}>
+        <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
+        <Text style={styles.secureText}>Your tasks and payments are managed securely.</Text>
+      </View>
+    </View>
+  )
+
+  return (
+    <AuthScreenLayout footer={footer}>
+      <AuthBrandHeader />
+
+      <Text style={styles.heading}>Help your community thrive.</Text>
+      <Text style={styles.subtitle}>
+        Find a helping hand, offer your skills, and get everyday things moving.
+      </Text>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Welcome back</Text>
+        <Text style={styles.cardSubtitle}>Sign in to pick up where you left off.</Text>
+
+        {!!formError && (
+          <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Text style={styles.errorText}>{formError}</Text>
           </View>
+        )}
 
-          {error ? (
-            <View style={styles.errorBanner} accessibilityRole="alert">
-              <View style={styles.errorMark}><Text style={styles.errorMarkText}>!</Text></View>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
+        <FormField
+          label="Email address"
+          value={email}
+          onChangeText={setEmail}
+          error={emailError}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="you@example.com"
-              placeholderTextColor={COLORS.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              textContentType="emailAddress"
-              returnKeyType="next"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordWrap}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Enter your password"
-                placeholderTextColor={COLORS.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoComplete="current-password"
-                textContentType="password"
-                returnKeyType="go"
-                onSubmitEditing={handleLogin}
+        <FormField
+          ref={passwordRef}
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          error={passwordError}
+          placeholder="Enter your password"
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={handleSignIn}
+          containerStyle={{ marginBottom: 4 }}
+          right={
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              style={styles.eye}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={21}
+                color={colors.textSecondary}
               />
-              <TouchableOpacity
-                style={styles.revealButton}
-                onPress={() => setShowPassword(value => !value)}
-                accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <Text style={styles.revealText}>{showPassword ? 'Hide' : 'Show'}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            </Pressable>
+          }
+        />
 
-          <Button
-            title="Sign in to DFY  →"
-            onPress={handleLogin}
-            loading={loading}
-            disabled={!email.trim() || !password}
-            fullWidth
-            size="lg"
-            style={styles.signInButton}
-          />
-
-          <TouchableOpacity
-            style={styles.switchRow}
-            onPress={() => navigation.navigate('Register')}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.switchText}>New to DoForYou? </Text>
-            <Text style={styles.switchLink}>Create an account</Text>
-          </TouchableOpacity>
-
-          <View style={styles.trustRow}>
-            <View style={styles.trustDot} />
-            <Text style={styles.trustText}>Your tasks and payments are managed securely.</Text>
-          </View>
-        </View>
-        <Text style={styles.footer}>Small tasks. Stronger communities.</Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <Pressable
+          onPress={requestPasswordReset}
+          hitSlop={8}
+          accessibilityRole="link"
+          style={styles.forgot}
+        >
+          <Text style={styles.link}>Forgot password?</Text>
+        </Pressable>
+      </View>
+    </AuthScreenLayout>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 22 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 28 },
-  brandMark: {
-    width: 46, height: 46, borderRadius: 16, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
+  heading: {
+    fontFamily: fonts.medium,
+    fontSize: 22,
+    lineHeight: 28,
+    color: colors.text,
+    textAlign: 'center',
+    marginTop: 20,
   },
-  brandMarkLetter: { color: COLORS.white, fontSize: 27, fontWeight: '900', marginTop: -2 },
-  brandMarkDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFE4B8', position: 'absolute', right: 9, bottom: 8 },
-  brandName: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
-  brandTagline: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 3 },
-  hero: { marginBottom: 24, position: 'relative', overflow: 'hidden' },
-  heroKicker: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, marginBottom: 13, zIndex: 1 },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.success },
-  heroKickerText: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: COLORS.secondary },
-  heroTitle: {
-    color: COLORS.textPrimary, fontSize: 34, lineHeight: 39, fontWeight: '900',
-    letterSpacing: -1.1, marginBottom: 11, maxWidth: 390, zIndex: 1,
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
   },
-  heroSubtitle: { color: COLORS.textSecondary, fontSize: 15, lineHeight: 23, maxWidth: 340, zIndex: 1 },
-  valueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 20, zIndex: 1 },
-  valuePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8,
-    paddingHorizontal: 10, borderRadius: RADIUS.full, backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.border,
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: radii.card,
+    padding: 18,
+    marginTop: 20,
   },
-  valueIcon: { width: 24, height: 24, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  valueIconOrange: { backgroundColor: COLORS.primaryLight },
-  valueIconGreen: { backgroundColor: '#E6F7EF' },
-  valueIconText: { color: COLORS.primaryDark, fontSize: 16, fontWeight: '900', marginTop: -1 },
-  valueIconTextGreen: { color: COLORS.success, fontSize: 15, fontWeight: '900' },
-  valueLabel: { color: COLORS.textPrimary, fontSize: 11, fontWeight: '700' },
-  heroOrb: { position: 'absolute', width: 100, height: 100, borderRadius: 50, right: -54, top: -32, backgroundColor: '#FFF0D9' },
-  heroOrbSmall: { position: 'absolute', width: 42, height: 42, borderRadius: 21, right: 0, top: 10, backgroundColor: '#FFF7EB', borderWidth: 1, borderColor: '#FFE6C7' },
-  formCard: {
-    backgroundColor: COLORS.surface, borderRadius: 26, padding: 21,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOW.md,
+  cardTitle: { fontFamily: fonts.medium, fontSize: 18, color: colors.text, textAlign: 'center' },
+  cardSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 2,
+    marginBottom: 16,
   },
-  formHeading: { marginBottom: 22 },
-  formTitle: { color: COLORS.textPrimary, fontSize: 25, fontWeight: '900', letterSpacing: -0.6, marginBottom: 5 },
-  formSubtitle: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19 },
-  errorBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 9,
-    backgroundColor: '#FFF0EE', borderColor: '#F8D2CE', borderWidth: 1,
-    borderRadius: RADIUS.md, padding: 12, marginBottom: 16,
+  eye: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  forgot: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center' },
+  link: { fontFamily: fonts.medium, fontSize: 13, color: colors.button },
+  errorBox: { padding: 12, borderRadius: 10, backgroundColor: colors.errorBg, marginBottom: 14 },
+  errorText: { fontFamily: fonts.regular, fontSize: 13, color: colors.error },
+  button: {
+    height: 52,
+    borderRadius: radii.button,
+    backgroundColor: colors.button,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  errorMark: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#FBD6D2', alignItems: 'center', justifyContent: 'center' },
-  errorMarkText: { color: '#AD2922', fontWeight: '900', fontSize: 13 },
-  errorText: { color: '#AD2922', fontSize: 12, flex: 1, lineHeight: 18 },
-  inputGroup: { marginBottom: 17 },
-  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
-  input: {
-    width: '100%', minHeight: 52, borderWidth: 1.5, borderColor: COLORS.border,
-    borderRadius: RADIUS.md, paddingHorizontal: 15, paddingVertical: 12,
-    fontSize: 14, color: COLORS.textPrimary, backgroundColor: '#FFFEFC',
+  buttonInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  buttonText: { fontFamily: fonts.medium, fontSize: 15, color: '#FFFFFF' },
+  pressed: { opacity: 0.88 },
+  loading: { opacity: 0.8 },
+  switchRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 6,
   },
-  passwordWrap: {
-    flexDirection: 'row', alignItems: 'center', borderWidth: 1.5,
-    borderColor: COLORS.border, borderRadius: RADIUS.md, backgroundColor: '#FFFEFC',
+  switchText: { fontFamily: fonts.regular, fontSize: 14, color: colors.text },
+  switchLink: { minHeight: 44, justifyContent: 'center' },
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 2,
   },
-  passwordInput: { flex: 1, minHeight: 52, paddingHorizontal: 15, paddingVertical: 12, fontSize: 14, color: COLORS.textPrimary },
-  revealButton: { paddingHorizontal: 14, paddingVertical: 10 },
-  revealText: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
-  signInButton: { marginTop: 2, borderRadius: RADIUS.md, minHeight: 52 },
-  switchRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 20, paddingVertical: 5 },
-  switchText: { color: COLORS.textSecondary, fontSize: 12 },
-  switchLink: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '900' },
-  trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 18 },
-  trustDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
-  trustText: { color: COLORS.textMuted, fontSize: 10, textAlign: 'center' },
-  footer: { textAlign: 'center', paddingTop: 21, color: COLORS.textMuted, fontSize: 11, fontWeight: '600' },
+  secureText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
 })

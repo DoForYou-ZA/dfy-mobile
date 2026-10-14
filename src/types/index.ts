@@ -6,7 +6,8 @@ export interface RegisterModel {
 export interface User {
   id: number; name: string; firstName?: string; lastName?: string; email: string
   contact: string; phoneNumber?: string; userType?: string; isVerified: boolean
-  profileCompleted: boolean; profileCompletion?: number; rating: number
+  profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
+  canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
   completedTasks: number; createdAt: string; lastLoginAt?: string
   roles?: string[]; isAdmin?: boolean; idNumber?: string; address?: string
 }

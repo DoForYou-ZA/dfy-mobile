@@ -152,10 +152,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const refreshUser = useCallback(async () => {
+    try {
+      const response = await authApi.getProfile()
+      const fresh = response.data?.data || response.data
+      if (fresh && typeof fresh === 'object') {
+        const stored = await AsyncStorage.getItem('currentUser')
+        const previous = stored ? JSON.parse(stored) : {}
+        const merged = { ...previous, ...fresh }
+        await AsyncStorage.setItem('currentUser', JSON.stringify(merged))
+        setUser(merged)
+        return
+      }
+    } catch {}
     const stored = await AsyncStorage.getItem('currentUser')
-    if (stored) {
-      try { setUser(JSON.parse(stored)) } catch {}
-    }
+    if (stored) { try { setUser(JSON.parse(stored)) } catch {} }
   }, [])
 
   const isAuthenticated = useCallback(() => {
@@ -175,6 +185,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isProfileComplete = useCallback(() => {
     if (!user) return false
     const phone = user.contact || user.phoneNumber
+    if (typeof user.profileCompleted === 'boolean') return user.profileCompleted
+    if (typeof user.profileCompletion === 'number') return user.profileCompletion >= 100
     return !!(user.firstName && user.lastName && user.email && phone
       && user.userType && user.idNumber && user.address)
   }, [user])
@@ -183,13 +195,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const canPostErrands = useCallback(() => {
     if (!isAuthenticated() || isAdmin()) return false
+    if (typeof user?.canCreateTasks === 'boolean') return user.canCreateTasks
     const ut = user?.userType
     if (ut) return ut === 'creator' || ut === 'both'
     return false
   }, [user, isAuthenticated, isAdmin])
 
   const canAcceptTasks = useCallback(() => {
-    if (!isAuthenticated() || isAdmin() || isProfileIncomplete()) return false
+    if (!isAuthenticated() || isAdmin()) return false
+    if (typeof user?.canAcceptTasks === 'boolean') return user.canAcceptTasks
+    if (isProfileIncomplete()) return false
     const ut = user?.userType
     if (ut) return ut === 'runner' || ut === 'both'
     return false

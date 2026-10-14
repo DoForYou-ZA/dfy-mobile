@@ -1,3 +1,4 @@
+import SignOutButton from '../../components/SignOutButton'
 import React, { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
@@ -123,8 +124,7 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={[styles.typeBadge, { backgroundColor: form.userType === 'creator' ? '#DBEAFE' : form.userType === 'runner' ? '#D1FAE5' : '#EDE9FE' }]}>
           <Text style={[styles.typeBadgeText, { color: form.userType === 'creator' ? '#1D4ED8' : form.userType === 'runner' ? '#065F46' : '#5B21B6' }]}>{form.userType || 'Not set'}</Text>
         </View>
-        {completion > 0 && (
-          <View style={styles.completionBar}>
+        <View style={styles.completionBar}>
             <View style={styles.completionHeader}>
               <Text style={styles.completionLabel}>Profile Completion</Text>
               <Text style={styles.completionPct}>{completion}%</Text>
@@ -133,7 +133,24 @@ export default function ProfileScreen({ navigation }: any) {
               <View style={[styles.progressFill, { width: `${completion}%` as any }]} />
             </View>
           </View>
-        )}
+      </View>
+
+      <View style={styles.accountLinks}>
+        <Text style={styles.accountLinksTitle}>Your account tools</Text>
+        <View style={styles.accountLinksGrid}>
+          {[
+            { title: 'Payment history', subtitle: 'Payments and status', kind: 'payments' },
+            { title: 'My disputes', subtitle: 'Track raised disputes', kind: 'disputes' },
+            { title: 'Help & support', subtitle: 'Contact the support team', kind: 'support' },
+            { title: 'Activity', subtitle: 'Recent task updates', kind: 'activity' },
+          ].map(item => (
+            <TouchableOpacity key={item.kind} style={styles.accountLink} onPress={() => navigation.navigate('AccountTools', { kind: item.kind })} accessibilityRole="button">
+              <Text style={styles.accountLinkTitle}>{item.title}</Text>
+              <Text style={styles.accountLinkSub}>{item.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={styles.actionRequiredLink} onPress={() => navigation.navigate('ActionRequired')} accessibilityRole="button"><Text style={styles.actionRequiredTitle}>Action required</Text><Text style={styles.accountLinkSub}>Payments and completion reviews waiting for you</Text></TouchableOpacity>
       </View>
 
       {/* Tabs */}
@@ -202,7 +219,7 @@ export default function ProfileScreen({ navigation }: any) {
       )}
 
       <Button title="Bank Accounts" onPress={() => navigation.navigate('BankAccounts')} variant="secondary" fullWidth style={{ marginTop: 8 }} />
-      <Button title="Sign Out" onPress={logout} variant="outline" fullWidth style={{ marginTop: 8 }} />
+      <SignOutButton onConfirm={logout} style={{ marginTop: 8 }} />
     </ScrollView>
   )
 }
@@ -210,6 +227,14 @@ export default function ProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: SPACING.md, paddingBottom: 40, gap: 16 },
+  accountLinks: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border },
+  accountLinksTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '800', marginBottom: 10 },
+  accountLinksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  actionRequiredLink: { marginTop: 9, padding: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
+  actionRequiredTitle: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '900' },
+  accountLink: { width: '48%', padding: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.borderLight },
+  accountLinkTitle: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800' },
+  accountLinkSub: { color: COLORS.textSecondary, fontSize: 10, lineHeight: 15, marginTop: 4 },
   profileCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: SPACING.lg, alignItems: 'center', ...SHADOW.sm },
   avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   avatarText: { fontSize: 28, fontWeight: '800', color: COLORS.white },
