@@ -1,20 +1,18 @@
-import React, { useState } from 'react'
-import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity, Linking,
-  KeyboardAvoidingView, Platform, ScrollView, Alert
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import React, { useRef, useState } from 'react'
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { authApi } from '../../api'
-import Button from '../../components/Button'
 import AuthBrandHeader from '../../components/AuthBrandHeader'
-import { COLORS, RADIUS, SHADOW } from '../../config/theme'
+import AuthScreenLayout from '../../components/AuthScreenLayout'
+import FormField from '../../components/FormField'
+import StepIndicator from '../../components/StepIndicator'
+import { colors, fonts, radii } from '../../theme'
 
 const STEPS = ['Your details', 'Your role', 'Security']
-
-function isValidSouthAfricanMobile(value: string): boolean {
-  const digits = value.replace(/\D/g, '')
-  return /^(?:0[6-8]\d{8}|27[6-8]\d{8})$/.test(digits)
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const LEGAL_BASE_URL = process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'
+const TERMS_URL = `${LEGAL_BASE_URL}/terms`
+const PRIVACY_URL = `${LEGAL_BASE_URL}/privacy`
 
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
@@ -23,10 +21,29 @@ function extractDobFromId(id: string): string {
   return `${year}-${mm}-${dd}`
 }
 
+/**
+ * Accepts "081 234 5678", "81 234 5678" or "+27 81 234 5678" and returns the local
+ * format the app has always sent to the API ("0812345678"), or null if invalid.
+ * If your backend expects "+27812345678", change the return to `+27${d}`.
+ */
+function toLocalSouthAfricanNumber(input: string): string | null {
+  let d = input.replace(/\D/g, '')
+  if (d.startsWith('27')) d = d.slice(2)
+  else if (d.startsWith('0')) d = d.slice(1)
+  return /^[6-8]\d{8}$/.test(d) ? `0${d}` : null
+}
+
+const ROLES = [
+  { value: 'creator', icon: 'clipboard-outline', label: 'Task Creator', desc: 'Post tasks for others' },
+  { value: 'runner', icon: 'walk-outline', label: 'Task Runner', desc: 'Complete tasks & earn' },
+  { value: 'both', icon: 'people-outline', label: 'Both', desc: 'Post & complete tasks' },
+] as const
+
 export default function RegisterScreen({ navigation }: any) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [form, setForm] = useState({
@@ -35,264 +52,408 @@ export default function RegisterScreen({ navigation }: any) {
     password: '', confirmPassword: '',
   })
 
-  const set = (field: string) => (val: string) =>
-    setForm(f => ({ ...f, [field]: val }))
+  const lastRef = useRef<TextInput>(null)
+  const emailRef = useRef<TextInput>(null)
+  const phoneRef = useRef<TextInput>(null)
+  const addressRef = useRef<TextInput>(null)
+  const confirmRef = useRef<TextInput>(null)
 
-  const handleIdChange = (val: string) =>
-    setForm(f => ({ ...f, idNumber: val, dateOfBirth: extractDobFromId(val) }))
+  const set = (field: string) => (val: string) => setForm((f: typeof form) => ({ ...f, [field]: val }))
 
-  const canNext = () => {
-    if (step === 1) return !!(form.firstName.trim() && form.lastName.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && isValidSouthAfricanMobile(form.phoneNumber))
-    if (step === 2) return !!(form.userType && /^\d{13}$/.test(form.idNumber) && form.address.trim())
-    return false
+  const handleIdChange = (val: string) => {
+    const digits = val.replace(/\D/g, '')
+    setForm((f: typeof form) => ({ ...f, idNumber: digits, dateOfBirth: extractDobFromId(digits) }))
+  }
+
+  const finishValidation = (next: Record<string, string>) => {
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  const validateStep1 = () => {
+    const e: Record<string, string> = {}
+    if (!form.firstName.trim()) e.firstName = 'Enter your first name.'
+    if (!form.lastName.trim()) e.lastName = 'Enter your last name.'
+    if (!EMAIL_RE.test(form.email.trim())) e.email = 'Enter a valid email address.'
+    if (!toLocalSouthAfricanNumber(form.phoneNumber)) e.phoneNumber = 'Enter a valid South African mobile number.'
+    return finishValidation(e)
+  }
+
+  const validateStep2 = () => {
+    const e: Record<string, string> = {}
+    if (!form.userType) e.userType = 'Choose how you want to use DoForYou.'
+    if (!/^\d{13}$/.test(form.idNumber)) e.idNumber = 'Enter your 13-digit South African ID number.'
+    if (!form.address.trim()) e.address = 'Enter your address.'
+    return finishValidation(e)
+  }
+
+  const validateStep3 = () => {
+    const e: Record<string, string> = {}
+    if (form.password.length < 6) e.password = 'Password must be at least 6 characters.'
+    if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match.'
+    return finishValidation(e)
+  }
+
+  const goBack = () => {
+    setError('')
+    setErrors({})
+    if (step === 1) navigation.navigate('Login')
+    else setStep(step - 1)
   }
 
   const handleSubmit = async () => {
-    if (!acceptedTerms) { setError('Please agree to the terms and privacy notice to continue.'); return }
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
-    if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
-    setError(''); setLoading(true)
+    if (loading) return
+    if (!acceptedTerms) {
+      setError('Please agree to the terms and privacy notice to continue.')
+      return
+    }
+    if (!validateStep3()) return
+    setError('')
+    setLoading(true)
     try {
       const res = await authApi.register({
-        firstName: form.firstName, lastName: form.lastName,
-        email: form.email, phoneNumber: form.phoneNumber,
+        firstName: form.firstName.trim(), lastName: form.lastName.trim(),
+        email: form.email.trim(), phoneNumber: toLocalSouthAfricanNumber(form.phoneNumber) ?? form.phoneNumber,
         userType: form.userType, idNumber: form.idNumber,
-        dateOfBirth: form.dateOfBirth, address: form.address,
+        dateOfBirth: form.dateOfBirth, address: form.address.trim(),
         password: form.password,
       })
       if (res.data.success) {
         Alert.alert('Account Created!', 'Please sign in to continue.', [
-          { text: 'Sign In', onPress: () => navigation.navigate('Login') }
+          { text: 'Sign In', onPress: () => navigation.navigate('Login') },
         ])
       } else {
         setError(res.data.message || 'Registration failed')
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.')
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const ROLES = [
-    { value: 'creator', icon: '📋', label: 'Task Creator', desc: 'Post tasks for others' },
-    { value: 'runner', icon: '🏃', label: 'Task Runner', desc: 'Complete tasks & earn' },
-    { value: 'both', icon: '🤝', label: 'Both', desc: 'Post & complete tasks' },
-  ]
+  const handlePrimary = () => {
+    if (step === 1) { if (validateStep1()) setStep(2) }
+    else if (step === 2) { if (validateStep2()) setStep(3) }
+    else handleSubmit()
+  }
+
+  const openLink = (url: string) => {
+    void Linking.openURL(url).catch(() => {
+      Alert.alert('Unable to open link', `Please open ${url} in your browser.`)
+    })
+  }
+
+  const footer = (
+    <View>
+      {step === 3 && (
+        <View style={styles.consentRow}>
+          <Pressable
+            onPress={() => {
+              setAcceptedTerms((value) => !value)
+              setError((current) =>
+                current === 'Please agree to the terms and privacy notice to continue.' ? '' : current,
+              )
+            }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: acceptedTerms }}
+            accessibilityLabel="Agree to the terms and privacy notice"
+            style={styles.consentCheckboxTouch}
+          >
+            <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
+              {acceptedTerms && <Ionicons name="checkmark" size={15} color="#FFFFFF" />}
+            </View>
+          </Pressable>
+          <Text style={styles.terms}>
+            I agree to the DoForYou{' '}
+            <Text style={styles.link} onPress={() => openLink(TERMS_URL)} accessibilityRole="link">
+              Terms & Conditions
+            </Text>
+            {' '}and{' '}
+            <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)} accessibilityRole="link">
+              Privacy Policy
+            </Text>.
+          </Text>
+        </View>
+      )}
+
+      <Pressable
+        style={({ pressed }: { pressed: boolean }) => [styles.button, pressed && !loading && styles.pressed, loading && styles.loading]}
+        onPress={handlePrimary}
+        disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel={step === 3 ? 'Create account' : 'Continue'}
+      >
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <View style={styles.buttonInner}>
+            <Text style={styles.buttonText}>{step === 3 ? 'Create Account' : 'Continue'}</Text>
+            <Ionicons name={step === 3 ? 'checkmark' : 'arrow-forward'} size={18} color="#FFFFFF" />
+          </View>
+        )}
+      </Pressable>
+
+      <View style={styles.switchRow}>
+        <Text style={styles.switchText}>Already have an account?</Text>
+        <Pressable onPress={() => navigation.navigate('Login')} hitSlop={8} accessibilityRole="link" style={styles.switchLink}>
+          <Text style={styles.link}>Sign in</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    <AuthScreenLayout footer={footer}>
+      <View>
         <AuthBrandHeader />
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Join your community.</Text>
-          <Text style={styles.panelSub}>Create one account to post tasks, find work, and get things moving.</Text>
-        </View>
+        <Pressable
+          onPress={goBack}
+          style={styles.back}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={step === 1 ? 'Back to sign in' : 'Back to previous step'}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
+        </Pressable>
+      </View>
 
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Create Account</Text>
+      <Text style={styles.heading}>Join your community.</Text>
+      <Text style={styles.subtitle}>Create one account to post tasks, find work, and get things moving.</Text>
 
-          {/* Step indicator */}
-          <View style={styles.stepRow}>
-            {STEPS.map((s, i) => (
-              <View key={i} style={styles.stepItem}>
-                <View style={[
-                  styles.stepCircle,
-                  step > i + 1 && styles.stepDone,
-                  step === i + 1 && styles.stepActive,
-                ]}>
-                  <Text style={[styles.stepNum, step >= i + 1 && styles.stepNumActive]}>
-                    {step > i + 1 ? '✓' : i + 1}
-                  </Text>
-                </View>
-                <Text style={[styles.stepLabel, step === i + 1 && styles.stepLabelActive]}>{s}</Text>
-                {i < STEPS.length - 1 && <View style={[styles.stepLine, step > i + 1 && styles.stepLineDone]} />}
-              </View>
-            ))}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Create Account</Text>
+        <StepIndicator steps={STEPS} current={step - 1} />
+
+        {!!error && (
+          <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Text style={styles.errorText}>{error}</Text>
           </View>
+        )}
 
-          {error ? (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>⚠️ {error}</Text>
+        {step === 1 && (
+          <View>
+            <View style={styles.nameRow}>
+              <FormField
+                label="First name *"
+                value={form.firstName}
+                onChangeText={set('firstName')}
+                error={errors.firstName}
+                placeholder="John"
+                autoCapitalize="words"
+                autoComplete="given-name"
+                textContentType="givenName"
+                returnKeyType="next"
+                onSubmitEditing={() => lastRef.current?.focus()}
+                containerStyle={styles.half}
+              />
+              <FormField
+                ref={lastRef}
+                label="Last name *"
+                value={form.lastName}
+                onChangeText={set('lastName')}
+                error={errors.lastName}
+                placeholder="Doe"
+                autoCapitalize="words"
+                autoComplete="family-name"
+                textContentType="familyName"
+                returnKeyType="next"
+                onSubmitEditing={() => emailRef.current?.focus()}
+                containerStyle={styles.half}
+              />
             </View>
-          ) : null}
+            <FormField
+              ref={emailRef}
+              label="Email address *"
+              value={form.email}
+              onChangeText={set('email')}
+              error={errors.email}
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="next"
+              onSubmitEditing={() => phoneRef.current?.focus()}
+            />
+            <FormField
+              ref={phoneRef}
+              label="Phone number (South Africa) *"
+              prefix="+27"
+              value={form.phoneNumber}
+              onChangeText={set('phoneNumber')}
+              error={errors.phoneNumber}
+              placeholder="81 234 5678"
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              textContentType="telephoneNumber"
+              maxLength={14}
+              returnKeyType="done"
+              onSubmitEditing={handlePrimary}
+              containerStyle={{ marginBottom: 0 }}
+            />
+          </View>
+        )}
 
-          {step === 1 && (
-            <View style={styles.stepContent}>
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>First name *</Text>
-                  <TextInput style={styles.input} value={form.firstName} onChangeText={set('firstName')} placeholder="John" placeholderTextColor={COLORS.textMuted} />
-                </View>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>Last name *</Text>
-                  <TextInput style={styles.input} value={form.lastName} onChangeText={set('lastName')} placeholder="Doe" placeholderTextColor={COLORS.textMuted} />
-                </View>
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email address *</Text>
-                <TextInput style={styles.input} value={form.email} onChangeText={set('email')} placeholder="e.g. you@example.com" placeholderTextColor={COLORS.textMuted} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" />
-                {!!form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && <Text style={styles.validationHint}>Enter a valid email address.</Text>}
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone number (South Africa) *</Text>
-                <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="e.g. 081 234 5678 or +27 81 234 5678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" maxLength={16} />
-                {!!form.phoneNumber && !isValidSouthAfricanMobile(form.phoneNumber) && <Text style={styles.validationHint}>Enter a valid SA mobile number, starting with 06–08 or +27.</Text>}
-              </View>
-              <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={styles.stepPrimaryAction} />
-            </View>
-          )}
-
-          {step === 2 && (
-            <View style={styles.stepContent}>
-              <Text style={styles.label}>I want to...</Text>
-              {ROLES.map(r => (
-                <TouchableOpacity
+        {step === 2 && (
+          <View>
+            <Text style={styles.groupLabel}>I want to...</Text>
+            {ROLES.map((r) => {
+              const selected = form.userType === r.value
+              return (
+                <Pressable
                   key={r.value}
-                  style={[styles.roleCard, form.userType === r.value && styles.roleCardSelected]}
-                  onPress={() => setForm(f => ({ ...f, userType: r.value }))}
+                  style={[styles.roleCard, selected && styles.roleCardSelected]}
+                  onPress={() => setForm((f: typeof form) => ({ ...f, userType: r.value }))}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${r.label}. ${r.desc}`}
                 >
-                  <Text style={styles.roleIcon}>{r.icon}</Text>
+                  <View style={[styles.roleIcon, selected && styles.roleIconSelected]}>
+                    <Ionicons name={r.icon} size={22} color={selected ? colors.button : colors.textSecondary} />
+                  </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.roleLabel, form.userType === r.value && styles.roleLabelSelected]}>{r.label}</Text>
+                    <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>{r.label}</Text>
                     <Text style={styles.roleDesc}>{r.desc}</Text>
                   </View>
-                  {form.userType === r.value && <Text style={{ color: COLORS.primary, fontSize: 18 }}>✓</Text>}
-                </TouchableOpacity>
-              ))}
-              <Text style={styles.label}>ID Number *</Text>
-              <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdChange} placeholder="13-digit SA ID" placeholderTextColor={COLORS.textMuted} keyboardType="numeric" maxLength={13} />
-              {form.dateOfBirth ? <Text style={styles.hint}>Date of birth auto-filled: {form.dateOfBirth}</Text> : null}
-              <Text style={styles.label}>Address *</Text>
-              <TextInput style={styles.input} value={form.address} onChangeText={set('address')} placeholder="123 Main St, Johannesburg" placeholderTextColor={COLORS.textMuted} />
-              <View style={styles.navRow}>
-                <Button title="← Back" onPress={() => setStep(1)} variant="secondary" style={{ flex: 1 }} />
-                <Button title="Continue →" onPress={() => canNext() && setStep(3)} disabled={!canNext()} style={{ flex: 1 }} />
-              </View>
-            </View>
-          )}
+                  {selected && <Ionicons name="checkmark-circle" size={22} color={colors.orange} />}
+                </Pressable>
+              )
+            })}
+            {!!errors.userType && <Text style={styles.fieldError}>{errors.userType}</Text>}
 
-          {step === 3 && (
-            <View style={styles.stepContent}>
-              <Text style={styles.label}>Password *</Text>
-              <View style={styles.passwordRow}>
-                <TextInput style={[styles.input, { flex: 1 }]} value={form.password} onChangeText={set('password')} placeholder="Min 6 characters" placeholderTextColor={COLORS.textMuted} secureTextEntry={!showPassword} />
-                <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(v => !v)}>
-                  <Text>{showPassword ? '🙈' : '👁️'}</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.label}>Confirm Password *</Text>
-              <TextInput style={styles.input} value={form.confirmPassword} onChangeText={set('confirmPassword')} placeholder="Repeat password" placeholderTextColor={COLORS.textMuted} secureTextEntry={!showPassword} />
-              {form.confirmPassword && form.password !== form.confirmPassword && (
-                <Text style={styles.errorText}>Passwords don't match</Text>
-              )}
-              <View style={styles.consentRow}>
-                <TouchableOpacity
-                  onPress={() => setAcceptedTerms(value => !value)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: acceptedTerms }}
-                  accessibilityLabel="Agree to the terms and privacy notice"
-                  style={styles.consentCheckboxTouch}
+            <FormField
+              label="ID number *"
+              value={form.idNumber}
+              onChangeText={handleIdChange}
+              error={errors.idNumber}
+              placeholder="13-digit SA ID"
+              keyboardType="number-pad"
+              maxLength={13}
+              returnKeyType="next"
+              onSubmitEditing={() => addressRef.current?.focus()}
+              containerStyle={{ marginTop: 14, marginBottom: form.dateOfBirth ? 4 : 14 }}
+            />
+            {!!form.dateOfBirth && <Text style={styles.hint}>Date of birth auto-filled: {form.dateOfBirth}</Text>}
+
+            <FormField
+              ref={addressRef}
+              label="Address *"
+              value={form.address}
+              onChangeText={set('address')}
+              error={errors.address}
+              placeholder="123 Main St, Johannesburg"
+              autoComplete="street-address"
+              textContentType="fullStreetAddress"
+              returnKeyType="done"
+              onSubmitEditing={handlePrimary}
+              containerStyle={{ marginBottom: 0 }}
+            />
+          </View>
+        )}
+
+        {step === 3 && (
+          <View>
+            <FormField
+              label="Password *"
+              value={form.password}
+              onChangeText={set('password')}
+              error={errors.password}
+              placeholder="Min 6 characters"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmRef.current?.focus()}
+              right={
+                <Pressable
+                  onPress={() => setShowPassword((v: boolean) => !v)}
+                  style={styles.eye}
+                  hitSlop={4}
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
-                    {acceptedTerms && <Text style={styles.consentCheck}>✓</Text>}
-                  </View>
-                </TouchableOpacity>
-                <Text style={styles.consentText}>
-                  I agree to the DoForYou{' '}
-                  <Text
-                    style={styles.consentLink}
-                    accessibilityRole="link"
-                    accessibilityLabel="Read Terms and Conditions"
-                    onPress={() => {
-                      void Linking.openURL(`${process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'}/terms`).catch(() =>
-                        Alert.alert('Terms & Conditions', 'Open https://dfy-fe-staging.onrender.com/terms in your browser to read the terms.')
-                      )
-                    }}
-                  >Terms & Conditions</Text>
-                  {' '}and{' '}
-                  <Text
-                    style={styles.consentLink}
-                    accessibilityRole="link"
-                    accessibilityLabel="Read Privacy Policy"
-                    onPress={() => {
-                      void Linking.openURL(`${process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'}/privacy`).catch(() =>
-                        Alert.alert('Privacy Policy', 'Open https://dfy-fe-staging.onrender.com/privacy in your browser to read the privacy policy.')
-                      )
-                    }}
-                  >Privacy Policy</Text>.
-                </Text>
-              </View>
-              <View style={styles.navRow}>
-                <Button title="← Back" onPress={() => setStep(2)} variant="secondary" style={{ flex: 1 }} />
-                <Button title="Create Account" onPress={handleSubmit} loading={loading} disabled={!acceptedTerms || !form.password || form.password !== form.confirmPassword} style={{ flex: 1 }} />
-              </View>
-            </View>
-          )}
-
-          <TouchableOpacity style={styles.switchRow} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.switchText}>Already have an account? <Text style={styles.switchLink}>Sign In</Text></Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-    </SafeAreaView>
+                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={21} color={colors.textSecondary} />
+                </Pressable>
+              }
+            />
+            <FormField
+              ref={confirmRef}
+              label="Confirm password *"
+              value={form.confirmPassword}
+              onChangeText={set('confirmPassword')}
+              error={errors.confirmPassword}
+              placeholder="Repeat password"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="go"
+              onSubmitEditing={handleSubmit}
+              containerStyle={{ marginBottom: 0 }}
+            />
+          </View>
+        )}
+      </View>
+    </AuthScreenLayout>
   )
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.background },
-  container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 16, paddingTop: 18, paddingBottom: 20 },
-  panel: { width: '100%', maxWidth: 460, backgroundColor: 'transparent', paddingVertical: 0, marginBottom: 16, alignItems: 'flex-start' },
-  panelTitle: { fontSize: 25, lineHeight: 30, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 7, letterSpacing: -0.8 },
-  panelSub: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 19, marginBottom: 0 },
-  features: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  featureItem: { alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, minWidth: 80, gap: 6, borderWidth: 1, borderColor: COLORS.border },
-  featureIcon: { fontSize: 22, color: COLORS.primaryDark },
-  featureLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
-  formCard: { width: '100%', maxWidth: 460, flexGrow: 1, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, padding: 18, ...SHADOW.md },
-  stepContent: { flexGrow: 1, gap: 12 },
-  stepPrimaryAction: { marginTop: 'auto', minHeight: 52 },
-  inputGroup: { gap: 5 },
-  validationHint: { fontSize: 11, lineHeight: 15, color: COLORS.danger },
-  formTitle: { fontSize: 23, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 10, letterSpacing: -0.4 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  stepItem: { flex: 1, alignItems: 'center', position: 'relative' },
-  stepCircle: { width: 30, height: 30, borderRadius: 12, backgroundColor: COLORS.backgroundDark, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
-  stepActive: { backgroundColor: COLORS.primary },
-  stepDone: { backgroundColor: COLORS.success },
-  stepNum: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
-  stepNumActive: { color: COLORS.white },
-  stepLabel: { fontSize: 11, lineHeight: 14, color: COLORS.textSecondary, textAlign: 'center' },
-  stepLabelActive: { color: COLORS.primaryDark, fontWeight: '800' },
-  stepLine: { position: 'absolute', top: 14, left: '60%', right: '-40%', height: 2, backgroundColor: COLORS.border },
-  stepLineDone: { backgroundColor: COLORS.success },
-  errorBanner: { backgroundColor: '#FFF0EE', borderWidth: 1, borderColor: '#F8D2CE', borderRadius: RADIUS.md, padding: 12, marginBottom: 16 },
-  errorText: { color: '#AD2922', fontSize: 13, lineHeight: 18 },
-  row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 0 },
-  hint: { fontSize: 12, color: COLORS.textSecondary },
-  input: { minHeight: 45, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 13, paddingVertical: 11, fontSize: 14, color: COLORS.textPrimary, backgroundColor: '#FFFEFC' },
-  roleCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 11 },
-  roleCardSelected: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
-  roleIcon: { fontSize: 24 },
-  roleLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
-  roleLabelSelected: { color: COLORS.primaryDark },
-  roleDesc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  navRow: { flexDirection: 'row', gap: 10, marginTop: 'auto', paddingTop: 8 },
-  passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: { paddingHorizontal: 13, paddingVertical: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.background },
-  switchRow: { marginTop: 'auto', paddingTop: 18, alignItems: 'center' },
-  consentRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 14, minHeight: 44 },
-  consentCheckboxTouch: { minWidth: 32, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  consentLink: { color: COLORS.primaryDark, fontWeight: '800', textDecorationLine: 'underline' },
-  consentBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface },
-  consentBoxChecked: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  consentCheck: { color: '#FFFFFF', fontWeight: '900', fontSize: 14 },
-  consentText: { flex: 1, color: COLORS.textSecondary, fontSize: 12, lineHeight: 18 },
-  switchText: { fontSize: 14, color: COLORS.textSecondary },
-  switchLink: { color: COLORS.primaryDark, fontWeight: '800' },
+  back: {
+    position: 'absolute', left: 0, top: 1, width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.cardBorder,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  heading: { fontFamily: fonts.medium, fontSize: 22, lineHeight: 28, color: colors.text, textAlign: 'center', marginTop: 20 },
+  subtitle: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.textSecondary, textAlign: 'center', marginTop: 8 },
+  card: {
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.cardBorder,
+    borderRadius: radii.card, padding: 18, marginTop: 20,
+  },
+  cardTitle: { fontFamily: fonts.medium, fontSize: 18, color: colors.text, textAlign: 'center' },
+  errorBox: { padding: 12, borderRadius: 10, backgroundColor: colors.errorBg, marginBottom: 14 },
+  errorText: { fontFamily: fonts.regular, fontSize: 13, color: colors.error },
+  nameRow: { flexDirection: 'row', gap: 10 },
+  half: { flex: 1, minWidth: 0 },
+  groupLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.text, marginBottom: 8 },
+  roleCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5,
+    borderColor: colors.inputBorder, backgroundColor: colors.surface,
+    borderRadius: radii.input + 2, padding: 12, marginBottom: 10, minHeight: 64,
+  },
+  roleCardSelected: { borderColor: colors.orange, backgroundColor: '#FFF6E9' },
+  roleIcon: {
+    width: 40, height: 40, borderRadius: 12, backgroundColor: '#F6F0E6',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  roleIconSelected: { backgroundColor: colors.iconCircle },
+  roleLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
+  roleLabelSelected: { color: colors.button },
+  roleDesc: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  fieldError: { fontFamily: fonts.regular, fontSize: 12, color: colors.error, marginTop: -4 },
+  hint: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary, marginBottom: 14 },
+  eye: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 },
+  consentCheckboxTouch: { width: 28, minHeight: 28, alignItems: 'center', justifyContent: 'center' },
+  consentBox: {
+    width: 20, height: 20, borderWidth: 1.5, borderColor: colors.inputBorder,
+    borderRadius: 5, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',
+  },
+  consentBoxChecked: { backgroundColor: colors.button, borderColor: colors.button },
+  terms: { flex: 1, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.textSecondary },
+  link: { fontFamily: fonts.medium, fontSize: 13, color: colors.button },
+  button: {
+    height: 52, borderRadius: radii.button, backgroundColor: colors.button,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  buttonInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  buttonText: { fontFamily: fonts.medium, fontSize: 15, color: '#FFFFFF' },
+  pressed: { opacity: 0.88 },
+  loading: { opacity: 0.8 },
+  switchRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 },
+  switchText: { fontFamily: fonts.regular, fontSize: 14, color: colors.text },
+  switchLink: { minHeight: 44, justifyContent: 'center' },
 })

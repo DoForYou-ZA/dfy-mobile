@@ -30,6 +30,7 @@ const pkg = JSON.parse(read('package.json') || '{}');
 const app = JSON.parse(read('app.json') || '{}');
 const login = read('src/screens/auth/LoginScreen.tsx') || '';
 const register = read('src/screens/auth/RegisterScreen.tsx') || '';
+const authLayout = read('src/components/AuthScreenLayout.tsx') || '';
 const brand = read('src/components/BrandLogo.tsx') || '';
 const authHeader = read('src/components/AuthBrandHeader.tsx') || '';
 
@@ -49,9 +50,9 @@ check('Registration has terms/privacy consent',
   /acceptedTerms/.test(register) && /Terms & Conditions/.test(register) && /Privacy Policy/.test(register),
   'Consent must gate account creation and link to terms and privacy information.');
 check('Auth screens allow content to grow and scroll',
-  /flexGrow:\s*1/.test(login) && /flexGrow:\s*1/.test(register) &&
-  /keyboardShouldPersistTaps="handled"/.test(login) && /keyboardShouldPersistTaps="handled"/.test(register),
-  'Check flexGrow and keyboard-friendly scrolling on both auth screens.');
+  /AuthScreenLayout/.test(login) && /AuthScreenLayout/.test(register) &&
+  /flexGrow:\s*1/.test(authLayout) && /keyboardShouldPersistTaps="handled"/.test(authLayout),
+  'Both auth screens should use the shared flex-growing, keyboard-friendly layout.');
 check('Non-functional sign-in pills absent',
   !/Post a task|Find work/.test(login),
   'These labels should not be displayed as inert controls on the sign-in screen.');

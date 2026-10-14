@@ -1,3 +1,4 @@
+import SignOutButton from '../../components/SignOutButton'
 import React, { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
@@ -218,7 +219,7 @@ export default function ProfileScreen({ navigation }: any) {
       )}
 
       <Button title="Bank Accounts" onPress={() => navigation.navigate('BankAccounts')} variant="secondary" fullWidth style={{ marginTop: 8 }} />
-      <Button title="Sign Out" onPress={logout} variant="outline" fullWidth style={{ marginTop: 8 }} />
+      <SignOutButton onConfirm={logout} style={{ marginTop: 8 }} />
     </ScrollView>
   )
 }
