@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
   brandName: { color: COLORS.textPrimary, fontSize: 17, lineHeight: 21, fontWeight: '900', letterSpacing: -0.4 },
   brandCaption: { color: COLORS.textMuted, fontSize: 7, fontWeight: '800', letterSpacing: 0.7, marginTop: 2 },
   navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
-  signOutIcon: { color: COLORS.primaryDark, fontSize: 22, fontWeight: '900' },
+  accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, borderWidth: 1, borderColor: COLORS.primary },
+  signOutIcon: { color: '#292A2D', fontSize: 22, fontWeight: '900' },
   bellButton: {
     position: 'relative', width: 42, height: 42, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
