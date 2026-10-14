@@ -6,7 +6,7 @@ export const colors = {
   textSecondary: '#5F6368',
   placeholder: '#777B82',
   orange: '#F28C28', // brand accent: logo dot, active step, full stops
-  button: '#F28C28', // buttons + links (passes contrast with white text)
+  button: '#F28C28', // brand-orange buttons and links; use dark text on filled orange
   inputBorder: '#D5D9E0',
   cardBorder: '#E5E7EB',
   iconCircle: '#FFF0E0',
