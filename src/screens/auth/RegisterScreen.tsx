@@ -23,6 +23,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
     userType: '', idNumber: '', dateOfBirth: '', address: '',
@@ -42,6 +43,7 @@ export default function RegisterScreen({ navigation }: any) {
   }
 
   const handleSubmit = async () => {
+    if (!acceptedTerms) { setError('Please agree to the terms and privacy notice to continue.'); return }
     if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
     if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
     setError(''); setLoading(true)
@@ -187,9 +189,21 @@ export default function RegisterScreen({ navigation }: any) {
               {form.confirmPassword && form.password !== form.confirmPassword && (
                 <Text style={styles.errorText}>Passwords don't match</Text>
               )}
+              <TouchableOpacity
+                style={styles.consentRow}
+                onPress={() => setAcceptedTerms(value => !value)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: acceptedTerms }}
+                accessibilityLabel="I agree to the terms and privacy notice"
+              >
+                <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
+                  {acceptedTerms && <Text style={styles.consentCheck}>✓</Text>}
+                </View>
+                <Text style={styles.consentText}>I agree to the DoForYou terms and privacy notice.</Text>
+              </TouchableOpacity>
               <View style={styles.navRow}>
                 <Button title="← Back" onPress={() => setStep(2)} variant="secondary" style={{ flex: 1 }} />
-                <Button title="Create Account" onPress={handleSubmit} loading={loading} disabled={!form.password || form.password !== form.confirmPassword} style={{ flex: 1 }} />
+                <Button title="Create Account" onPress={handleSubmit} loading={loading} disabled={!acceptedTerms || !form.password || form.password !== form.confirmPassword} style={{ flex: 1 }} />
               </View>
             </View>
           )}
@@ -248,6 +262,11 @@ const styles = StyleSheet.create({
   passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   eyeBtn: { paddingHorizontal: 13, paddingVertical: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.background },
   switchRow: { marginTop: 'auto', paddingTop: 18, alignItems: 'center' },
+  consentRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 14, minHeight: 44 },
+  consentBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface },
+  consentBoxChecked: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  consentCheck: { color: '#FFFFFF', fontWeight: '900', fontSize: 14 },
+  consentText: { flex: 1, color: COLORS.textSecondary, fontSize: 12, lineHeight: 18 },
   switchText: { fontSize: 14, color: COLORS.textSecondary },
   switchLink: { color: COLORS.primaryDark, fontWeight: '800' },
 })
