@@ -7,6 +7,13 @@ import AppModal from '../../components/AppModal'
 import Button from '../../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 
+function formatRunnerPayout(value: unknown) {
+  if (value === null || value === undefined || value === '') return 'Payout unavailable'
+  const amount = Number(value)
+  if (!Number.isFinite(amount) || amount <= 0) return 'Payout unavailable'
+  return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 export default function MyActiveTasksScreen({ navigation }: any) {
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,7 +48,7 @@ export default function MyActiveTasksScreen({ navigation }: any) {
     dateNeeded: t.dueDate || t.dateNeeded || '',
     userName: t.creatorName || t.userName || '',
     userContact: t.creatorContact || t.userContact || '',
-    payoutAmount: t.payoutAmount || t.PayoutAmount || 0,
+    payoutAmount: t.payoutAmount ?? t.PayoutAmount,
   })
 
   const handleComplete = async () => {
@@ -92,7 +99,7 @@ export default function MyActiveTasksScreen({ navigation }: any) {
       <View style={styles.taskCard}>
         <View style={styles.taskHeader}>
           <StatusBadge status={t.taskStatus} />
-          <Text style={styles.budget}>R{Number(t.payoutAmount || t.budget * 0.85).toFixed(0)} <Text style={styles.budgetSub}>you earn</Text></Text>
+          <Text style={styles.budget}>{formatRunnerPayout(t.payoutAmount)} <Text style={styles.budgetSub}>you earn</Text></Text>
         </View>
         <Text style={styles.taskTitle} numberOfLines={2}>{t.taskName || t.taskDescription}</Text>
         <View style={styles.taskMeta}>
