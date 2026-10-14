@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  View, Text, ScrollView, TextInput, StyleSheet,
+  View, Text, ScrollView, TextInput, StyleSheet, Modal,
   TouchableOpacity, Alert, Switch
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
@@ -13,9 +13,108 @@ import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 const DEFAULT_CATEGORIES = ['Grocery Shopping','Delivery','Cleaning','Gardening','Moving','Repairs','Tutoring','Pet Care','Cooking','Other']
 
 function calcCommission(budget: number) {
-  const commission = Math.max(budget * 0.15, 0)
+  // Match the web app and backend: 15% with a R5 minimum fee.
+  const commission = budget > 0 ? Math.max(budget * 0.15, 5) : 0
   return { total: budget, commission, payout: budget - commission }
 }
+
+
+function DateTimePickerField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const parseValue = (raw: string) => {
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/)
+    if (!match) return new Date()
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]))
+  }
+  const [visible, setVisible] = useState(false)
+  const [month, setMonth] = useState(() => {
+    const d = value ? parseValue(value) : new Date()
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+  })
+  const [selected, setSelected] = useState(() => value ? parseValue(value) : new Date(Date.now() + 86400000))
+  const [time, setTime] = useState(() => value ? value.slice(11, 16) : '14:00')
+  const year = month.getFullYear()
+  const monthIndex = month.getMonth()
+  const days = new Date(year, monthIndex + 1, 0).getDate()
+  const offset = new Date(year, monthIndex, 1).getDay()
+  const dayCells = [...Array(offset).fill(0), ...Array.from({ length: days }, (_, i) => i + 1)]
+  const today = new Date()
+  const chooseDay = (day: number) => setSelected(new Date(year, monthIndex, day, selected.getHours(), selected.getMinutes()))
+  const formatted = value ? value.replace('T', ' ') : 'Select date and time'
+  const commit = () => {
+    const [hours, minutes] = time.split(':').map(Number)
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return
+    const d = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate(), hours, minutes)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    onChange(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+    setVisible(false)
+  }
+  return (
+    <>
+      <TouchableOpacity style={pickerStyles.trigger} onPress={() => setVisible(true)} accessibilityRole="button" accessibilityLabel="Choose task deadline">
+        <Text style={[pickerStyles.triggerText, !value && pickerStyles.placeholder]}>{formatted}</Text>
+        <Text style={pickerStyles.triggerIcon}>▦</Text>
+      </TouchableOpacity>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
+        <View style={pickerStyles.overlay}>
+          <View style={pickerStyles.modal}>
+            <Text style={pickerStyles.title}>Choose deadline</Text>
+            <View style={pickerStyles.monthRow}>
+              <TouchableOpacity onPress={() => setMonth(new Date(year, monthIndex - 1, 1))} style={pickerStyles.monthButton}><Text style={pickerStyles.monthButtonText}>‹</Text></TouchableOpacity>
+              <Text style={pickerStyles.monthLabel}>{month.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}</Text>
+              <TouchableOpacity onPress={() => setMonth(new Date(year, monthIndex + 1, 1))} style={pickerStyles.monthButton}><Text style={pickerStyles.monthButtonText}>›</Text></TouchableOpacity>
+            </View>
+            <View style={pickerStyles.weekRow}>{['S','M','T','W','T','F','S'].map((d, i) => <Text key={i} style={pickerStyles.weekDay}>{d}</Text>)}</View>
+            <View style={pickerStyles.calendarGrid}>
+              {dayCells.map((day, i) => {
+                if (!day) return <View key={`blank-${i}`} style={pickerStyles.dayCell} />
+                const active = selected.getFullYear() === year && selected.getMonth() === monthIndex && selected.getDate() === day
+                const date = new Date(year, monthIndex, day)
+                const tooOld = date < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                return <TouchableOpacity key={day} disabled={tooOld} onPress={() => chooseDay(day)} style={[pickerStyles.dayCell, active && pickerStyles.daySelected, tooOld && pickerStyles.dayDisabled]}><Text style={[pickerStyles.dayText, active && pickerStyles.dayTextSelected, tooOld && pickerStyles.dayTextDisabled]}>{day}</Text></TouchableOpacity>
+              })}
+            </View>
+            <Text style={pickerStyles.timeLabel}>Time (24-hour)</Text>
+            <TextInput style={pickerStyles.timeInput} value={time} onChangeText={setTime} placeholder="14:00" keyboardType="numbers-and-punctuation" maxLength={5} />
+            <View style={pickerStyles.actions}>
+              <TouchableOpacity onPress={() => setVisible(false)} style={pickerStyles.cancel}><Text style={pickerStyles.cancelText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity onPress={commit} style={pickerStyles.confirm}><Text style={pickerStyles.confirmText}>Use deadline</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  )
+}
+
+const pickerStyles = StyleSheet.create({
+  trigger: { minHeight: 48, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white },
+  triggerText: { color: COLORS.textPrimary, fontSize: 15 },
+  placeholder: { color: COLORS.textMuted },
+  triggerIcon: { color: COLORS.primaryDark, fontSize: 21, marginLeft: 8 },
+  overlay: { flex: 1, backgroundColor: 'rgba(20,16,12,0.5)', justifyContent: 'center', padding: 18 },
+  modal: { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: 18, maxWidth: 440, width: '100%', alignSelf: 'center' },
+  title: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '800', marginBottom: 14 },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  monthButton: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  monthButtonText: { color: COLORS.primaryDark, fontSize: 26, fontWeight: '700' },
+  monthLabel: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '700' },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 6 },
+  weekDay: { width: '13.5%', textAlign: 'center', color: COLORS.textMuted, fontSize: 12, fontWeight: '700' },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
+  dayCell: { width: '14.28%', height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  daySelected: { backgroundColor: COLORS.primary },
+  dayDisabled: { opacity: 0.35 },
+  dayText: { color: COLORS.textPrimary, fontSize: 14 },
+  dayTextSelected: { color: COLORS.white, fontWeight: '800' },
+  dayTextDisabled: { color: COLORS.textMuted },
+  timeLabel: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700', marginTop: 14, marginBottom: 6 },
+  timeInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 11, color: COLORS.textPrimary, fontSize: 16 },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 },
+  cancel: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.background },
+  cancelText: { color: COLORS.textSecondary, fontWeight: '700' },
+  confirm: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
+  confirmText: { color: COLORS.white, fontWeight: '800' },
+})
 
 export default function PostErrandScreen({ navigation, route }: any) {
   const { user, canPostErrands, isAuthenticated } = useAuth()
@@ -26,7 +125,8 @@ export default function PostErrandScreen({ navigation, route }: any) {
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [minAmount] = useState(50)
+  const [minAmount, setMinAmount] = useState(50)
+  const [maxAmount, setMaxAmount] = useState(5000)
   const [form, setForm] = useState({
     taskName: '', taskDescription: '', category: '', area: '',
     priority: 'standard', dateNeeded: '', budget: '', notes: '',
@@ -38,6 +138,11 @@ export default function PostErrandScreen({ navigation, route }: any) {
       navigation.navigate('Dashboard')
       return
     }
+    userPreferencesApi.get().then(r => {
+      const d = r.data?.data || r.data
+      if (d?.minTaskAmount != null) setMinAmount(Number(d.minTaskAmount))
+      if (d?.maxTaskAmount != null) setMaxAmount(Number(d.maxTaskAmount))
+    }).catch(() => {})
     categoryApi.getAll().then(r => {
       const cats = r.data?.data || r.data
       if (Array.isArray(cats) && cats.length)
@@ -66,8 +171,16 @@ export default function PostErrandScreen({ navigation, route }: any) {
     setForm(f => ({ ...f, [field]: val }))
 
   const isStep1Valid = () =>
-    form.taskName.trim().length >= 3 && form.taskDescription.length >= 10 && !!form.category && !!form.area
-  const isStep2Valid = () => !!form.dateNeeded && parseFloat(form.budget) >= minAmount
+    form.taskName.trim().length >= 3 && form.taskDescription.trim().length >= 20 && form.taskDescription.trim().length <= 500 && !!form.category && !!form.area
+  const isStep2Valid = () => {
+    const amount = Number(form.budget)
+    const date = form.dateNeeded ? new Date(form.dateNeeded) : null
+    const now = new Date()
+    return !!date && !Number.isNaN(date.getTime()) &&
+      date.getTime() > now.getTime() + 30 * 60 * 1000 &&
+      date.getTime() <= now.getTime() + 365 * 24 * 60 * 60 * 1000 &&
+      Number.isFinite(amount) && amount >= minAmount && amount <= maxAmount
+  }
   const budget = parseFloat(form.budget) || 0
   const commission = calcCommission(budget)
 
@@ -83,7 +196,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
         priority: form.priority,
         dateNeeded: form.dateNeeded,
         budget: parseFloat(form.budget),
-        notes: form.notes,
+        notes: form.notes.trim(),
         termsAccepted: form.termsAccepted,
       }
       const res = isEdit
@@ -108,7 +221,11 @@ export default function PostErrandScreen({ navigation, route }: any) {
         setError(data.message || 'Failed to create task.')
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit task.')
+      const body = err.response?.data
+      const validationErrors = body?.errors && typeof body.errors === 'object'
+        ? Object.values(body.errors).flat().filter(Boolean).join(' ')
+        : ''
+      setError(validationErrors || body?.message || body?.title || 'Failed to submit task. Please check the details and try again.')
     } finally { setSubmitting(false) }
   }
 
@@ -189,7 +306,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 numberOfLines={4}
                 textAlignVertical="top"
               />
-              <Text style={styles.hint}>Be specific — the more details, the better matches!</Text>
+              <Text style={styles.hint}>Be specific — the more details, the better matches! Use 20–500 characters. {form.taskDescription.trim().length}/500</Text>
             </View>
 
             <View>
@@ -255,18 +372,13 @@ export default function PostErrandScreen({ navigation, route }: any) {
             <Text style={styles.stepTitle}>📅 When & How Much?</Text>
 
             <View>
-              <Text style={styles.label}>Deadline * <Text style={styles.hint}>(YYYY-MM-DDTHH:MM)</Text></Text>
-              <TextInput
-                style={styles.input}
-                value={form.dateNeeded}
-                onChangeText={set('dateNeeded')}
-                placeholder="2025-12-31T14:00"
-                placeholderTextColor={COLORS.textMuted}
-              />
+              <Text style={styles.label}>Deadline *</Text>
+              <DateTimePickerField value={form.dateNeeded} onChange={value => set('dateNeeded')(value)} />
             </View>
 
             <View>
-              <Text style={styles.label}>Your Budget (R) * <Text style={styles.hint}>Min R{minAmount}</Text></Text>
+              <Text style={styles.label}>Your Budget (R) *</Text>
+              <Text style={styles.hint}>R{minAmount} minimum · R{maxAmount} maximum</Text>
               <View style={styles.budgetRow}>
                 <View style={styles.currencyPrefix}>
                   <Text style={styles.currencyText}>R</Text>
@@ -282,14 +394,14 @@ export default function PostErrandScreen({ navigation, route }: any) {
               </View>
             </View>
 
-            {budget >= 50 && (
+            {budget >= minAmount && (
               <View style={styles.breakdown}>
                 <View style={styles.breakdownRow}>
                   <Text style={styles.breakdownLabel}>Task Budget:</Text>
                   <Text style={styles.breakdownValue}>R{commission.total.toFixed(2)}</Text>
                 </View>
                 <View style={styles.breakdownRow}>
-                  <Text style={styles.breakdownLabel}>Platform Fee (15%):</Text>
+                  <Text style={styles.breakdownLabel}>DFY platform fee (15%):</Text>
                   <Text style={[styles.breakdownValue, { color: COLORS.danger }]}>-R{commission.commission.toFixed(2)}</Text>
                 </View>
                 <View style={[styles.breakdownRow, styles.breakdownTotal]}>
@@ -336,9 +448,9 @@ export default function PostErrandScreen({ navigation, route }: any) {
             </View>
 
             <View style={styles.paymentInfo}>
-              <Text style={styles.paymentInfoTitle}>🔒 Secure Payment via PayFast</Text>
-              <Text style={styles.paymentInfoSub}>Bank-level security • Instant activation • Money-back guarantee</Text>
-              <Text style={styles.paymentInfoNote}>Powered by PayFast — South Africa's leading payment gateway</Text>
+              <Text style={styles.paymentInfoTitle}>🔒 Secure Paystack payment</Text>
+              <Text style={styles.paymentInfoSub}>Secure hosted checkout • Payment verified by DoForYou</Text>
+              <Text style={styles.paymentInfoNote}>Your task becomes live only after payment is verified.</Text>
             </View>
 
             <View style={styles.navRow}>
