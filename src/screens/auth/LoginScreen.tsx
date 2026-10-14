@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
+import BrandLogo from '../../components/BrandLogo'
 import { COLORS, RADIUS, SHADOW } from '../../config/theme'
 
 export default function LoginScreen({ navigation }: any) {
@@ -44,10 +45,7 @@ export default function LoginScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandRow}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkLetter}>D</Text>
-            <View style={styles.brandMarkDot} />
-          </View>
+          <BrandLogo size={42} />
           <View>
             <Text style={styles.brandName}>DoForYou</Text>
             <Text style={styles.brandTagline}>HELPING YOUR COMMUNITY MOVE</Text>
@@ -59,26 +57,11 @@ export default function LoginScreen({ navigation }: any) {
             <View style={styles.liveDot} />
             <Text style={styles.heroKickerText}>LOCAL HELP. REAL OPPORTUNITY.</Text>
           </View>
-          <Text style={styles.heroTitle}>Good things happen when we help each other.</Text>
+          <Text style={styles.heroTitle}>Good things happen when we help.</Text>
           <Text style={styles.heroSubtitle}>
             Find a helping hand, offer your skills, and get everyday things moving.
           </Text>
-          <View style={styles.valueRow}>
-            <View style={styles.valuePill}>
-              <View style={[styles.valueIcon, styles.valueIconOrange]}>
-                <Text style={styles.valueIconText}>＋</Text>
-              </View>
-              <Text style={styles.valueLabel}>Post a task</Text>
-            </View>
-            <View style={styles.valuePill}>
-              <View style={[styles.valueIcon, styles.valueIconGreen]}>
-                <Text style={styles.valueIconTextGreen}>↗</Text>
-              </View>
-              <Text style={styles.valueLabel}>Find work</Text>
-            </View>
-          </View>
-          <View style={styles.heroOrb} />
-          <View style={styles.heroOrbSmall} />
+          
         </View>
 
         <View style={styles.formCard}>
@@ -174,13 +157,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flexGrow: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 },
-  brandMark: {
-    width: 36, height: 36, borderRadius: 13, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
-  },
-  brandMarkLetter: { color: COLORS.white, fontSize: 23, fontWeight: '900', marginTop: -2 },
-  brandMarkDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFE4B8', position: 'absolute', right: 9, bottom: 8 },
-  brandName: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
+    brandName: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
   brandTagline: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 3 },
   hero: { marginBottom: 12, position: 'relative', overflow: 'hidden' },
   heroKicker: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, marginBottom: 7, zIndex: 1 },
@@ -191,20 +168,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.7, marginBottom: 6, maxWidth: 390, zIndex: 1,
   },
   heroSubtitle: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19, maxWidth: 340, zIndex: 1 },
-  valueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, zIndex: 1 },
-  valuePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6,
-    paddingHorizontal: 9, borderRadius: RADIUS.full, backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  valueIcon: { width: 24, height: 24, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  valueIconOrange: { backgroundColor: COLORS.primaryLight },
-  valueIconGreen: { backgroundColor: '#E6F7EF' },
-  valueIconText: { color: COLORS.primaryDark, fontSize: 16, fontWeight: '900', marginTop: -1 },
-  valueIconTextGreen: { color: COLORS.success, fontSize: 15, fontWeight: '900' },
-  valueLabel: { color: COLORS.textPrimary, fontSize: 11, fontWeight: '700' },
-  heroOrb: { position: 'absolute', width: 100, height: 100, borderRadius: 50, right: -54, top: -32, backgroundColor: '#FFF0D9' },
-  heroOrbSmall: { position: 'absolute', width: 42, height: 42, borderRadius: 21, right: 0, top: 10, backgroundColor: '#FFF7EB', borderWidth: 1, borderColor: '#FFE6C7' },
   formCard: {
     backgroundColor: COLORS.surface, borderRadius: 22, padding: 16,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOW.md,
@@ -241,5 +204,5 @@ const styles = StyleSheet.create({
   trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 10 },
   trustDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
   trustText: { color: COLORS.textMuted, fontSize: 10, textAlign: 'center' },
-  footer: { textAlign: 'center', paddingTop: 12, color: COLORS.textMuted, fontSize: 11, fontWeight: '600' },
+  footer: { textAlign: 'center', marginTop: 'auto', paddingTop: 18, color: COLORS.textSecondary, fontSize: 11, fontWeight: '600' },
 })
