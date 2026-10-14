@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationContext'
 import { COLORS, RADIUS, SHADOW } from '../config/theme'
 import Button from '../components/Button'
+import BrandLogo from '../components/BrandLogo'
 
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
@@ -36,13 +37,10 @@ function TopNavbar({ navRef }: { navRef: any }) {
     <View style={[styles.navbar, { paddingTop: insets.top }]}>
       <View style={styles.navbarInner}>
         <View style={styles.brandGroup}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>D</Text>
-            <View style={styles.brandMarkDot} />
-          </View>
+          <BrandLogo size={38} />
           <View>
             <Text style={styles.brandName}>DoForYou</Text>
-            <Text style={styles.brandCaption}>EVERYDAY HELP, MADE EASIER</Text>
+            <Text style={styles.brandCaption}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
           </View>
         </View>
         <View style={styles.navActions}>
@@ -143,7 +141,7 @@ const orangeHeader = {
 function AdminMobileNotice({ onSignOut }: { onSignOut: () => void }) {
   return (
     <View style={styles.adminNoticePage}>
-      <View style={styles.adminNoticeMark}><Text style={styles.adminNoticeMarkText}>D</Text></View>
+      <BrandLogo size={56} />
       <Text style={styles.adminNoticeEyebrow}>DOFORYOU WORKSPACE</Text>
       <Text style={styles.adminNoticeTitle}>Admin tools live on the web.</Text>
       <Text style={styles.adminNoticeText}>
@@ -162,12 +160,9 @@ export default function AppNavigator() {
   if (loading) {
     return (
       <View style={styles.loadingSplash} accessibilityLabel="DoForYou is starting">
-        <View style={styles.loadingSplashMark}>
-          <Text style={styles.loadingSplashMarkText}>D</Text>
-          <View style={styles.brandMarkDot} />
-        </View>
+        <BrandLogo size={64} />
         <Text style={styles.loadingSplashName}>DoForYou</Text>
-        <Text style={styles.loadingSplashCaption}>HELPING YOUR COMMUNITY MOVE</Text>
+        <Text style={styles.loadingSplashCaption}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
       </View>
     )
   }
@@ -228,11 +223,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: '#FFF9F2', alignItems: 'center',
     justifyContent: 'center', paddingHorizontal: 24,
   },
-  loadingSplashMark: {
-    width: 56, height: 56, borderRadius: 19, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 14, ...SHADOW.primary,
-  },
-  loadingSplashMarkText: { color: COLORS.white, fontSize: 31, fontWeight: '900', marginTop: -2 },
+  loadingSplashMark: { marginBottom: 14 },
   loadingSplashName: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', letterSpacing: -0.6 },
   loadingSplashCaption: { color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 5 },
   appShell: { flex: 1, backgroundColor: COLORS.background },
@@ -255,7 +246,6 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 13, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center', ...SHADOW.primary,
   },
-  brandMarkText: { color: COLORS.white, fontSize: 22, fontWeight: '900', marginTop: -2 },
   brandMarkDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFE4B8', position: 'absolute', right: 7, bottom: 7 },
   brandName: { color: COLORS.textPrimary, fontSize: 17, lineHeight: 21, fontWeight: '900', letterSpacing: -0.4 },
   brandCaption: { color: COLORS.textMuted, fontSize: 7, fontWeight: '800', letterSpacing: 0.7, marginTop: 2 },
@@ -300,11 +290,6 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: COLORS.background, justifyContent: 'center',
     padding: 28, alignItems: 'center',
   },
-  adminNoticeMark: {
-    width: 62, height: 62, borderRadius: 22, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 22, ...SHADOW.primary,
-  },
-  adminNoticeMarkText: { color: COLORS.white, fontSize: 34, fontWeight: '900' },
   adminNoticeEyebrow: { color: COLORS.primaryDark, fontSize: 10, fontWeight: '900', letterSpacing: 1.5, marginBottom: 10 },
   adminNoticeTitle: { color: COLORS.textPrimary, fontSize: 28, lineHeight: 34, textAlign: 'center', fontWeight: '900', letterSpacing: -0.8, marginBottom: 12 },
   adminNoticeText: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 24, maxWidth: 330 },
