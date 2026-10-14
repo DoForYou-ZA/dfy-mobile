@@ -16,7 +16,7 @@ const DEFAULT_CATEGORIES = ['Grocery Shopping','Delivery','Cleaning','Gardening'
 
 // Use the backend-calculated payout (including its minimum commission rule) as the source of truth.
 function getRunnerPayout(task: Task) {
-  const amount = task.payoutAmount
+  const amount = task.payoutAmount ?? (task as any).PayoutAmount
   if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) return '—'
   return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
