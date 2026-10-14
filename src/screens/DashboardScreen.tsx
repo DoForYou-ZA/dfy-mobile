@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   progressFillComplete: { backgroundColor: '#17865B' },
   promptArrow: { fontSize: 26, color: COLORS.primaryDark, fontWeight: '400' },
   promptArrowComplete: { color: '#17865B' },
-  greetingSubtitle: { color: COLORS.textSecondary, fontSize: 15, lineHeight: 22, marginTop: 0, marginBottom: 22 },
+
   actionCard: {
     backgroundColor: COLORS.surface, borderRadius: 26, padding: 20, marginBottom: 26,
     borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', ...SHADOW.md,
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   textLink: { color: COLORS.primaryDark, fontSize: 12, fontWeight: '800', paddingBottom: 3 },
   metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 18, gap: 10 },
   metricCard: {
-    width: '48%', minHeight: 126, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
+    width: '47%', minHeight: 126, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
     padding: 14, borderWidth: 1, borderColor: COLORS.borderLight, overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center', ...SHADOW.sm,
   },
