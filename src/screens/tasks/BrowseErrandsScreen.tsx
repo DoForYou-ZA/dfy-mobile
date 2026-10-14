@@ -18,7 +18,7 @@ const DEFAULT_CATEGORIES = ['Grocery Shopping','Delivery','Cleaning','Gardening'
 function getRunnerPayout(task: Task) {
   const amount = task.payoutAmount
   if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) return '—'
-  return amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export default function BrowseErrandsScreen({ navigation }: any) {
@@ -123,10 +123,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
         <View style={s.taskCategory}>
           <Text style={s.taskCategoryText}>{task.category || 'General'}</Text>
         </View>
-        <Text style={s.taskBudget}>
-          <Text style={s.taskBudgetCurrency}>R</Text>
-          {getRunnerPayout(task)}
-        </Text>
+        <Text style={s.taskBudget}>{getRunnerPayout(task)}</Text>
       </View>
 
       {/* .task-card-body */}
@@ -297,7 +294,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
               {(detailModal.date_time_needed || detailModal.dateNeeded) && (
                 <Text style={s.modalMeta}>📅 {new Date(detailModal.date_time_needed || detailModal.dateNeeded!).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
               )}
-              <Text style={s.modalMeta}>💰 You earn: <Text style={{ color: COLORS.primary, fontWeight: '700' }}>R{getRunnerPayout(detailModal)}</Text></Text>
+              <Text style={s.modalMeta}>💰 You earn: <Text style={{ color: COLORS.primary, fontWeight: '700' }}>{getRunnerPayout(detailModal)}</Text></Text>
               {detailModal.notes && <Text style={s.modalMeta}>📝 {detailModal.notes}</Text>}
             </View>
           </View>
@@ -319,7 +316,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
             <View style={s.claimTaskInfo}>
               <Text style={s.modalTitle}>{claimModal.task_description || claimModal.taskDescription}</Text>
               <Text style={s.modalMeta}>📍 {claimModal.area_suburb || claimModal.area}</Text>
-              <Text style={s.modalMeta}>💰 You earn: <Text style={{ color: COLORS.primary, fontWeight: '700' }}>R{getRunnerPayout(claimModal)}</Text></Text>
+              <Text style={s.modalMeta}>💰 You earn: <Text style={{ color: COLORS.primary, fontWeight: '700' }}>{getRunnerPayout(claimModal)}</Text></Text>
             </View>
             {claimError ? <AlertBanner type="error" message={claimError} /> : null}
           </View>
