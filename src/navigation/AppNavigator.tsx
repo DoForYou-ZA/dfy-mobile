@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native'
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -32,6 +32,7 @@ function TopNavbar({ navRef }: { navRef: any }) {
   const { unreadCount } = useNotifications()
   const { logout } = useAuth()
   const insets = useSafeAreaInsets()
+  const [signOutVisible, setSignOutVisible] = React.useState(false)
 
   return (
     <View style={[styles.navbar, { paddingTop: insets.top }]}>
@@ -46,10 +47,7 @@ function TopNavbar({ navRef }: { navRef: any }) {
         <View style={styles.navActions}>
           <TouchableOpacity
             style={styles.accountButton}
-            onPress={() => Alert.alert('Sign out?', 'You will need to sign in again to access your account.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign out', style: 'destructive', onPress: () => { void logout() } },
-            ])}
+            onPress={() => setSignOutVisible(true)}
             activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
@@ -72,6 +70,49 @@ function TopNavbar({ navRef }: { navRef: any }) {
           </TouchableOpacity>
         </View>
       </View>
+      <Modal
+        visible={signOutVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setSignOutVisible(false)}
+      >
+        <View style={styles.signOutOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setSignOutVisible(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close sign out confirmation"
+          />
+          <View style={styles.signOutDialog} accessibilityRole="alert" accessibilityViewIsModal>
+            <View style={styles.signOutLogoWrap}>
+              <BrandLogo size={52} />
+            </View>
+            <Text style={styles.signOutEyebrow}>DOFORYOU ACCOUNT</Text>
+            <Text style={styles.signOutTitle}>Sign out?</Text>
+            <Text style={styles.signOutDescription}>
+              You will need to sign in again to access your account.
+            </Text>
+            <View style={styles.signOutActions}>
+              <Button
+                title="Cancel"
+                variant="secondary"
+                onPress={() => setSignOutVisible(false)}
+                style={styles.signOutAction}
+              />
+              <Button
+                title="Sign out"
+                variant="danger"
+                onPress={() => {
+                  setSignOutVisible(false)
+                  void logout()
+                }}
+                style={styles.signOutAction}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -252,6 +293,68 @@ const styles = StyleSheet.create({
   navActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   accountButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight, borderWidth: 1, borderColor: COLORS.border },
   signOutIcon: { color: COLORS.primaryDark, fontSize: 22, fontWeight: '900' },
+  signOutOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(35, 24, 16, 0.56)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  signOutDialog: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: COLORS.surface,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 20,
+    alignItems: 'center',
+    shadowColor: '#2A1B10',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 16,
+  },
+  signOutLogoWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  signOutEyebrow: {
+    color: COLORS.primaryDark,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    marginBottom: 7,
+  },
+  signOutTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 25,
+    lineHeight: 31,
+    fontWeight: '900',
+    letterSpacing: -0.6,
+    marginBottom: 8,
+  },
+  signOutDescription: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 22,
+  },
+  signOutActions: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  signOutAction: { flex: 1, minHeight: 48, borderRadius: RADIUS.md },
   bellButton: {
     position: 'relative', width: 42, height: 42, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
