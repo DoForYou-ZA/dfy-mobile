@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   typecheck-and-bundle:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -41,7 +41,7 @@ jobs:
           if-no-files-found: ignore
 
   android-release-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     # Expo public variables are embedded in the client bundle at build time.
     # Keep these staging URLs here so the installed APK targets the staging API.
