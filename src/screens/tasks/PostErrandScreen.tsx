@@ -172,7 +172,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
     setForm(f => ({ ...f, [field]: val }))
 
   const isStep1Valid = () =>
-    form.taskName.trim().length >= 3 && form.taskDescription.trim().length >= 20 && form.taskDescription.trim().length <= 500 && !!(form.category === 'Other' ? form.customCategory.trim() : form.category.trim()) && !!form.area.trim()
+    form.taskName.trim().length >= 1 && form.taskName.trim().length <= 60 && form.taskDescription.trim().length >= 20 && form.taskDescription.trim().length <= 500 && !!(form.category === 'Other' ? form.customCategory.trim() : form.category.trim()) && form.area.trim().length >= 2
   const isStep2Valid = () => {
     const amount = Number(form.budget)
     const date = form.dateNeeded ? new Date(form.dateNeeded) : null
@@ -190,10 +190,10 @@ export default function PostErrandScreen({ navigation, route }: any) {
     setSubmitting(true); setError('')
     try {
       const payload = {
-        taskName: form.taskName,
-        taskDescription: form.taskDescription,
-        category: form.category,
-        area: form.area,
+        taskName: form.taskName.trim(),
+        taskDescription: form.taskDescription.trim(),
+        category: form.category === 'Other' ? form.customCategory.trim() : form.category.trim(),
+        area: form.area.trim(),
         priority: form.priority,
         dateNeeded: form.dateNeeded,
         budget: parseFloat(form.budget),
