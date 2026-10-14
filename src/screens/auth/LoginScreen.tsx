@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, StyleSheet, TouchableOpacity, Linking, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -120,14 +120,20 @@ export default function LoginScreen({ navigation }: any) {
           <TouchableOpacity
             style={styles.forgotRow}
             onPress={() => {
-              if (!email.trim()) {
-                setError('Enter your email address first, then contact support to reset your password.')
-                return
-              }
-              setError('Password reset is not available in the app yet. Please contact DoForYou support for help.')
+              const subject = encodeURIComponent('Password reset assistance')
+              const accountEmail = email.trim() || '(please add the email address for my account)'
+              const body = encodeURIComponent(
+                `Hello DoForYou Support,\n\nI need help regaining access to my account. Please advise me on the secure next steps to reset my password.\n\nAccount email: ${accountEmail}\n\nThank you.`
+              )
+              void Linking.openURL(`mailto:info@doforyou.co.za?subject=${subject}&body=${body}`).catch(() => {
+                Alert.alert(
+                  'Contact DoForYou support',
+                  'We could not open your email app. Please email info@doforyou.co.za with the subject “Password reset assistance”.'
+                )
+              })
             }}
             accessibilityRole="button"
-            accessibilityLabel="Forgot password"
+            accessibilityLabel="Request password reset help from DoForYou support"
           >
             <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
