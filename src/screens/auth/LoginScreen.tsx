@@ -48,7 +48,7 @@ export default function LoginScreen({ navigation }: any) {
           <BrandLogo size={42} />
           <View>
             <Text style={styles.brandName}>DoForYou</Text>
-            <Text style={styles.brandTagline}>HELPING YOUR COMMUNITY MOVE</Text>
+            <Text style={styles.brandTagline}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
           </View>
         </View>
 
@@ -141,7 +141,7 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.trustText}>Your tasks and payments are managed securely.</Text>
           </View>
         </View>
-        <Text style={styles.footer}>Small tasks. Stronger communities.</Text>
+        <Text style={styles.footer}>A South African task marketplace.</Text>
       </ScrollView>
     </KeyboardAvoidingView>
     </SafeAreaView>
