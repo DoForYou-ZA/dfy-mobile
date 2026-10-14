@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View, Text, ScrollView, TextInput, StyleSheet, Modal,
   TouchableOpacity, Alert, Switch
@@ -125,6 +125,11 @@ export default function PostErrandScreen({ navigation, route }: any) {
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [pendingScrollField, setPendingScrollField] = useState('')
+  const scrollRef = useRef<ScrollView>(null)
+  const fieldPositions = useRef<Record<string, number>>({})
   const [minAmount, setMinAmount] = useState(50)
   const [maxAmount, setMaxAmount] = useState(5000)
   const [form, setForm] = useState({
@@ -171,22 +176,121 @@ export default function PostErrandScreen({ navigation, route }: any) {
   const set = (field: string) => (val: string | boolean) =>
     setForm(f => ({ ...f, [field]: val }))
 
-  const isStep1Valid = () =>
-    form.taskName.trim().length >= 1 && form.taskName.trim().length <= 60 && form.taskDescription.trim().length >= 20 && form.taskDescription.trim().length <= 500 && !!(form.category === 'Other' ? form.customCategory.trim() : form.category.trim()) && form.area.trim().length >= 2
-  const isStep2Valid = () => {
+  const validateForm = () => {
     const amount = Number(form.budget)
     const date = form.dateNeeded ? new Date(form.dateNeeded) : null
     const now = new Date()
-    return !!date && !Number.isNaN(date.getTime()) &&
-      date.getTime() > now.getTime() + 30 * 60 * 1000 &&
-      date.getTime() <= now.getTime() + 365 * 24 * 60 * 60 * 1000 &&
-      Number.isFinite(amount) && amount >= minAmount && amount <= maxAmount
+    const next: Record<string, string> = {}
+    const name = form.taskName.trim()
+    const description = form.taskDescription.trim()
+    const category = form.category === 'Other' ? form.customCategory.trim() : form.category.trim()
+    if (!name) next.taskName = 'Enter a task name.'
+    else if (name.length < 3) next.taskName = 'Task name must be at least 3 characters.'
+    else if (name.length > 60) next.taskName = 'Task name must be 60 characters or fewer.'
+    if (!description) next.taskDescription = 'Describe what needs to be done.'
+    else if (description.length < 20) next.taskDescription = `Add more detail (at least 20 characters; currently ${description.length}).`
+    else if (description.length > 500) next.taskDescription = 'Description must be 500 characters or fewer.'
+    if (!form.category.trim()) next.category = 'Choose a category.'
+    else if (form.category === 'Other' && !category) next.customCategory = 'Enter a custom category.'
+    else if (form.category === 'Other' && category.length > 80) next.customCategory = 'Custom category must be 80 characters or fewer.'
+    if (form.area.trim().length < 2) next.area = 'Enter an area or suburb (at least 2 characters).'
+    if (!form.dateNeeded || !date || Number.isNaN(date.getTime())) next.dateNeeded = 'Choose a valid deadline.'
+    else if (date.getTime() <= now.getTime() + 30 * 60 * 1000) next.dateNeeded = 'Deadline must be at least 30 minutes from now.'
+    else if (date.getTime() > now.getTime() + 365 * 24 * 60 * 60 * 1000) next.dateNeeded = 'Deadline cannot be more than 365 days away.'
+    if (!form.budget.trim() || !Number.isFinite(amount)) next.budget = 'Enter a valid budget amount.'
+    else if (amount < minAmount) next.budget = `Budget must be at least R${minAmount}.`
+    else if (amount > maxAmount) next.budget = `Budget cannot exceed R${maxAmount}.`
+    if (!form.termsAccepted) next.termsAccepted = 'Accept the Terms & Conditions to continue.'
+    return next
   }
+
+  const fieldStep: Record<string, number> = {
+    taskName: 1, taskDescription: 1, category: 1, customCategory: 1, area: 1,
+    dateNeeded: 2, budget: 2, termsAccepted: 3,
+  }
+
+  const validateStep = (targetStep: number) => {
+    const allErrors = validateForm()
+    const fieldsForStep = Object.keys(allErrors).filter(field => fieldStep[field] === targetStep)
+    setTouched(current => ({ ...current, ...Object.fromEntries(fieldsForStep.map(field => [field, true])) }))
+    setFieldErrors(allErrors)
+    if (fieldsForStep.length) {
+      setPendingScrollField(fieldsForStep[0])
+      return false
+    }
+    return true
+  }
+
+  useEffect(() => {
+    if (!pendingScrollField) return
+    const position = fieldPositions.current[pendingScrollField]
+    if (position != null) scrollRef.current?.scrollTo({ y: Math.max(position - 24, 0), animated: true })
+    setPendingScrollField('')
+  }, [step, pendingScrollField])
+
+  const isFieldInvalid = (field: string) => !!touched[field] && !!fieldErrors[field]
+  const fieldHint = (field: string) => isFieldInvalid(field)
+    ? <Text accessibilityRole="alert" style={styles.fieldError}>{fieldErrors[field]}</Text>
+    : null
+
+  const set = (field: string) => (val: string | boolean) => {
+    setForm(f => ({ ...f, [field]: val }))
+    if (touched[field]) {
+      const updated = { ...form, [field]: val }
+      const oldForm = form
+      // Validate the edited field immediately after it has been touched.
+      const amount = Number(updated.budget)
+      const date = updated.dateNeeded ? new Date(updated.dateNeeded) : null
+      const now = new Date()
+      let message = ''
+      if (field === 'taskName') {
+        const value = String(val).trim()
+        message = !value ? 'Enter a task name.' : value.length < 3 ? 'Task name must be at least 3 characters.' : value.length > 60 ? 'Task name must be 60 characters or fewer.' : ''
+      } else if (field === 'taskDescription') {
+        const value = String(val).trim()
+        message = !value ? 'Describe what needs to be done.' : value.length < 20 ? `Add more detail (at least 20 characters; currently ${value.length}).` : value.length > 500 ? 'Description must be 500 characters or fewer.' : ''
+      } else if (field === 'category') {
+        message = !String(val).trim() ? 'Choose a category.' : ''
+      } else if (field === 'customCategory') {
+        const value = String(val).trim()
+        message = updated.category === 'Other' && !value ? 'Enter a custom category.' : value.length > 80 ? 'Custom category must be 80 characters or fewer.' : ''
+      } else if (field === 'area') {
+        message = String(val).trim().length < 2 ? 'Enter an area or suburb (at least 2 characters).' : ''
+      } else if (field === 'dateNeeded') {
+        message = !date || Number.isNaN(date.getTime()) ? 'Choose a valid deadline.' : date.getTime() <= now.getTime() + 30 * 60 * 1000 ? 'Deadline must be at least 30 minutes from now.' : date.getTime() > now.getTime() + 365 * 24 * 60 * 60 * 1000 ? 'Deadline cannot be more than 365 days away.' : ''
+      } else if (field === 'budget') {
+        message = !String(val).trim() || !Number.isFinite(amount) ? 'Enter a valid budget amount.' : amount < minAmount ? `Budget must be at least R${minAmount}.` : amount > maxAmount ? `Budget cannot exceed R${maxAmount}.` : ''
+      } else if (field === 'termsAccepted') {
+        message = val ? '' : 'Accept the Terms & Conditions to continue.'
+      }
+      setFieldErrors(current => ({ ...current, [field]: message }))
+    }
+  }
+
+  const isStep1Valid = () => Object.keys(validateForm()).every(field => fieldStep[field] !== 1)
+  const isStep2Valid = () => Object.keys(validateForm()).every(field => fieldStep[field] !== 2)
   const budget = parseFloat(form.budget) || 0
   const commission = calcCommission(budget)
 
   const handleSubmit = async () => {
-    if (!form.termsAccepted) { setError('Please accept the terms and conditions.'); return }
+    const validation = validateForm()
+    setFieldErrors(validation)
+    setTouched({
+      taskName: true, taskDescription: true, category: true, customCategory: true,
+      area: true, dateNeeded: true, budget: true, termsAccepted: true,
+    })
+    const firstInvalid = Object.keys(validation)[0]
+    if (firstInvalid) {
+      const targetStep = fieldStep[firstInvalid] || 1
+      setPendingScrollField(firstInvalid)
+      if (step !== targetStep) setStep(targetStep)
+      else {
+        const position = fieldPositions.current[firstInvalid]
+        if (position != null) scrollRef.current?.scrollTo({ y: Math.max(position - 24, 0), animated: true })
+      }
+      setError('Please fix the highlighted field' + (Object.keys(validation).length > 1 ? 's' : '') + ' before continuing.')
+      return
+    }
     setSubmitting(true); setError('')
     try {
       const payload = {
@@ -247,6 +351,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
@@ -295,7 +400,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
           <View style={{ gap: 14 }}>
             <Text style={styles.stepTitle}>📋 What do you need done?</Text>
 
-            <View>
+            <View onLayout={event => { fieldPositions.current.taskName = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Task Name * <Text style={styles.hint}>(max 60 chars)</Text></Text>
               <TextInput
                 style={styles.input}
@@ -304,11 +409,14 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 placeholder="e.g. Car Wash Vereeniging, Grocery Run Sandton"
                 placeholderTextColor={COLORS.textMuted}
                 maxLength={60}
+                onBlur={() => { setTouched(current => ({ ...current, taskName: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                style={[styles.input, isFieldInvalid('taskName') && styles.inputInvalid]}
               />
               <Text style={styles.charCount}>{form.taskName.length}/60</Text>
+              {fieldHint('taskName')}
             </View>
 
-            <View>
+            <View onLayout={event => { fieldPositions.current.taskDescription = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Describe your task *</Text>
               <TextInput
                 style={[styles.input, styles.textarea]}
@@ -320,11 +428,14 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 numberOfLines={4}
                 maxLength={500}
                 textAlignVertical="top"
+                onBlur={() => { setTouched(current => ({ ...current, taskDescription: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                style={[styles.input, styles.textarea, isFieldInvalid('taskDescription') && styles.inputInvalid]}
               />
               <Text style={styles.hint}>Be specific — the more details, the better matches! Use 20–500 characters. {form.taskDescription.trim().length}/500</Text>
+              {fieldHint('taskDescription')}
             </View>
 
-            <View>
+            <View onLayout={event => { fieldPositions.current.category = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Category *</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.catRow}>
@@ -332,7 +443,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                     <TouchableOpacity
                       key={c}
                       style={[styles.catChip, form.category === c && styles.catChipActive]}
-                      onPress={() => set('category')(c)}
+                      onPress={() => { set('category')(c); setTouched(current => ({ ...current, category: true, customCategory: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
                     >
                       <Text style={[styles.catChipText, form.category === c && styles.catChipTextActive]}>{c}</Text>
                     </TouchableOpacity>
@@ -347,11 +458,14 @@ export default function PostErrandScreen({ navigation, route }: any) {
                   placeholder="Enter custom category..."
                   placeholderTextColor={COLORS.textMuted}
                   maxLength={80}
+                  onBlur={() => { setTouched(current => ({ ...current, customCategory: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                  style={[styles.input, { marginTop: 10 }, isFieldInvalid('customCategory') && styles.inputInvalid]}
                 />
               )}
+              {fieldHint(form.category === 'Other' ? 'customCategory' : 'category')}
             </View>
 
-            <View>
+            <View onLayout={event => { fieldPositions.current.area = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Location *</Text>
               <TextInput
                 style={styles.input}
@@ -359,7 +473,10 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 onChangeText={set('area')}
                 placeholder="Area / Suburb"
                 placeholderTextColor={COLORS.textMuted}
+                onBlur={() => { setTouched(current => ({ ...current, area: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                style={[styles.input, isFieldInvalid('area') && styles.inputInvalid]}
               />
+              {fieldHint('area')}
             </View>
 
             <View>
@@ -384,8 +501,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 
             <Button
               title="Next →"
-              onPress={() => isStep1Valid() && setStep(2)}
-              disabled={!isStep1Valid()}
+              onPress={() => { if (validateStep(1)) setStep(2) }}
               fullWidth size="lg"
             />
           </View>
@@ -396,12 +512,13 @@ export default function PostErrandScreen({ navigation, route }: any) {
           <View style={{ gap: 14 }}>
             <Text style={styles.stepTitle}>📅 When & How Much?</Text>
 
-            <View>
+            <View onLayout={event => { fieldPositions.current.dateNeeded = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Deadline *</Text>
-              <DateTimePickerField value={form.dateNeeded} onChange={value => set('dateNeeded')(value)} />
+              <DateTimePickerField value={form.dateNeeded} onChange={value => { set('dateNeeded')(value); setTouched(current => ({ ...current, dateNeeded: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }} />
+              {fieldHint('dateNeeded')}
             </View>
 
-            <View>
+            <View onLayout={event => { fieldPositions.current.budget = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Your Budget (R) *</Text>
               <Text style={styles.hint}>R{minAmount} minimum · R{maxAmount} maximum</Text>
               <View style={styles.budgetRow}>
@@ -414,9 +531,12 @@ export default function PostErrandScreen({ navigation, route }: any) {
                   onChangeText={set('budget')}
                   placeholder="100.00"
                   placeholderTextColor={COLORS.textMuted}
-                  keyboardType="numeric"
+                  keyboardType="decimal-pad"
+                  onBlur={() => { setTouched(current => ({ ...current, budget: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }}
+                  style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }, isFieldInvalid('budget') && styles.inputInvalid]}
                 />
               </View>
+              {fieldHint('budget')}
             </View>
 
             {budget >= minAmount && (
@@ -443,7 +563,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 
             <View style={styles.navRow}>
               <Button title="← Previous" onPress={() => setStep(1)} variant="secondary" style={{ flex: 1 }} />
-              <Button title="Next →" onPress={() => isStep2Valid() && setStep(3)} disabled={!isStep2Valid()} style={{ flex: 1 }} />
+              <Button title="Next →" onPress={() => { if (validateStep(2)) setStep(3) }} style={{ flex: 1 }} />
             </View>
           </View>
         )}
@@ -468,15 +588,16 @@ export default function PostErrandScreen({ navigation, route }: any) {
               />
             </View>
 
-            <View style={styles.termsRow}>
+            <View onLayout={event => { fieldPositions.current.termsAccepted = event.nativeEvent.layout.y }} style={styles.termsRow}>
               <Switch
                 value={form.termsAccepted}
-                onValueChange={set('termsAccepted')}
+                onValueChange={value => { set('termsAccepted')(value); setTouched(current => ({ ...current, termsAccepted: true })); setFieldErrors(current => ({ ...current, termsAccepted: value ? '' : 'Accept the Terms & Conditions to continue.' })) }}
                 trackColor={{ false: COLORS.border, true: COLORS.primary }}
                 thumbColor={COLORS.white}
               />
               <Text style={styles.termsText}>I agree to the Terms & Conditions</Text>
             </View>
+            {fieldHint('termsAccepted')}
 
             <View style={styles.paymentInfo}>
               <Text style={styles.paymentInfoTitle}>🔒 Secure Paystack payment</Text>
@@ -490,7 +611,6 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 title={isEdit ? 'Save Changes' : '🚀 Launch My Task'}
                 onPress={handleSubmit}
                 loading={submitting}
-                disabled={!form.termsAccepted}
                 style={{ flex: 1 }}
               />
             </View>
@@ -526,6 +646,8 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 4 },
   label: { fontSize: 14, fontWeight: '500', color: COLORS.textPrimary, marginBottom: 6 },
   hint: { fontSize: 12, color: COLORS.textMuted, fontWeight: '400' },
+  inputInvalid: { borderColor: COLORS.danger, borderWidth: 2 },
+  fieldError: { color: COLORS.danger, fontSize: 12, fontWeight: '600', marginTop: 5 },
   input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, fontSize: 15, color: COLORS.textPrimary, backgroundColor: COLORS.white },
   textarea: { height: 100, textAlignVertical: 'top' },
   charCount: { fontSize: 11, color: COLORS.textMuted, textAlign: 'right', marginTop: 2 },
