@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }: any) {
         ) : (
           <View style={styles.buttonInner}>
             <Text style={styles.buttonText}>Sign in to DFY</Text>
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            <Ionicons name="arrow-forward" size={18} color={colors.text} />
           </View>
         )}
       </Pressable>
