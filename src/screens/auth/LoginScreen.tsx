@@ -124,7 +124,6 @@ export default function LoginScreen({ navigation }: any) {
                 setError('Enter your email address first, then contact support to reset your password.')
                 return
               }
-              setResetRequested(true)
               setError('Password reset is not available in the app yet. Please contact DoForYou support for help.')
             }}
             accessibilityRole="button"
