@@ -4,8 +4,8 @@
  * Static checks catch configuration/source regressions. Visual spacing, clipping,
  * keyboard behavior and adaptive-icon safe-zone still require device screenshots.
  */
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const root = process.cwd();
 const results = [];
