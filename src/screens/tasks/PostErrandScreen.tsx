@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Linking } from 'react-native'
 import {
   View, Text, ScrollView, TextInput, StyleSheet, Modal,
   TouchableOpacity, Alert, Switch
@@ -209,10 +210,23 @@ export default function PostErrandScreen({ navigation, route }: any) {
         const payUrl = data.data?.paymentUrl
 
         if (payUrl) {
-          // Open Paystack checkout. Browser dismissal is not proof of payment;
-          // the backend webhook/return flow remains authoritative.
-          await WebBrowser.openBrowserAsync(payUrl)
+          // Use an auth session so the Paystack callback can deep-link back into
+          // the installed app and close the browser. A redirect is not proof of payment:
+          // the backend webhook and task API remain authoritative.
+          const returnUrl = Linking.createURL('payment-return')
+          const checkoutResult = await WebBrowser.openAuthSessionAsync(payUrl, returnUrl)
           navigation.navigate('MyPostedTasks')
+          if (checkoutResult.type === 'success') {
+            Alert.alert(
+              'Checking payment status',
+              'You have returned to DoForYou. Your task will show as paid only after the backend verifies the payment.'
+            )
+          } else {
+            Alert.alert(
+              'Checkout closed',
+              'Your payment may still be processing. Check your posted tasks before trying to pay again.'
+            )
+          }
         } else {
           Alert.alert('Success!', isEdit ? 'Task updated.' : 'Task created!', [
             { text: 'View Tasks', onPress: () => navigation.navigate('MyPostedTasks') }
