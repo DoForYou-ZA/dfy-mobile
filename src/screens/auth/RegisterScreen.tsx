@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { authApi } from '../../api'
 import Button from '../../components/Button'
 import BrandLogo from '../../components/BrandLogo'
-import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
+import { COLORS, RADIUS, SHADOW } from '../../config/theme'
 
 const STEPS = ['Your details', 'Your role', 'Security']
 
@@ -36,8 +36,8 @@ export default function RegisterScreen({ navigation }: any) {
     setForm(f => ({ ...f, idNumber: val, dateOfBirth: extractDobFromId(val) }))
 
   const canNext = () => {
-    if (step === 1) return !!(form.firstName && form.lastName && form.email && form.phoneNumber)
-    if (step === 2) return !!(form.userType && form.idNumber && form.address)
+    if (step === 1) return !!(form.firstName.trim() && form.lastName.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.phoneNumber.replace(/\D/g, '').length === 10)
+    if (step === 2) return !!(form.userType && /^\d{13}$/.test(form.idNumber) && form.address.trim())
     return false
   }
 
@@ -121,22 +121,24 @@ export default function RegisterScreen({ navigation }: any) {
           {step === 1 && (
             <View style={styles.stepContent}>
               <View style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>First Name *</Text>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>First name *</Text>
                   <TextInput style={styles.input} value={form.firstName} onChangeText={set('firstName')} placeholder="John" placeholderTextColor={COLORS.textMuted} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Last Name *</Text>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>Last name *</Text>
                   <TextInput style={styles.input} value={form.lastName} onChangeText={set('lastName')} placeholder="Doe" placeholderTextColor={COLORS.textMuted} />
                 </View>
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email address *</Text>
                 <TextInput style={styles.input} value={form.email} onChangeText={set('email')} placeholder="e.g. you@example.com" placeholderTextColor={COLORS.textMuted} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" />
+                {!!form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && <Text style={styles.validationHint}>Enter a valid email address.</Text>}
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Phone number (South Africa) *</Text>
                 <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="e.g. 081 234 5678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" maxLength={16} />
+                {!!form.phoneNumber && form.phoneNumber.replace(/\D/g, '').length !== 10 && <Text style={styles.validationHint}>Enter a 10-digit South African mobile number.</Text>}
               </View>
               <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={styles.stepPrimaryAction} />
             </View>
@@ -217,6 +219,7 @@ const styles = StyleSheet.create({
   stepContent: { flexGrow: 1, gap: 12 },
   stepPrimaryAction: { marginTop: 'auto', minHeight: 52 },
   inputGroup: { gap: 5 },
+  validationHint: { fontSize: 11, lineHeight: 15, color: COLORS.danger },
   formTitle: { fontSize: 23, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 10, letterSpacing: -0.4 },
   stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   stepItem: { flex: 1, alignItems: 'center', position: 'relative' },
