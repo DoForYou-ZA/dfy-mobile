@@ -8,9 +8,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "imageWidth": 160,
+      "imageWidth": 180,
       "backgroundColor": "#FFF9F2"
     },
     "ios": {
@@ -25,9 +25,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.chrismokolare.dfymobile",
       "splash": {
-        "image": "./assets/splash-icon.png",
+        "image": "./assets/icon.png",
         "resizeMode": "contain",
-        "imageWidth": 160,
+        "imageWidth": 180,
         "backgroundColor": "#FFF9F2"
       }
     },
