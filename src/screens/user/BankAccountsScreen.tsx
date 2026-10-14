@@ -6,6 +6,11 @@ import Button from '../../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 import type { BankAccount, SupportedBank } from '../../types'
 
+const maskAccountNumber = (value: unknown) => {
+  const digits = String(value ?? '').replace(/\D/g, '')
+  return digits ? `•••• ${digits.slice(-4)}` : 'Account number unavailable'
+}
+
 export default function BankAccountsScreen() {
   const [accounts,setAccounts]=useState<BankAccount[]>([])
   const [banks,setBanks]=useState<SupportedBank[]>([])
@@ -45,7 +50,7 @@ export default function BankAccountsScreen() {
     <View style={s.header}><Text style={s.title}>Bank Accounts</Text><Text style={s.sub}>Verified accounts receive direct task payouts. Wallet withdrawals are retired.</Text></View>
     <View style={s.card}><Text style={s.heading}>Your accounts</Text>
       {accounts.length===0?<EmptyState icon="🏦" title="No bank account" subtitle="Add and verify a bank account for runner payouts."/>:
-      accounts.map(a=><View key={a.id} style={s.account}><Text style={s.bank}>{a.bankName}</Text><Text style={s.meta}>{a.accountHolderName} · {a.accountNumber}</Text><Text style={[s.verified,{color:a.isVerified?COLORS.success:COLORS.danger}]}>{a.isVerified?'✓ Verified':'Not verified for payouts'}</Text>{!a.isVerified&&a.verificationMessage?<Text style={s.verificationMessage}>{a.verificationMessage}</Text>:null}{a.isDefaultPayout?<Text style={s.defaultLabel}>Default payout account</Text>:a.isVerified?<TouchableOpacity onPress={()=>setDefault(a.id)} style={s.defaultAction}><Text style={s.defaultActionText}>Set as default payout</Text></TouchableOpacity>:<TouchableOpacity onPress={()=>retryVerification(a.id)} style={s.defaultAction}><Text style={s.defaultActionText}>Retry verification</Text></TouchableOpacity>}<TouchableOpacity onPress={()=>removeAccount(a.id)} style={s.removeAction}><Text style={s.removeActionText}>Remove account</Text></TouchableOpacity></View>)}
+      accounts.map(a=><View key={a.id} style={s.account}><Text style={s.bank}>{a.bankName}</Text><Text style={s.meta}>{a.accountHolderName} · {maskAccountNumber(a.accountNumber)}</Text><Text style={[s.verified,{color:a.isVerified?COLORS.success:COLORS.danger}]}>{a.isVerified?'✓ Verified':'Not verified for payouts'}</Text>{!a.isVerified&&a.verificationMessage?<Text style={s.verificationMessage}>{a.verificationMessage}</Text>:null}{a.isDefaultPayout?<Text style={s.defaultLabel}>Default payout account</Text>:a.isVerified?<TouchableOpacity onPress={()=>setDefault(a.id)} style={s.defaultAction}><Text style={s.defaultActionText}>Set as default payout</Text></TouchableOpacity>:<TouchableOpacity onPress={()=>retryVerification(a.id)} style={s.defaultAction}><Text style={s.defaultActionText}>Retry verification</Text></TouchableOpacity>}<TouchableOpacity onPress={()=>removeAccount(a.id)} style={s.removeAction}><Text style={s.removeActionText}>Remove account</Text></TouchableOpacity></View>)}
     </View>
     <View style={s.card}><Text style={s.heading}>Add account</Text>
       <Text style={s.label}>Bank</Text>
