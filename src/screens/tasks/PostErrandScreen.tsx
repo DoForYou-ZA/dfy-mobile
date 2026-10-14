@@ -263,8 +263,6 @@ export default function PostErrandScreen({ navigation, route }: any) {
     }
   }
 
-  const isStep1Valid = () => Object.keys(validateForm()).every(field => fieldStep[field] !== 1)
-  const isStep2Valid = () => Object.keys(validateForm()).every(field => fieldStep[field] !== 2)
   const budget = parseFloat(form.budget) || 0
   const commission = calcCommission(budget)
 
@@ -282,7 +280,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
       if (step !== targetStep) setStep(targetStep)
       else {
         const position = fieldPositions.current[firstInvalid]
-        if (position != null) scrollRef.current?.scrollTo({ y: Math.max(position - 24, 0), animated: true })
+        if (position != null) scrollRef.current?.scrollTo({ y: Math.max(position + 240, 0), animated: true })
       }
       setError('Please fix the highlighted field' + (Object.keys(validation).length > 1 ? 's' : '') + ' before continuing.')
       return
@@ -506,7 +504,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 
             <View onLayout={event => { fieldPositions.current.dateNeeded = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Deadline *</Text>
-              <DateTimePickerField value={form.dateNeeded} onChange={value => { set('dateNeeded')(value); setTouched(current => ({ ...current, dateNeeded: true })); setFieldErrors(current => ({ ...current, ...validateForm() })) }} />
+              <DateTimePickerField value={form.dateNeeded} onChange={value => { set('dateNeeded')(value); setTouched(current => ({ ...current, dateNeeded: true })); setFieldErrors(validateForm()) }} />
               {fieldHint('dateNeeded')}
             </View>
 
