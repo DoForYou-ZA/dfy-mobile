@@ -6,9 +6,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { authApi } from '../../api'
 import Button from '../../components/Button'
+import BrandLogo from '../../components/BrandLogo'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 
-const STEPS = ['Personal Info', 'Role & Details', 'Security']
+const STEPS = ['Your details', 'Your role', 'Security']
 
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
@@ -78,12 +79,10 @@ export default function RegisterScreen({ navigation }: any) {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 }}>
-          <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOW.primary }}>
-            <Text style={{ color: COLORS.white, fontSize: 23, fontWeight: '900' }}>D</Text>
-          </View>
+          <BrandLogo size={42} />
           <View>
             <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: '900' }}>DoForYou</Text>
-            <Text style={{ color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1, marginTop: 3 }}>HELPING YOUR COMMUNITY MOVE</Text>
+            <Text style={{ color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1, marginTop: 3 }}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
           </View>
         </View>
         <View style={styles.panel}>
@@ -120,7 +119,7 @@ export default function RegisterScreen({ navigation }: any) {
           ) : null}
 
           {step === 1 && (
-            <View style={{ gap: 12 }}>
+            <View style={styles.stepContent}>
               <View style={styles.row}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>First Name *</Text>
@@ -131,16 +130,20 @@ export default function RegisterScreen({ navigation }: any) {
                   <TextInput style={styles.input} value={form.lastName} onChangeText={set('lastName')} placeholder="Doe" placeholderTextColor={COLORS.textMuted} />
                 </View>
               </View>
-              <Text style={styles.label}>Email Address *</Text>
-              <TextInput style={styles.input} value={form.email} onChangeText={set('email')} placeholder="your@email.com" placeholderTextColor={COLORS.textMuted} keyboardType="email-address" autoCapitalize="none" />
-              <Text style={styles.label}>Phone Number *</Text>
-              <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="0812345678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" />
-              <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={{ marginTop: 8 }} />
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email address *</Text>
+                <TextInput style={styles.input} value={form.email} onChangeText={set('email')} placeholder="e.g. you@example.com" placeholderTextColor={COLORS.textMuted} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" />
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone number (South Africa) *</Text>
+                <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="e.g. 081 234 5678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" maxLength={16} />
+              </View>
+              <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={styles.stepPrimaryAction} />
             </View>
           )}
 
           {step === 2 && (
-            <View style={{ gap: 12 }}>
+            <View style={styles.stepContent}>
               <Text style={styles.label}>I want to...</Text>
               {ROLES.map(r => (
                 <TouchableOpacity
@@ -169,7 +172,7 @@ export default function RegisterScreen({ navigation }: any) {
           )}
 
           {step === 3 && (
-            <View style={{ gap: 12 }}>
+            <View style={styles.stepContent}>
               <Text style={styles.label}>Password *</Text>
               <View style={styles.passwordRow}>
                 <TextInput style={[styles.input, { flex: 1 }]} value={form.password} onChangeText={set('password')} placeholder="Min 6 characters" placeholderTextColor={COLORS.textMuted} secureTextEntry={!showPassword} />
@@ -210,7 +213,10 @@ const styles = StyleSheet.create({
   featureItem: { alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, minWidth: 80, gap: 6, borderWidth: 1, borderColor: COLORS.border },
   featureIcon: { fontSize: 22, color: COLORS.primaryDark },
   featureLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
-  formCard: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, padding: 15, ...SHADOW.md },
+  formCard: { flexGrow: 1, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, padding: 15, ...SHADOW.md },
+  stepContent: { flexGrow: 1, gap: 12 },
+  stepPrimaryAction: { marginTop: 'auto', minHeight: 52 },
+  inputGroup: { gap: 5 },
   formTitle: { fontSize: 23, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 10, letterSpacing: -0.4 },
   stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   stepItem: { flex: 1, alignItems: 'center', position: 'relative' },
@@ -219,14 +225,14 @@ const styles = StyleSheet.create({
   stepDone: { backgroundColor: COLORS.success },
   stepNum: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   stepNumActive: { color: COLORS.white },
-  stepLabel: { fontSize: 10, color: COLORS.textMuted, textAlign: 'center' },
+  stepLabel: { fontSize: 11, lineHeight: 14, color: COLORS.textSecondary, textAlign: 'center' },
   stepLabelActive: { color: COLORS.primaryDark, fontWeight: '800' },
   stepLine: { position: 'absolute', top: 14, left: '60%', right: '-40%', height: 2, backgroundColor: COLORS.border },
   stepLineDone: { backgroundColor: COLORS.success },
   errorBanner: { backgroundColor: '#FFF0EE', borderWidth: 1, borderColor: '#F8D2CE', borderRadius: RADIUS.md, padding: 12, marginBottom: 16 },
   errorText: { color: '#AD2922', fontSize: 13, lineHeight: 18 },
   row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 7 },
+  label: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 0 },
   hint: { fontSize: 12, color: COLORS.textSecondary },
   input: { minHeight: 45, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 13, paddingVertical: 11, fontSize: 14, color: COLORS.textPrimary, backgroundColor: '#FFFEFC' },
   roleCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 11 },
@@ -235,10 +241,10 @@ const styles = StyleSheet.create({
   roleLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   roleLabelSelected: { color: COLORS.primaryDark },
   roleDesc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  navRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  navRow: { flexDirection: 'row', gap: 10, marginTop: 'auto', paddingTop: 8 },
   passwordRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   eyeBtn: { paddingHorizontal: 13, paddingVertical: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.background },
-  switchRow: { marginTop: SPACING.lg, alignItems: 'center' },
+  switchRow: { marginTop: 'auto', paddingTop: 18, alignItems: 'center' },
   switchText: { fontSize: 14, color: COLORS.textSecondary },
   switchLink: { color: COLORS.primaryDark, fontWeight: '800' },
 })
