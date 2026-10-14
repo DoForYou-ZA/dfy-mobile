@@ -7,6 +7,13 @@ import AppModal from '../../components/AppModal'
 import Button from '../../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 
+function formatRunnerPayout(value: unknown) {
+  if (value === null || value === undefined || value === '') return 'Payout unavailable'
+  const amount = Number(value)
+  if (!Number.isFinite(amount) || amount <= 0) return 'Payout unavailable'
+  return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 export default function MyCompletedTasksScreen({ navigation }: any) {
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,7 +68,7 @@ export default function MyCompletedTasksScreen({ navigation }: any) {
             <View style={s.card}>
               <View style={s.row}>
                 <StatusBadge status={status} />
-                <Text style={s.amount}>R{Number(t.budget || 0).toFixed(0)}</Text>
+                <Text style={s.amount}>{formatRunnerPayout(t.payoutAmount ?? t.PayoutAmount)}</Text>
               </View>
               <Text style={s.taskTitle}>{title}</Text>
               <Text style={s.meta}>📍 {t.area || t.location || 'Location not specified'}</Text>
