@@ -185,11 +185,11 @@ export default function RegisterScreen({ navigation }: any) {
         accessibilityLabel={step === 3 ? 'Create account' : 'Continue'}
       >
         {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={colors.text} />
         ) : (
           <View style={styles.buttonInner}>
             <Text style={styles.buttonText}>{step === 3 ? 'Create Account' : 'Continue'}</Text>
-            <Ionicons name={step === 3 ? 'checkmark' : 'arrow-forward'} size={18} color="#FFFFFF" />
+            <Ionicons name={step === 3 ? 'checkmark' : 'arrow-forward'} size={18} color={colors.text} />
           </View>
         )}
       </Pressable>
