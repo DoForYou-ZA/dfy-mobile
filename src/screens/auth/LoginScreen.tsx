@@ -16,7 +16,6 @@ export default function LoginScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [resetRequested, setResetRequested] = useState(false)
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
