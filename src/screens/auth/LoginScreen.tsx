@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
-import BrandLogo from '../../components/BrandLogo'
+import AuthBrandHeader from '../../components/AuthBrandHeader'
 import { COLORS, RADIUS, SHADOW } from '../../config/theme'
 
 export default function LoginScreen({ navigation }: any) {
@@ -44,13 +44,7 @@ export default function LoginScreen({ navigation }: any) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.brandRow}>
-          <BrandLogo size={42} />
-          <View>
-            <Text style={styles.brandName}>DoForYou</Text>
-            <Text style={styles.brandTagline}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
-          </View>
-        </View>
+        <AuthBrandHeader />
 
         <View style={styles.hero}>
                     <Text style={styles.heroTitle}>Good things happen when we help.</Text>
@@ -172,18 +166,18 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { flexGrow: 1, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14 },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 20 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 },
     brandName: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '900', letterSpacing: -0.5 },
   brandTagline: { color: COLORS.textSecondary, fontSize: 8, fontWeight: '800', letterSpacing: 0.8, marginTop: 3 },
-  hero: { marginBottom: 12, position: 'relative', overflow: 'hidden' },
+  hero: { width: '100%', maxWidth: 460, marginBottom: 16, position: 'relative' },
   heroTitle: {
     color: COLORS.textPrimary, fontSize: 27, lineHeight: 31, fontWeight: '900',
     letterSpacing: -0.7, marginBottom: 6, maxWidth: 390, zIndex: 1,
   },
   heroSubtitle: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19, maxWidth: 340, zIndex: 1 },
   formCard: {
-    backgroundColor: COLORS.surface, borderRadius: 22, padding: 16,
+    width: '100%', maxWidth: 460, backgroundColor: COLORS.surface, borderRadius: 22, padding: 18,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOW.md,
   },
   formHeading: { marginBottom: 12 },
@@ -220,5 +214,5 @@ const styles = StyleSheet.create({
   trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 10 },
   trustDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
   trustText: { color: COLORS.textMuted, fontSize: 10, textAlign: 'center' },
-  footer: { textAlign: 'center', marginTop: 'auto', paddingTop: 18, color: COLORS.textSecondary, fontSize: 11, fontWeight: '600' },
+  footer: { width: '100%', maxWidth: 460, textAlign: 'center', marginTop: 'auto', paddingTop: 18, color: COLORS.textSecondary, fontSize: 11, fontWeight: '600' },
 })
