@@ -50,7 +50,7 @@ function DateTimePickerField({ value, onChange }: { value: string; onChange: (va
   }
   return (
     <>
-      <TouchableOpacity style={pickerStyles.trigger} onPress={() => setVisible(true)} accessibilityRole="button" accessibilityLabel="Choose task deadline">
+      <TouchableOpacity style={pickerStyles.trigger} onPress={() => { const d = value ? parseValue(value) : new Date(Date.now() + 86400000); setSelected(d); setMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setTime(value ? value.slice(11, 16) : '14:00'); setVisible(true) }} accessibilityRole="button" accessibilityLabel="Choose task deadline">
         <Text style={[pickerStyles.triggerText, !value && pickerStyles.placeholder]}>{formatted}</Text>
         <Text style={pickerStyles.triggerIcon}>▦</Text>
       </TouchableOpacity>
@@ -128,7 +128,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
   const [minAmount, setMinAmount] = useState(50)
   const [maxAmount, setMaxAmount] = useState(5000)
   const [form, setForm] = useState({
-    taskName: '', taskDescription: '', category: '', area: '',
+    taskName: '', taskDescription: '', category: '', customCategory: '', area: '',
     priority: 'standard', dateNeeded: '', budget: '', notes: '',
     termsAccepted: false,
   })
@@ -157,6 +157,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
           taskName: t.taskName || t.title || '',
           taskDescription: t.taskDescription || t.description || '',
           category: t.category || '',
+          customCategory: '',
           area: t.area || t.location || '',
           priority: t.priority || 'standard',
           dateNeeded: (t.dateNeeded || t.dueDate) ? (t.dateNeeded || t.dueDate).substring(0, 16) : '',
@@ -171,7 +172,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
     setForm(f => ({ ...f, [field]: val }))
 
   const isStep1Valid = () =>
-    form.taskName.trim().length >= 3 && form.taskDescription.trim().length >= 20 && form.taskDescription.trim().length <= 500 && !!form.category && !!form.area
+    form.taskName.trim().length >= 3 && form.taskDescription.trim().length >= 20 && form.taskDescription.trim().length <= 500 && !!(form.category === 'Other' ? form.customCategory.trim() : form.category.trim()) && !!form.area.trim()
   const isStep2Valid = () => {
     const amount = Number(form.budget)
     const date = form.dateNeeded ? new Date(form.dateNeeded) : null
@@ -324,6 +325,16 @@ export default function PostErrandScreen({ navigation, route }: any) {
                   ))}
                 </View>
               </ScrollView>
+              {form.category === 'Other' && (
+                <TextInput
+                  style={[styles.input, { marginTop: 10 }]}
+                  value={form.customCategory}
+                  onChangeText={set('customCategory')}
+                  placeholder="Enter custom category..."
+                  placeholderTextColor={COLORS.textMuted}
+                  maxLength={80}
+                />
+              )}
             </View>
 
             <View>
@@ -433,6 +444,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
                 placeholderTextColor={COLORS.textMuted}
                 multiline
                 numberOfLines={3}
+                maxLength={1000}
                 textAlignVertical="top"
               />
             </View>
