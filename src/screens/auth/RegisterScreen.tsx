@@ -11,6 +11,11 @@ import { COLORS, RADIUS, SHADOW } from '../../config/theme'
 
 const STEPS = ['Your details', 'Your role', 'Security']
 
+function isValidSouthAfricanMobile(value: string): boolean {
+  const digits = value.replace(/\\D/g, '')
+  return /^(?:0[6-8]\\d{8}|27[6-8]\\d{8})$/.test(digits)
+}
+
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
   const yy = id.substring(0, 2), mm = id.substring(2, 4), dd = id.substring(4, 6)
@@ -139,7 +144,7 @@ export default function RegisterScreen({ navigation }: any) {
               </View>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Phone number (South Africa) *</Text>
-                <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="e.g. 081 234 5678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" maxLength={16} />
+                <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} placeholder="e.g. 081 234 5678 or +27 81 234 5678" placeholderTextColor={COLORS.textMuted} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" maxLength={16} />
                 {!!form.phoneNumber && form.phoneNumber.replace(/\D/g, '').length !== 10 && <Text style={styles.validationHint}>Enter a 10-digit South African mobile number.</Text>}
               </View>
               <Button title="Continue →" onPress={() => canNext() && setStep(2)} disabled={!canNext()} fullWidth size="lg" style={styles.stepPrimaryAction} />
