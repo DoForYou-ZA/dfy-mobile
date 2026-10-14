@@ -34,7 +34,7 @@ export default function Button({
         styles[`v_${variant}`],
         styles[`s_${size}`],
         fullWidth && styles.block,
-        isDisabled && styles.disabled,
+        isDisabled && (variant === 'primary' ? styles.disabledPrimary : styles.disabled),
         style,
       ]}
       onPress={onPress}
@@ -43,7 +43,7 @@ export default function Button({
     >
       {loading
         ? <ActivityIndicator size="small" color={variant === 'outline' || variant === 'outline-secondary' || variant === 'ghost' ? COLORS.primary : '#fff'} />
-        : <Text style={[styles.txt, styles[`t_${variant}`], styles[`ts_${size}`], textStyle]}>{title}</Text>
+        : <Text style={[styles.txt, styles[`t_${variant}`], styles[`ts_${size}`], isDisabled && variant === 'primary' && styles.disabledPrimaryText, textStyle]}>{title}</Text>
       }
     </TouchableOpacity>
   )
@@ -60,7 +60,9 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   block: { width: '100%', justifyContent: 'center' },
-  disabled: { opacity: 0.55 },
+  disabled: { opacity: 0.82 },
+  disabledPrimary: { opacity: 1, backgroundColor: '#FFE2BE', borderWidth: 1, borderColor: '#D98A3D', shadowOpacity: 0, elevation: 0 },
+  disabledPrimaryText: { color: '#59320F' },
 
   // Variants — match .btn-primary, .btn-secondary etc from global.css
   v_primary: {
