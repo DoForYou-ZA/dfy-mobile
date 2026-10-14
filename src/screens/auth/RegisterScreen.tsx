@@ -161,7 +161,7 @@ export default function RegisterScreen({ navigation }: any) {
             style={styles.consentCheckboxTouch}
           >
             <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
-              {acceptedTerms && <Ionicons name="checkmark" size={15} color="#FFFFFF" />}
+              {acceptedTerms && <Ionicons name="checkmark" size={15} color={colors.text} />}
             </View>
           </Pressable>
           <Text style={styles.terms}>
@@ -185,11 +185,11 @@ export default function RegisterScreen({ navigation }: any) {
         accessibilityLabel={step === 3 ? 'Create account' : 'Continue'}
       >
         {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={colors.text} />
         ) : (
           <View style={styles.buttonInner}>
             <Text style={styles.buttonText}>{step === 3 ? 'Create Account' : 'Continue'}</Text>
-            <Ionicons name={step === 3 ? 'checkmark' : 'arrow-forward'} size={18} color="#FFFFFF" />
+            <Ionicons name={step === 3 ? 'checkmark' : 'arrow-forward'} size={18} color={colors.text} />
           </View>
         )}
       </Pressable>
@@ -426,9 +426,9 @@ const styles = StyleSheet.create({
     borderColor: colors.inputBorder, backgroundColor: colors.surface,
     borderRadius: radii.input + 2, padding: 12, marginBottom: 10, minHeight: 64,
   },
-  roleCardSelected: { borderColor: colors.orange, backgroundColor: '#FFF6E9' },
+  roleCardSelected: { borderColor: colors.orange, backgroundColor: '#FFF1E5' },
   roleIcon: {
-    width: 40, height: 40, borderRadius: 12, backgroundColor: '#F6F0E6',
+    width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF1E5',
     alignItems: 'center', justifyContent: 'center',
   },
   roleIconSelected: { backgroundColor: colors.iconCircle },
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  buttonText: { fontFamily: fonts.medium, fontSize: 15, color: '#FFFFFF' },
+  buttonText: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
   pressed: { opacity: 0.88 },
   loading: { opacity: 0.8 },
   switchRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 },

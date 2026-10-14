@@ -99,5 +99,5 @@ const styles = StyleSheet.create({
   cancel: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.inputBorder },
   cancelText: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
   confirm: { backgroundColor: colors.button },
-  confirmText: { fontFamily: fonts.medium, fontSize: 14, color: '#FFFFFF' },
+  confirmText: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
 });

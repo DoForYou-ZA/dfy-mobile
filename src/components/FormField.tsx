@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRightWidth: 1,
     borderRightColor: colors.inputBorder,
-    backgroundColor: '#FBF6EC',
+    backgroundColor: '#FFF1E5',
   },
   prefixText: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
   input: {

@@ -2,14 +2,14 @@
 export const colors = {
   background: '#FFF9F2', // matches app.json splash + adaptive icon background
   surface: '#FFFFFF',
-  text: '#29231F',
-  textSecondary: '#6D6259',
-  placeholder: '#8A7F70',
-  orange: '#FF8A00', // brand accent: logo dot, active step, full stops
-  button: '#B35A00', // buttons + links (passes contrast with white text)
-  inputBorder: '#CDBD9F',
-  cardBorder: '#F1E2D2',
-  iconCircle: '#FBE6CC',
+  text: '#292A2D',
+  textSecondary: '#5F6368',
+  placeholder: '#777B82',
+  orange: '#F28C28', // brand accent: logo dot, active step, full stops
+  button: '#F28C28', // brand-orange buttons and links; use dark text on filled orange
+  inputBorder: '#D5D9E0',
+  cardBorder: '#E5E7EB',
+  iconCircle: '#FFF0E0',
   error: '#AD2922',
   errorBg: '#FFF0EE',
   scrim: 'rgba(41, 35, 31, 0.58)',

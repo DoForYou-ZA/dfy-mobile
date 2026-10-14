@@ -1,9 +1,9 @@
 // DoForYou Mobile visual system: warm, bright, clean, and recognisably DFY.
 export const COLORS = {
   // Keep DoForYou's signature orange, balanced with warm neutrals.
-  primary: '#FF8A00',
-  primaryDark: '#E77700',
-  primaryLight: '#FFF0D9',
+  primary: '#F28C28',
+  primaryDark: '#C96A13',
+  primaryLight: '#FFF1E5',
   success: '#17865B',
   successDark: '#146C49',
   danger: '#D94841',
@@ -49,7 +49,7 @@ export const SHADOW = {
   md: { shadowColor: '#57371B', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
   lg: { shadowColor: '#57371B', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.07, shadowRadius: 18, elevation: 5 },
   xl: { shadowColor: '#57371B', shadowOffset: { width: 0, height: 18 }, shadowOpacity: 0.08, shadowRadius: 26, elevation: 8 },
-  primary: { shadowColor: '#FF8A00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 10, elevation: 4 },
+  primary: { shadowColor: '#F28C28', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 10, elevation: 4 },
 }
 
 // Shared cards and fields for task screens and forms.

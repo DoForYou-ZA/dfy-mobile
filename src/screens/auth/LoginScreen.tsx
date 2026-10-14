@@ -67,11 +67,11 @@ export default function LoginScreen({ navigation }: any) {
         accessibilityLabel="Sign in to DFY"
       >
         {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={colors.text} />
         ) : (
           <View style={styles.buttonInner}>
             <Text style={styles.buttonText}>Sign in to DFY</Text>
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            <Ionicons name="arrow-forward" size={18} color={colors.text} />
           </View>
         )}
       </Pressable>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  buttonText: { fontFamily: fonts.medium, fontSize: 15, color: '#FFFFFF' },
+  buttonText: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
   pressed: { opacity: 0.88 },
   loading: { opacity: 0.8 },
   switchRow: {

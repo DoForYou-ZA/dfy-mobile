@@ -14,7 +14,7 @@ export default function SignOutButton({ onConfirm, style }: Props) {
 
   return (
     <>
-      <Button title="Sign Out" onPress={() => setOpen(true)} variant="outline" fullWidth style={style} />
+      <Button title="Sign Out" onPress={() => setOpen(true)} variant="primary" fullWidth textStyle={{ color: '#292A2D' }} style={style} />
       <SignOutDialog
         visible={open}
         onCancel={() => setOpen(false)}
