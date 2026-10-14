@@ -49,6 +49,7 @@ export default function DashboardScreen({ navigation }: any) {
   const canRun = userType === 'runner' || userType === 'both'
   const firstName = user?.firstName?.trim() || user?.name?.split(' ')[0] || 'there'
   const profileCompletion = Math.min(100, Math.max(0, Number(user?.profileCompletion ?? (user?.profileCompleted ? 100 : (isProfileIncomplete() ? 0 : 100)))))
+  const profileIsComplete = profileCompletion >= 100 && !isProfileIncomplete()
 
   const load = useCallback(async () => {
     try {
@@ -135,36 +136,35 @@ export default function DashboardScreen({ navigation }: any) {
           <Text style={styles.eyebrowText}>YOUR DOFORYOU SPACE</Text>
         </View>
         <Text style={styles.greeting}>Hi, {firstName} 👋</Text>
-        <Text style={styles.greetingSubtitle}>
-          {canCreate && canRun
-            ? 'What would you like to get moving today?'
-            : canCreate
-              ? 'Let’s get the help you need, sorted.'
-              : 'Find good work. Make things happen.'}
-        </Text>
       </View>
 
-      {(isProfileIncomplete() || profileCompletion < 100) && (
-        <TouchableOpacity
-          activeOpacity={0.86}
-          style={styles.profilePrompt}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <View style={styles.profilePromptIcon}>
-            <Text style={styles.profilePromptIconText}>✓</Text>
+      <TouchableOpacity
+        activeOpacity={0.86}
+        style={[styles.profilePrompt, profileIsComplete && styles.profilePromptComplete]}
+        onPress={() => navigation.navigate('Profile')}
+      >
+        <View style={[styles.profilePromptIcon, profileIsComplete && styles.profilePromptIconComplete]}>
+          <Text style={[styles.profilePromptIconText, profileIsComplete && styles.profilePromptIconTextComplete]}>{profileIsComplete ? '✓' : '↗'}</Text>
+        </View>
+        <View style={styles.profilePromptCopy}>
+          <Text style={styles.profilePromptTitle}>{profileIsComplete ? 'Your profile is complete' : 'Finish setting up your profile'}</Text>
+          <Text style={styles.profilePromptSub}>
+            {profileIsComplete ? '100% complete · You’re ready to use DoForYou.' : `${profileCompletion}% complete · Complete your details to unlock more of DFY.`}
+          </Text>
+          <View style={[styles.progressTrack, profileIsComplete && styles.progressTrackComplete]}>
+            <View style={[styles.progressFill, profileIsComplete && styles.progressFillComplete, { width: `${Math.min(100, Math.max(0, profileCompletion))}%` }]} />
           </View>
-          <View style={styles.profilePromptCopy}>
-            <Text style={styles.profilePromptTitle}>Finish setting up your profile</Text>
-            <Text style={styles.profilePromptSub}>
-              {profileCompletion}% complete · A complete profile unlocks more of DFY.
-            </Text>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${Math.min(100, Math.max(0, profileCompletion))}%` }]} />
-            </View>
-          </View>
-          <Text style={styles.promptArrow}>›</Text>
-        </TouchableOpacity>
-      )}
+        </View>
+        <Text style={[styles.promptArrow, profileIsComplete && styles.promptArrowComplete]}>›</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.greetingSubtitle}>
+        {canCreate && canRun
+          ? 'What would you like to get moving today?'
+          : canCreate
+            ? 'Let’s get the help you need, sorted.'
+            : 'Find good work. Make things happen.'}
+      </Text>
 
       <View style={styles.actionCard}>
         <View style={styles.actionCardTop}>
@@ -288,7 +288,7 @@ export default function DashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 34 },
-  greetingBlock: { marginBottom: 20 },
+  greetingBlock: { marginBottom: 14 },
   eyebrow: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     backgroundColor: COLORS.primaryLight, paddingHorizontal: 10, paddingVertical: 6,
@@ -297,20 +297,27 @@ const styles = StyleSheet.create({
   eyebrowDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary },
   eyebrowText: { color: COLORS.primaryDark, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
   greeting: { color: COLORS.textPrimary, fontSize: 29, lineHeight: 36, fontWeight: '800', letterSpacing: -0.8 },
-  greetingSubtitle: { color: COLORS.textSecondary, fontSize: 15, lineHeight: 22, marginTop: 5 },
+  greetingSubtitle: { color: COLORS.textSecondary, fontSize: 15, lineHeight: 22, marginTop: 0, marginBottom: 22 },
   profilePrompt: {
     flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
-    backgroundColor: '#FFF2E2', borderRadius: RADIUS.lg, borderWidth: 1,
-    borderColor: '#FFE0BC', marginBottom: 18,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1,
+    borderColor: COLORS.border, marginBottom: 12, ...SHADOW.sm,
   },
-  profilePromptIcon: { height: 38, width: 38, borderRadius: 13, backgroundColor: '#FFE1B9', alignItems: 'center', justifyContent: 'center' },
+  profilePromptComplete: { backgroundColor: '#F0F8F3', borderColor: '#CFE8D8' },
+  profilePromptIcon: { height: 38, width: 38, borderRadius: 13, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  profilePromptIconComplete: { backgroundColor: '#D9F0E2' },
   profilePromptIconText: { fontSize: 20, color: COLORS.primaryDark, fontWeight: '800' },
+  profilePromptIconTextComplete: { color: '#17865B' },
   profilePromptCopy: { flex: 1, gap: 4 },
   profilePromptTitle: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '800' },
   profilePromptSub: { fontSize: 11, color: COLORS.textSecondary, lineHeight: 16 },
-  progressTrack: { height: 5, borderRadius: 3, backgroundColor: '#F5DCC0', overflow: 'hidden', marginTop: 4 },
+  progressTrack: { height: 5, borderRadius: 3, backgroundColor: COLORS.backgroundDark, overflow: 'hidden', marginTop: 4 },
+  progressTrackComplete: { backgroundColor: '#D9EDE1' },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 3 },
+  progressFillComplete: { backgroundColor: '#17865B' },
   promptArrow: { fontSize: 26, color: COLORS.primaryDark, fontWeight: '400' },
+  promptArrowComplete: { color: '#17865B' },
+  greetingSubtitle: { color: COLORS.textSecondary, fontSize: 15, lineHeight: 22, marginTop: 0, marginBottom: 22 },
   actionCard: {
     backgroundColor: COLORS.surface, borderRadius: 26, padding: 20, marginBottom: 26,
     borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', ...SHADOW.md,
@@ -335,7 +342,8 @@ const styles = StyleSheet.create({
   metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 18, gap: 10 },
   metricCard: {
     width: '48%', minHeight: 126, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
-    padding: 14, borderWidth: 1, borderColor: COLORS.borderLight, overflow: 'hidden', ...SHADOW.sm,
+    padding: 14, borderWidth: 1, borderColor: COLORS.borderLight, overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center', ...SHADOW.sm,
   },
   metricIcon: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 11 },
   metricIconText: { fontSize: 18, fontWeight: '800' },
@@ -347,8 +355,8 @@ const styles = StyleSheet.create({
   toneText_blue: { color: '#315EC0' },
   toneText_purple: { color: '#7650B8' },
   toneText_green: { color: '#17865B' },
-  metricValue: { color: COLORS.textPrimary, fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.5 },
-  metricLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '600', marginTop: 3 },
+  metricValue: { color: COLORS.textPrimary, fontSize: 22, lineHeight: 27, fontWeight: '800', letterSpacing: -0.5, textAlign: 'center', width: '100%' },
+  metricLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center', width: '100%' },
   metricAccent: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3 },
   accentWarm: { backgroundColor: '#FFD8A8' },
   accentSoft: { backgroundColor: '#E1E8FF' },
