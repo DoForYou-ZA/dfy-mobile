@@ -42,6 +42,8 @@ jobs:
 
   android-release-build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     timeout-minutes: 45
     # Expo public variables are embedded in the client bundle at build time.
     # Keep these staging URLs here so the installed APK targets the staging API.
@@ -85,6 +87,11 @@ jobs:
           set -o pipefail
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee ../android-build.log
+      - name: Prepare stable APK filename
+        run: |
+          APK="$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          cp "$APK" android/app/build/outputs/apk/release/dfy-mobile.apk
       - name: Show runner disk space after build
         if: always()
         run: df -h
@@ -99,5 +106,19 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: dfy-mobile-android-release
-          path: android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/dfy-mobile.apk
           if-no-files-found: error
+      - name: Publish direct-download staging release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-staging-latest
+          name: DoForYou Mobile — Latest Staging APK
+          body: |
+            Installable Android staging build for DoForYou Mobile.
+
+            This build connects to the DFY staging API and is intended for testing, not production use. Device-level login and task-flow smoke tests are still required.
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: android/app/build/outputs/apk/release/dfy-mobile.apk
