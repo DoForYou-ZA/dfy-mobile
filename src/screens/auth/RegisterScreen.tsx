@@ -12,8 +12,8 @@ import { COLORS, RADIUS, SHADOW } from '../../config/theme'
 const STEPS = ['Your details', 'Your role', 'Security']
 
 function isValidSouthAfricanMobile(value: string): boolean {
-  const digits = value.replace(/\\D/g, '')
-  return /^(?:0[6-8]\\d{8}|27[6-8]\\d{8})$/.test(digits)
+  const digits = value.replace(/\D/g, '')
+  return /^(?:0[6-8]\d{8}|27[6-8]\d{8})$/.test(digits)
 }
 
 function extractDobFromId(id: string): string {
