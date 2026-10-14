@@ -62,7 +62,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
       const data = response.data?.data || response.data
       if (Array.isArray(data?.categories)) {
         const available = data.categories.filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
-        if (available.length) setCategories(Array.from(new Set(available.map(value => value.trim())))
+        if (available.length) setCategories(Array.from(new Set(available.map(value => value.trim()))))
       }
     }).catch(() => {
       // Keep the fallback categories visible if the filter-options endpoint is unavailable.
