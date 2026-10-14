@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { authApi } from '../../api'
 import Button from '../../components/Button'
-import BrandLogo from '../../components/BrandLogo'
+import AuthBrandHeader from '../../components/AuthBrandHeader'
 import { COLORS, RADIUS, SHADOW } from '../../config/theme'
 
 const STEPS = ['Your details', 'Your role', 'Security']
@@ -85,13 +85,7 @@ export default function RegisterScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 12 }}>
-          <BrandLogo size={42} />
-          <View>
-            <Text style={{ color: COLORS.textPrimary, fontSize: 20, fontWeight: '900' }}>DoForYou</Text>
-            <Text style={{ color: COLORS.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 1, marginTop: 3 }}>SMALL TASKS. STRONGER COMMUNITIES.</Text>
-          </View>
-        </View>
+        <AuthBrandHeader />
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>Join your community.</Text>
           <Text style={styles.panelSub}>Create one account to post tasks, find work, and get things moving.</Text>
@@ -251,15 +245,15 @@ export default function RegisterScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { flexGrow: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
-  panel: { backgroundColor: 'transparent', paddingVertical: 0, marginBottom: 12, alignItems: 'flex-start' },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 16, paddingTop: 18, paddingBottom: 20 },
+  panel: { width: '100%', maxWidth: 460, backgroundColor: 'transparent', paddingVertical: 0, marginBottom: 16, alignItems: 'flex-start' },
   panelTitle: { fontSize: 25, lineHeight: 30, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 7, letterSpacing: -0.8 },
   panelSub: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 19, marginBottom: 0 },
   features: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   featureItem: { alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, minWidth: 80, gap: 6, borderWidth: 1, borderColor: COLORS.border },
   featureIcon: { fontSize: 22, color: COLORS.primaryDark },
   featureLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
-  formCard: { flexGrow: 1, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, padding: 15, ...SHADOW.md },
+  formCard: { width: '100%', maxWidth: 460, flexGrow: 1, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 22, padding: 18, ...SHADOW.md },
   stepContent: { flexGrow: 1, gap: 12 },
   stepPrimaryAction: { marginTop: 'auto', minHeight: 52 },
   inputGroup: { gap: 5 },
