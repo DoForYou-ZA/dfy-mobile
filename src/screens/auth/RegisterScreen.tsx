@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, StyleSheet, TouchableOpacity, Linking,
   KeyboardAvoidingView, Platform, ScrollView, Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -194,18 +194,43 @@ export default function RegisterScreen({ navigation }: any) {
               {form.confirmPassword && form.password !== form.confirmPassword && (
                 <Text style={styles.errorText}>Passwords don't match</Text>
               )}
-              <TouchableOpacity
-                style={styles.consentRow}
-                onPress={() => setAcceptedTerms(value => !value)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: acceptedTerms }}
-                accessibilityLabel="I agree to the terms and privacy notice"
-              >
-                <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
-                  {acceptedTerms && <Text style={styles.consentCheck}>✓</Text>}
-                </View>
-                <Text style={styles.consentText}>I agree to the DoForYou terms and privacy notice.</Text>
-              </TouchableOpacity>
+              <View style={styles.consentRow}>
+                <TouchableOpacity
+                  onPress={() => setAcceptedTerms(value => !value)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: acceptedTerms }}
+                  accessibilityLabel="Agree to the terms and privacy notice"
+                  style={styles.consentCheckboxTouch}
+                >
+                  <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
+                    {acceptedTerms && <Text style={styles.consentCheck}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.consentText}>
+                  I agree to the DoForYou{' '}
+                  <Text
+                    style={styles.consentLink}
+                    accessibilityRole="link"
+                    accessibilityLabel="Read Terms and Conditions"
+                    onPress={() => {
+                      void Linking.openURL(`${process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'}/terms`).catch(() =>
+                        Alert.alert('Terms & Conditions', 'Open https://dfy-fe-staging.onrender.com/terms in your browser to read the terms.')
+                      )
+                    }}
+                  >Terms & Conditions</Text>
+                  {' '}and{' '}
+                  <Text
+                    style={styles.consentLink}
+                    accessibilityRole="link"
+                    accessibilityLabel="Read Privacy Policy"
+                    onPress={() => {
+                      void Linking.openURL(`${process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'}/privacy`).catch(() =>
+                        Alert.alert('Privacy Policy', 'Open https://dfy-fe-staging.onrender.com/privacy in your browser to read the privacy policy.')
+                      )
+                    }}
+                  >Privacy Policy</Text>.
+                </Text>
+              </View>
               <View style={styles.navRow}>
                 <Button title="← Back" onPress={() => setStep(2)} variant="secondary" style={{ flex: 1 }} />
                 <Button title="Create Account" onPress={handleSubmit} loading={loading} disabled={!acceptedTerms || !form.password || form.password !== form.confirmPassword} style={{ flex: 1 }} />
@@ -268,6 +293,8 @@ const styles = StyleSheet.create({
   eyeBtn: { paddingHorizontal: 13, paddingVertical: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.background },
   switchRow: { marginTop: 'auto', paddingTop: 18, alignItems: 'center' },
   consentRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 14, minHeight: 44 },
+  consentCheckboxTouch: { minWidth: 32, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  consentLink: { color: COLORS.primaryDark, fontWeight: '800', textDecorationLine: 'underline' },
   consentBox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface },
   consentBoxChecked: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   consentCheck: { color: '#FFFFFF', fontWeight: '900', fontSize: 14 },
