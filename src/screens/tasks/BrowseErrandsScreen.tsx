@@ -12,7 +12,7 @@ import Button from '../../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW, GLOBAL } from '../../config/theme'
 import type { Task } from '../../types'
 
-const CATEGORIES = ['Grocery Shopping','Delivery','Cleaning','Gardening','Moving','Repairs','Tutoring','Pet Care','Cooking','Other']
+const DEFAULT_CATEGORIES = ['Grocery Shopping','Delivery','Cleaning','Gardening','Moving','Repairs','Tutoring','Pet Care','Cooking','Other']
 
 function getRunnerPayout(budget: number) { return (budget * 0.85).toFixed(0) }
 
@@ -23,6 +23,8 @@ export default function BrowseErrandsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES)
+  const [loadError, setLoadError] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
@@ -35,9 +37,10 @@ export default function BrowseErrandsScreen({ navigation }: any) {
   const load = useCallback(async (p = 1, s = search, cat = category, silent = false) => {
     if (!silent) setLoading(true)
     try {
+      setLoadError('')
       const filters: Record<string, string> = {}
-      if (s) filters.search = s
-      if (cat) filters.category = cat
+      if (s.trim()) filters.search = s.trim()
+      if (cat.trim()) filters.category = cat.trim()
       const res = await tasksApi.getAvailable(p, 10, filters)
       const data = res.data
       const taskList = data.tasks || data.data || []
@@ -46,11 +49,25 @@ export default function BrowseErrandsScreen({ navigation }: any) {
       setTotalPages(data.totalPages || 1)
       setTotalItems(data.count || taskList.length)
       setLastUpdated(new Date())
-    } catch {}
+    } catch (error: any) {
+      setLoadError(error.response?.data?.message || 'We could not load tasks. Check your connection and try again.')
+      if (p === 1) setTasks([])
+    }
     finally { setLoading(false); setRefreshing(false) }
   }, [])
 
-  useEffect(() => { load(1) }, [])
+  useEffect(() => {
+    void load(1)
+    tasksApi.getFilters().then(response => {
+      const data = response.data?.data || response.data
+      if (Array.isArray(data?.categories)) {
+        const available = data.categories.filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
+        if (available.length) setCategories(Array.from(new Set(available.map(value => value.trim())))
+      }
+    }).catch(() => {
+      // Keep the fallback categories visible if the filter-options endpoint is unavailable.
+    })
+  }, [])
 
   const onRefresh = () => { setRefreshing(true); setPage(1); load(1, search, category) }
 
@@ -149,29 +166,31 @@ export default function BrowseErrandsScreen({ navigation }: any) {
 
   return (
     <View style={s.page}>
-      {/* .browse-hero */}
+      {/* Theme-led browse header */}
       <View style={s.hero}>
-        <View style={s.heroInner}>
-          <View>
-            <Text style={s.heroTitle}>🚀 Start Earning Today!</Text>
-            <Text style={s.heroSub}>Monetize your skills • Choose flexible opportunities</Text>
-            <View style={s.heroStats}>
-              <View style={s.heroStat}>
-                <Text style={s.heroStatNum}>{totalItems}</Text>
-                <Text style={s.heroStatLabel}>Active Tasks</Text>
-              </View>
-              {lastUpdated && (
-                <View style={s.heroStat}>
-                  <Text style={s.heroStatNum}>{lastUpdated.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}</Text>
-                  <Text style={s.heroStatLabel}>Last Updated</Text>
-                </View>
-              )}
+        <View style={s.heroHeading}>
+          <View style={s.heroMark}><Text style={s.heroMarkText}>↗</Text></View>
+          <View style={s.heroCopy}>
+            <Text style={s.heroTitle}>Start earning today</Text>
+            <Text style={s.heroSub}>Monetise your skills. Choose flexible opportunities.</Text>
+          </View>
+        </View>
+        <View style={s.heroBottom}>
+          <View style={s.heroStats}>
+            <View style={s.heroStat}>
+              <Text style={s.heroStatNum}>{totalItems}</Text>
+              <Text style={s.heroStatLabel}>Matching tasks</Text>
+            </View>
+            <View style={s.heroDivider} />
+            <View style={s.heroStat}>
+              <Text style={s.heroStatNum}>{lastUpdated ? lastUpdated.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '—'}</Text>
+              <Text style={s.heroStatLabel}>Last updated</Text>
             </View>
           </View>
           <Button
-            title={loading ? 'Refreshing...' : 'Refresh'}
-            onPress={() => load(page, search, category)}
-            variant="secondary"
+            title={loading ? 'Refreshing…' : 'Refresh'}
+            onPress={() => { setPage(1); void load(1, search, category) }}
+            variant="outline"
             size="sm"
             disabled={loading}
           />
@@ -196,7 +215,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
           <View style={s.searchWrapper}>
             <TextInput
               style={s.searchInput}
-              placeholder="Search tasks..."
+              placeholder="Search title, details, category or area..."
               placeholderTextColor={COLORS.textMuted}
               value={search}
               onChangeText={setSearch}
@@ -214,6 +233,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
             <Button title="Clear" onPress={() => { setSearch(''); setCategory(''); setPage(1); load(1, '', '') }} variant="secondary" size="sm" />
           )}
         </View>
+        <Text style={s.searchHint}>Search task names, descriptions, categories, notes or locations.</Text>
         {/* Category chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -223,7 +243,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
             >
               <Text style={[s.catChipText, !category && s.catChipTextActive]}>All</Text>
             </TouchableOpacity>
-            {CATEGORIES.map(c => (
+            {categories.map(c => (
               <TouchableOpacity
                 key={c}
                 style={[s.catChip, category === c && s.catChipActive]}
@@ -236,6 +256,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
         </ScrollView>
       </View>
 
+      {loadError ? <View style={s.errorWrap}><AlertBanner type="error" message={loadError} /><Button title="Try again" onPress={() => { setPage(1); void load(1, search, category) }} variant="outline" size="sm" /></View> : null}
       {loading ? <LoadingScreen message="Loading available tasks..." /> : (
         <FlatList
           data={tasks}
@@ -306,15 +327,20 @@ export default function BrowseErrandsScreen({ navigation }: any) {
 const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.background },
 
-  // .browse-hero
-  hero: { backgroundColor: COLORS.primary, paddingVertical: 28, paddingHorizontal: SPACING.md, marginBottom: SPACING.lg },
-  heroInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
-  heroTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 6 },
-  heroSub: { color: 'rgba(255,255,255,0.9)', fontSize: 14, marginBottom: 12 },
-  heroStats: { flexDirection: 'row', alignItems: 'center', gap: 24 },
-  heroStat: { alignItems: 'center' },
-  heroStatNum: { fontSize: 28, fontWeight: '700', color: '#fff' },
-  heroStatLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  // Theme-led browse header: a white card on the warm cream app background.
+  hero: { backgroundColor: COLORS.surface, padding: SPACING.md, marginHorizontal: SPACING.md, marginTop: SPACING.md, marginBottom: SPACING.md, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, ...SHADOW.sm },
+  heroHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  heroMark: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primaryLight },
+  heroMarkText: { color: COLORS.primaryDark, fontSize: 26, fontWeight: '800' },
+  heroCopy: { flex: 1 },
+  heroBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  heroTitle: { fontSize: 21, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
+  heroSub: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19 },
+  heroStats: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  heroStat: { alignItems: 'flex-start', minWidth: 76 },
+  heroStatNum: { fontSize: 21, fontWeight: '800', color: COLORS.textPrimary },
+  heroStatLabel: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
+  heroDivider: { width: 1, height: 34, backgroundColor: COLORS.border },
 
   // .guest-alert
   guestAlert: {
@@ -340,6 +366,8 @@ const s = StyleSheet.create({
     paddingRight: 36,
   },
   clearSearch: { position: 'absolute', right: 10, top: 10 },
+  searchHint: { color: COLORS.textMuted, fontSize: 11, lineHeight: 16, marginTop: 7 },
+  errorWrap: { marginHorizontal: SPACING.md, marginBottom: SPACING.md, gap: 8 },
   catChip: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: RADIUS.full, borderWidth: 1.5, borderColor: COLORS.border,
