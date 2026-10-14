@@ -5,7 +5,7 @@ import ENV from '../config/env'
 
 const api = axios.create({
   baseURL: ENV.apiUrl,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', 'X-DFY-Client': 'mobile' },
 })
 
 api.interceptors.request.use(async (config) => {
