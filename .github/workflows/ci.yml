@@ -5,6 +5,9 @@ on:
     branches: [main]
   push:
     branches: [main, align/dfy-fe-be-contract]
+  schedule:
+    - cron: '27 6 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -33,8 +36,8 @@ jobs:
           DFY_BE_READ_TOKEN: ${{ secrets.DFY_BE_READ_TOKEN }}
         run: |
           if [ -z "$DFY_BE_READ_TOKEN" ]; then
-            echo "::warning::DFY_BE_READ_TOKEN is not configured; only the vendored snapshot/declaration pair was checked."
-            exit 0
+            echo "::error::DFY_BE_READ_TOKEN is required to verify this client against the canonical DFY-BE contract. Configure a read-only Contents token in repository Actions secrets."
+            exit 1
           fi
           curl --fail --silent --show-error -H "Authorization: Bearer $DFY_BE_READ_TOKEN" -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/DoForYou-ZA/DFY-BE/contents/docs/openapi.json?ref=main" -o /tmp/dfy-canonical-openapi.json
           diff -u contracts/openapi.json /tmp/dfy-canonical-openapi.json
