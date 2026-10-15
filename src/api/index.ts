@@ -26,7 +26,7 @@ export const tasksApi = {
   create: (data: object) => api.post('/tasks', data),
   update: (id: string, data: object) => api.put(`/tasks/${id}`, data),
   claim: (id: string, helperName: string, helperContact: string, termsAccepted = false) =>
-    api.post(`/tasks/${id}/claim`, { HelperName: helperName, HelperContact: helperContact, TermsAccepted: termsAccepted }),
+    api.post(`/tasks/${id}/claim`, { helperName, helperContact, termsAccepted }),
   complete: (id: string) => api.post(`/tasks/${id}/complete`, {}),
   confirm: (id: string) => api.post(`/tasks/${id}/confirm`, {}),
   cancel: (id: string, reason: string) => api.post(`/tasks/${id}/cancel`, { reason }),
