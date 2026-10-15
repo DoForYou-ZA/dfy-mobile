@@ -63,11 +63,11 @@ jobs:
           git checkout -B automation/canonical-openapi-sync
           git add contracts/openapi.json src/api/openapi.d.ts
           git commit -m "chore: sync canonical backend OpenAPI contract"
-          git push --force-with-lease origin automation/canonical-openapi-sync
+          git push --force origin automation/canonical-openapi-sync
           gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
             --head automation/canonical-openapi-sync \
             --title "chore: sync canonical backend OpenAPI contract" \
-            --body "Automated contract synchronization from `DoForYou-ZA/DFY-BE` main. Review generated API type changes and run the client checks before merging. Backend business rules remain authoritative." \
+            --body 'Automated contract synchronization from DoForYou-ZA/DFY-BE main. Review generated API type changes and run the client checks before merging. Backend business rules remain authoritative.' \
             || gh pr view automation/canonical-openapi-sync --repo "$GITHUB_REPOSITORY"
