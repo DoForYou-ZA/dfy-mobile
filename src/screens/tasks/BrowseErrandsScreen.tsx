@@ -85,7 +85,11 @@ export default function BrowseErrandsScreen({ navigation }: any) {
     try {
       const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.name || ''
       const contact = user?.phoneNumber || user?.contact || ''
-      await tasksApi.claim(claimModal.taskId, name, contact, true)
+      const response = await tasksApi.claim(claimModal.taskId, name, contact, true)
+      if (response.data?.success !== true || response.data?.data !== true) {
+        setClaimError(response.data?.message || 'This task could not be accepted.')
+        return
+      }
       setClaimModal(null)
       Alert.alert('Success!', 'Task accepted! Check My Active Tasks.')
       load(1, search, category)
