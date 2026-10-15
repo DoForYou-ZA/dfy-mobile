@@ -71,3 +71,6 @@ jobs:
             --title "chore: sync canonical backend OpenAPI contract" \
             --body 'Automated contract synchronization from DoForYou-ZA/DFY-BE main. Review generated API type changes and run the client checks before merging. Backend business rules remain authoritative.' \
             || gh pr view automation/canonical-openapi-sync --repo "$GITHUB_REPOSITORY"
+          # GITHUB_TOKEN-created PR events do not automatically start other workflows.
+          # Explicitly dispatch the client CI against the synchronization branch.
+          gh workflow run ci.yml --ref automation/canonical-openapi-sync
