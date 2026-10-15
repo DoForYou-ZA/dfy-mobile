@@ -122,3 +122,13 @@ jobs:
           make_latest: false
           overwrite_files: true
           files: android/app/build/outputs/apk/release/dfy-mobile.apk
+      - name: Trigger DFY-FE staging deployment to refresh bundled APK
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.DFY_FE_STAGING_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::warning::DFY_FE_STAGING_DEPLOY_HOOK is not configured; website deployment was skipped."
+            exit 0
+          fi
+          curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"
