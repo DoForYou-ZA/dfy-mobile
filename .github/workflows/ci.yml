@@ -22,6 +22,23 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify generated OpenAPI declarations
+        run: |
+          npx --yes openapi-typescript@7.6.1 contracts/openapi.json -o /tmp/dfy-openapi.d.ts
+          diff -u src/api/openapi.d.ts /tmp/dfy-openapi.d.ts
+
+      - name: Check freshness against canonical DFY-BE main
+        env:
+          DFY_BE_READ_TOKEN: ${{ secrets.DFY_BE_READ_TOKEN }}
+        run: |
+          if [ -z "$DFY_BE_READ_TOKEN" ]; then
+            echo "::warning::DFY_BE_READ_TOKEN is not configured; only the vendored snapshot/declaration pair was checked."
+            exit 0
+          fi
+          curl --fail --silent --show-error -H "Authorization: Bearer $DFY_BE_READ_TOKEN" -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/DoForYou-ZA/DFY-BE/contents/docs/openapi.json?ref=main" -o /tmp/dfy-canonical-openapi.json
+          diff -u contracts/openapi.json /tmp/dfy-canonical-openapi.json
+
       - name: TypeScript check
         run: |
           set -o pipefail

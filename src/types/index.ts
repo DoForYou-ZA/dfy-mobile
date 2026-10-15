@@ -18,21 +18,23 @@ export interface AuthResponse {
 export type PaymentStatus =
   | 'Pending' | 'EscrowHeld' | 'EscrowReleased' | 'PayoutPending' | 'Processing'
   | 'RunnerPaid' | 'PayoutReturned' | 'PayoutCancelled' | 'PayoutFailed'
-  | 'DisputePending' | 'RefundPending' | 'Refunded' | 'Failed' | 'Expired'
+  | 'Completed' | 'DisputePending' | 'RefundPending' | 'Refunded' | 'Failed' | 'Expired'
   | 'pending' | 'verified' | 'failed' | 'expired' | 'refunded' | 'escrow_held'
 export type TaskStatus =
-  | 'PendingPayment' | 'Posted' | 'Claimed' | 'InProgress' | 'Completed'
-  | 'Confirmed' | 'RunnerPaid' | 'PayoutPending' | 'PayoutFailed'
-  | 'AwaitingConfirmation' | 'DisputePending' | 'RefundPending' | 'Cancelled'
-  | 'draft' | 'posted' | 'claimed' | 'in_progress' | 'completed' | 'awaiting_confirmation' | 'confirmed' | 'runner_paid' | 'cancelled' | 'disputed'
+  | 'draft' | 'posted' | 'claimed' | 'in_progress' | 'completed' | 'awaiting_confirmation'
+  | 'confirmed' | 'runner_paid' | 'cancelled' | 'disputed' | 'payout_pending' | 'refund_pending'
+  | 'PendingPayment' | 'Posted' | 'Claimed' | 'InProgress' | 'Completed' | 'AwaitingConfirmation'
+  | 'Confirmed' | 'RunnerPaid' | 'PayoutPending' | 'PayoutFailed' | 'PayoutReturned'
+  | 'PayoutCancelled' | 'Processing' | 'AwaitingFunds' | 'AwaitingBankDetails'
+  | 'Cancelled' | 'DisputePending' | 'RefundPending'
 export type Priority = 'standard' | 'urgent' | 'low'
 export interface Task {
   id: number; taskId: string; timestamp?: string; userName: string; userContact: string
   createdByUserId: number; taskName?: string; taskDescription: string; area: string
-  dateNeeded: string; budget: number; payoutAmount?: number; notes?: string; paymentStatus: PaymentStatus
+  dateNeeded: string; budget: number; commissionPercentage?: number; commissionAmount?: number; payoutAmount?: number; notes?: string; paymentStatus: PaymentStatus
   taskStatus: TaskStatus; helperName?: string; helperContact?: string; helperEmail?: string
   acceptedByUserId?: number; priority: Priority; category?: string; createdAt: string
-  updatedAt?: string; completedAt?: string; escrowStatus?: string
+  updatedAt?: string; completedAt?: string; escrowStatus?: 'none' | 'pending' | 'held' | 'released' | 'refunded' | 'disputed' | 'refund_pending'; escrowHoldUntil?: string
   task_description?: string; area_suburb?: string; date_time_needed?: string
   contact_number?: string; name_and_surname?: string; taskid?: string; status?: string
   canAccept?: boolean; canEdit?: boolean; canComplete?: boolean; canCancel?: boolean

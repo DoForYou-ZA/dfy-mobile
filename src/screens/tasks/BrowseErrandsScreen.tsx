@@ -38,6 +38,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
   const [detailModal, setDetailModal] = useState<Task | null>(null)
   const [claimLoading, setClaimLoading] = useState(false)
   const [claimError, setClaimError] = useState('')
+  const [needsPayoutAccount, setNeedsPayoutAccount] = useState(false)
 
   const load = useCallback(async (p = 1, s = search, cat = category, silent = false) => {
     if (!silent) setLoading(true)
@@ -48,7 +49,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
       if (cat.trim()) filters.category = cat.trim()
       const res = await tasksApi.getAvailable(p, 10, filters)
       const data = res.data
-      const taskList = data.tasks || data.data || []
+      const taskList = (data.tasks || []) as Task[]
       if (p === 1) setTasks(taskList)
       else setTasks(prev => [...prev, ...taskList])
       setTotalPages(data.totalPages || 1)
@@ -81,15 +82,23 @@ export default function BrowseErrandsScreen({ navigation }: any) {
     if (!isAuthenticated()) { navigation.navigate('Login'); return }
     if (isProfileIncomplete()) { navigation.navigate('Profile'); return }
     if (!canAcceptTasks()) { setClaimError('Your profile does not allow accepting tasks.'); return }
-    setClaimLoading(true); setClaimError('')
+    setClaimLoading(true); setClaimError(''); setNeedsPayoutAccount(false)
     try {
       const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.name || ''
       const contact = user?.phoneNumber || user?.contact || ''
-      await tasksApi.claim(claimModal.taskId, name, contact, true)
+      const response = await tasksApi.claim(claimModal.taskId, name, contact, true)
+      if (response.data?.success !== true || response.data?.data !== true) {
+        const missingPayoutAccount = response.data?.error === 'PAYOUT_BANK_ACCOUNT_REQUIRED'
+        setNeedsPayoutAccount(missingPayoutAccount)
+        setClaimError(response.data?.message || 'This task could not be accepted.')
+        return
+      }
       setClaimModal(null)
       Alert.alert('Success!', 'Task accepted! Check My Active Tasks.')
       load(1, search, category)
     } catch (err: any) {
+      const missingPayoutAccount = err.response?.data?.error === 'PAYOUT_BANK_ACCOUNT_REQUIRED'
+      setNeedsPayoutAccount(missingPayoutAccount)
       setClaimError(err.response?.data?.message || 'Failed to claim task.')
     } finally { setClaimLoading(false) }
   }
@@ -319,6 +328,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
               <Text style={s.modalMeta}>💰 You earn: <Text style={{ color: COLORS.primary, fontWeight: '700' }}>{getRunnerPayout(claimModal)}</Text></Text>
             </View>
             {claimError ? <AlertBanner type="error" message={claimError} /> : null}
+            {needsPayoutAccount ? <Button title="Add payout bank account" variant="outline" onPress={() => { setClaimModal(null); setClaimError(''); setNeedsPayoutAccount(false); navigation.navigate('BankAccounts') }} /> : null}
           </View>
         )}
       </AppModal>
