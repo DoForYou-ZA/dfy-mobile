@@ -48,7 +48,7 @@ export default function BrowseErrandsScreen({ navigation }: any) {
       if (cat.trim()) filters.category = cat.trim()
       const res = await tasksApi.getAvailable(p, 10, filters)
       const data = res.data
-      const taskList = data.tasks || data.data || []
+      const taskList = data.tasks || []
       if (p === 1) setTasks(taskList)
       else setTasks(prev => [...prev, ...taskList])
       setTotalPages(data.totalPages || 1)
