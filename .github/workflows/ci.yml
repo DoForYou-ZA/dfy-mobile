@@ -22,6 +22,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify generated OpenAPI declarations
+        run: |
+          npx --yes openapi-typescript@7.6.1 contracts/openapi.json -o /tmp/dfy-openapi.d.ts
+          diff -u src/api/openapi.d.ts /tmp/dfy-openapi.d.ts
+
       - name: TypeScript check
         run: |
           set -o pipefail
