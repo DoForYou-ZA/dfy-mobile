@@ -1,0 +1,107 @@
+name: Production Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: "Confirm this APK will connect to the live production API"
+        type: choice
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  production-apk:
+    if: github.event.inputs.confirm_production == 'yes'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EXPO_PUBLIC_DFY_API_URL: https://dfy-be-production.onrender.com/api/v1
+      EXPO_PUBLIC_DFY_SIGNALR_URL: https://dfy-be-production.onrender.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Show runner disk space before build
+        run: df -h
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Configure Gradle and cache dependencies
+        uses: gradle/actions/setup-gradle@v5
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Android platform and build tools
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - name: Generate native Android project
+        run: CI=1 npx expo prebuild --platform android --no-install
+      - name: Limit native build to 64-bit ARM devices
+        run: |
+          sed -i '/^reactNativeArchitectures=/d' android/gradle.properties
+          echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
+          grep '^reactNativeArchitectures=' android/gradle.properties
+          df -h
+      - name: Build standalone production APK
+        working-directory: android
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee ../android-build.log
+      - name: Verify embedded API endpoints
+        run: |
+          BUNDLE="android/app/build/generated/assets/createBundleReleaseJsAndAssets/index.android.bundle"
+          test -s "$BUNDLE"
+          if grep -Fq "dfy-be-staging.onrender.com" "$BUNDLE"; then
+            echo "::error::Staging API URL was found in the production APK bundle."
+            exit 1
+          fi
+          grep -Fq "https://dfy-be-production.onrender.com/api/v1" "$BUNDLE"
+          grep -Fq "https://dfy-be-production.onrender.com" "$BUNDLE"
+          echo "Verified: production API and SignalR URLs are embedded; staging URL is absent."
+      - name: Prepare stable APK filename
+        run: |
+          APK="$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          cp "$APK" android/app/build/outputs/apk/release/dfy-mobile.apk
+      - name: Upload production APK artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: dfy-mobile-production-apk
+          path: android/app/build/outputs/apk/release/dfy-mobile.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload Android build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dfy-mobile-production-build-diagnostics
+          path: android-build.log
+          if-no-files-found: ignore
+      - name: Publish production APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-production-${{ github.run_number }}
+          name: DoForYou Mobile — Production ${{ github.run_number }}
+          body: |
+            Installable Android production build for DoForYou Mobile.
+
+            This APK embeds the DFY production API and SignalR endpoints. The workflow verifies the bundle does not contain the staging API host. Complete device-level login and task-flow smoke tests before broad distribution.
+          prerelease: false
+          make_latest: true
+          files: android/app/build/outputs/apk/release/dfy-mobile.apk
+      - name: Show runner disk space after build
+        if: always()
+        run: df -h
