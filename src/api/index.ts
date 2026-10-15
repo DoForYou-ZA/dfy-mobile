@@ -1,5 +1,6 @@
 import api from './client'
 import type { LoginModel, RegisterModel, AuthResponse } from '../types'
+import type { BackendTaskPage, BackendClaimTaskRequest, BackendBooleanResponse } from './contract'
 
 export const publicApi = {
   getStats: () => api.get('/public/stats'),
@@ -17,7 +18,7 @@ export const authApi = {
 export const tasksApi = {
   getAvailable: (page = 1, pageSize = 10, filters: Record<string, string> = {}) => {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), ...filters })
-    return api.get(`/tasks/available?${params}`)
+    return api.get<BackendTaskPage>(`/tasks/available?${params}`)
   },
   getMyPosted: () => api.get('/tasks/my-posted'),
   getMyActive: () => api.get('/tasks/my-active'),
@@ -26,9 +27,9 @@ export const tasksApi = {
   create: (data: object) => api.post('/tasks', data),
   update: (id: string, data: object) => api.put(`/tasks/${id}`, data),
   claim: (id: string, helperName: string, helperContact: string, termsAccepted = false) =>
-    api.post(`/tasks/${id}/claim`, { helperName, helperContact, termsAccepted }),
-  complete: (id: string) => api.post(`/tasks/${id}/complete`, {}),
-  confirm: (id: string) => api.post(`/tasks/${id}/confirm`, {}),
+    api.post<BackendBooleanResponse>(`/tasks/${id}/claim`, { helperName, helperContact, termsAccepted } satisfies BackendClaimTaskRequest),
+  complete: (id: string) => api.post<BackendBooleanResponse>(`/tasks/${id}/complete`, {}),
+  confirm: (id: string) => api.post<BackendBooleanResponse>(`/tasks/${id}/confirm`, {}),
   cancel: (id: string, reason: string) => api.post(`/tasks/${id}/cancel`, { reason }),
   getMessages: (id: string, params?: object) => api.get(`/tasks/${id}/messages`, { params }),
   sendMessage: (id: string, content: string) => api.post(`/tasks/${id}/messages`, { content }),
