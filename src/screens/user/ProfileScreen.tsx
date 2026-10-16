@@ -12,6 +12,25 @@ const USER_TYPES = [
   { value: 'both', label: '🤝 Both', desc: 'Full access to post and complete tasks' },
 ]
 
+function deriveDobFromId(id: string): string {
+  if (!/^\d{6}/.test(id)) return ''
+  const yy = Number(id.slice(0, 2))
+  const month = Number(id.slice(2, 4))
+  const day = Number(id.slice(4, 6))
+  const today = new Date()
+  const century = Math.floor(today.getFullYear() / 100) * 100
+  for (const year of [century + yy, century + yy - 100]) {
+    const date = new Date(Date.UTC(year, month - 1, day))
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return ''
+    let age = today.getUTCFullYear() - year
+    if (today.getUTCMonth() < month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() < day)) age--
+    if (age >= 18 && age <= 110 && date.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
+      return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
+    }
+  }
+  return ''
+}
+
 export default function ProfileScreen({ navigation }: any) {
   const { user, refreshUser, logout } = useAuth()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
@@ -26,15 +45,19 @@ export default function ProfileScreen({ navigation }: any) {
   useEffect(() => {
     authApi.getProfile().then(r => {
       const d = r.data?.data || r.data
-      if (d) setForm({
-        firstName: d.firstName || '', lastName: d.lastName || '',
-        email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '',
-        userType: d.userType || '', idNumber: '',
-        address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '',
-      })
-      setHasIdNumber(!!d.hasIdNumber)
-      setIdNumberLastFour(d.idNumberLastFour || '')
+      if (d) {
+        setForm({
+          firstName: d.firstName || '', lastName: d.lastName || '',
+          email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '',
+          userType: d.userType || '', idNumber: '',
+          address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '',
+        })
+        setHasIdNumber(!!d.hasIdNumber)
+        setIdNumberLastFour(d.idNumberLastFour || '')
+      }
     }).catch(() => {
+      setHasIdNumber(false)
+      setIdNumberLastFour('')
       if (user) setForm({
         firstName: user.firstName || '', lastName: user.lastName || '',
         email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '',
@@ -47,14 +70,8 @@ export default function ProfileScreen({ navigation }: any) {
   const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }))
 
   const handleIdNumber = (val: string) => {
-    const id = val.replace(/\D/g, '').substring(0, 13)
-    const updates: any = { idNumber: id }
-    if (id.length === 13) {
-      const yy = id.substring(0, 2); const mm = id.substring(2, 4); const dd = id.substring(4, 6)
-      const year = parseInt(yy) <= new Date().getFullYear() % 100 ? `20${yy}` : `19${yy}`
-      updates.dateOfBirth = `${year}-${mm}-${dd}`
-    }
-    setForm(f => ({ ...f, ...updates }))
+    const id = val.replace(/\D/g, '').slice(0, 13)
+    setForm((f: typeof form) => ({ ...f, idNumber: id, dateOfBirth: deriveDobFromId(id) }))
   }
 
   const handleSave = async () => {
