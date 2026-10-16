@@ -370,7 +370,7 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.hint}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</Text>
               <Text style={styles.hint}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</Text>
               <Text style={styles.hint}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</Text>
-              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until identity verification and authenticator 2FA are completed. Those setup flows are not yet available in staging.'}</Text>
+              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Authenticator 2FA can be configured below. Task acceptance remains locked until a verified identity/liveness provider reports a passed result; no identity provider is configured for this staging release.'}</Text>
             </View>
           )}
         </View>
