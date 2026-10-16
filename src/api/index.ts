@@ -24,6 +24,7 @@ export const authApi = {
   changePassword: (data: object) => api.post('/auth/change-password', data),
   getProfile: () => api.get('/user/profile'),
   updateProfile: (data: object) => api.put('/user/profile', data),
+  updateMarketingConsent: (enabled: boolean) => api.put('/user/marketing-consent', { enabled }),
   validateId: (idNumber: string) => api.post('/user/validate-id', { idNumber }),
 }
 
