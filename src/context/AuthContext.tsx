@@ -74,7 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedUser = await AsyncStorage.getItem('currentUser')
       if (storedToken && storedUser) {
         try {
-          const parsed = JSON.parse(storedUser)
+          const parsedRaw = JSON.parse(storedUser)
+          const { idNumber: _legacyIdNumber, ...parsed } = parsedRaw
+          if (_legacyIdNumber !== undefined) await AsyncStorage.setItem('currentUser', JSON.stringify(parsed))
           if (isAdminSession(parsed, storedToken)) {
             // Mobile is a creator/runner client; stale admin sessions are cleared.
             await clearAccessToken()
