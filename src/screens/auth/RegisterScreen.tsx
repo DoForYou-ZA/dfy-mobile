@@ -13,6 +13,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const LEGAL_BASE_URL = process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'
 const TERMS_URL = `${LEGAL_BASE_URL}/terms`
 const PRIVACY_URL = `${LEGAL_BASE_URL}/privacy`
+const TERMS_VERSION = 'terms-v1'
+const PRIVACY_VERSION = 'privacy-v1'
 
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
@@ -46,6 +48,8 @@ export default function RegisterScreen({ navigation }: any) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
+  const [marketingConsent, setMarketingConsent] = useState(false)
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
     userType: '', idNumber: '', dateOfBirth: '', address: '',
@@ -89,7 +93,7 @@ export default function RegisterScreen({ navigation }: any) {
 
   const validateStep3 = () => {
     const e: Record<string, string> = {}
-    if (form.password.length < 6) e.password = 'Password must be at least 6 characters.'
+    if (form.password.length < 12 || form.password.length > 128) e.password = 'Use a password between 12 and 128 characters.'
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match.'
     return finishValidation(e)
   }
@@ -103,8 +107,8 @@ export default function RegisterScreen({ navigation }: any) {
 
   const handleSubmit = async () => {
     if (loading) return
-    if (!acceptedTerms) {
-      setError('Please agree to the terms and privacy notice to continue.')
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setError('Please accept the Terms & Conditions and acknowledge the Privacy Policy to continue.')
       return
     }
     if (!validateStep3()) return
@@ -117,6 +121,9 @@ export default function RegisterScreen({ navigation }: any) {
         userType: form.userType, idNumber: form.idNumber,
         dateOfBirth: form.dateOfBirth, address: form.address.trim(),
         password: form.password,
+        termsAccepted: acceptedTerms, privacyAccepted: acceptedPrivacy,
+        termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
+        marketingConsent,
       })
       if (res.data.success) {
         Alert.alert('Account Created!', 'Please sign in to continue.', [
@@ -157,7 +164,7 @@ export default function RegisterScreen({ navigation }: any) {
             }}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: acceptedTerms }}
-            accessibilityLabel="Agree to the terms and privacy notice"
+            accessibilityLabel="Accept the Terms and Conditions"
             style={styles.consentCheckboxTouch}
           >
             <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
@@ -169,11 +176,41 @@ export default function RegisterScreen({ navigation }: any) {
             <Text style={styles.link} onPress={() => openLink(TERMS_URL)} accessibilityRole="link">
               Terms & Conditions
             </Text>
-            {' '}and{' '}
+            .
+          </Text>
+        </View>
+        <View style={styles.consentRow}>
+          <Pressable
+            onPress={() => setAcceptedPrivacy(value => !value)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: acceptedPrivacy }}
+            accessibilityLabel="Acknowledge the Privacy Policy"
+            style={styles.consentCheckboxTouch}
+          >
+            <View style={[styles.consentBox, acceptedPrivacy && styles.consentBoxChecked]}>
+              {acceptedPrivacy && <Ionicons name="checkmark" size={15} color={colors.text} />}
+            </View>
+          </Pressable>
+          <Text style={styles.terms}>
+            I acknowledge the DoForYou{' '}
             <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)} accessibilityRole="link">
               Privacy Policy
             </Text>.
           </Text>
+        </View>
+        <View style={styles.consentRow}>
+          <Pressable
+            onPress={() => setMarketingConsent(value => !value)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: marketingConsent }}
+            accessibilityLabel="Receive optional marketing updates"
+            style={styles.consentCheckboxTouch}
+          >
+            <View style={[styles.consentBox, marketingConsent && styles.consentBoxChecked]}>
+              {marketingConsent && <Ionicons name="checkmark" size={15} color={colors.text} />}
+            </View>
+          </Pressable>
+          <Text style={styles.terms}>Send me optional DoForYou product updates and offers.</Text>
         </View>
       )}
 
