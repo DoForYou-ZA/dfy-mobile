@@ -12,28 +12,9 @@ const USER_TYPES = [
   { value: 'both', label: '🤝 Both', desc: 'Full access to post and complete tasks' },
 ]
 
-function deriveDobFromId(id: string): string {
-  if (!/^\d{6}/.test(id)) return ''
-  const yy = Number(id.slice(0, 2))
-  const month = Number(id.slice(2, 4))
-  const day = Number(id.slice(4, 6))
-  const today = new Date()
-  const century = Math.floor(today.getFullYear() / 100) * 100
-  for (const year of [century + yy, century + yy - 100]) {
-    const date = new Date(Date.UTC(year, month - 1, day))
-    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return ''
-    let age = today.getUTCFullYear() - year
-    if (today.getUTCMonth() < month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() < day)) age--
-    if (age >= 18 && age <= 110 && date.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
-      return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
-    }
-  }
-  return ''
-}
-
 export default function ProfileScreen({ navigation }: any) {
   const { user, refreshUser, logout } = useAuth()
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', address: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
@@ -53,8 +34,8 @@ export default function ProfileScreen({ navigation }: any) {
         setForm({
           firstName: d.firstName || '', lastName: d.lastName || '',
           email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '',
-          userType: d.userType || '', idNumber: '',
-          address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '',
+          userType: d.userType || '',
+          address: d.address || '',
         })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
@@ -69,18 +50,13 @@ export default function ProfileScreen({ navigation }: any) {
       if (user) setForm({
         firstName: user.firstName || '', lastName: user.lastName || '',
         email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '',
-        userType: user.userType || '', idNumber: '',
-        address: user.address || '', dateOfBirth: '',
+        userType: user.userType || '',
+        address: user.address || '',
       })
     })
   }, [user])
 
   const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }))
-
-  const handleIdNumber = (val: string) => {
-    const id = val.replace(/\D/g, '').slice(0, 13)
-    setForm((f: typeof form) => ({ ...f, idNumber: id, dateOfBirth: deriveDobFromId(id) }))
-  }
 
   const handleSave = async () => {
     setLoading(true)
@@ -89,7 +65,6 @@ export default function ProfileScreen({ navigation }: any) {
       const r = await authApi.getProfile()
       const d = r.data?.data || r.data
       if (d) {
-        setForm((prev: typeof form) => ({ ...prev, idNumber: '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : prev.dateOfBirth }))
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
@@ -225,13 +200,11 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={styles.label}>Phone Number</Text>
           <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} keyboardType="phone-pad" placeholderTextColor={COLORS.textMuted} />
           {(form.userType === 'runner' || form.userType === 'both') && (
-            <>
-              <Text style={styles.label}>Runner identity ID</Text>
-              {hasIdNumber ? <Text style={styles.hint}>ID on file ending {idNumberLastFour}. Leave blank to keep it, or enter a replacement.</Text> : null}
-              <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdNumber} keyboardType="numeric" maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} placeholderTextColor={COLORS.textMuted} />
-              {form.dateOfBirth ? <Text style={styles.hint}>Date of birth: {form.dateOfBirth}</Text> : null}
-              <Text style={styles.hint}>A valid ID format is not identity verification.</Text>
-            </>
+            <View style={styles.eligibilityCard}>
+              <Text style={styles.eligibilityTitle}>Runner identity onboarding</Text>
+              <Text style={styles.hint}>{hasIdNumber ? `An ID number is already on file ending ${idNumberLastFour}.` : 'Identity information will be collected through the dedicated verification flow once the provider and data protection controls are configured.'}</Text>
+              <Text style={styles.hint}>Do not send identity documents through this general profile form. A valid ID format is not identity verification.</Text>
+            </View>
           )}
           <Text style={styles.label}>Address</Text>
           <TextInput style={styles.input} value={form.address} onChangeText={set('address')} placeholderTextColor={COLORS.textMuted} />
