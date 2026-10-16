@@ -101,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await clearAccessToken()
           await AsyncStorage.removeItem('currentUser')
         }
+      } else if (!storedToken) {
+        await AsyncStorage.multiRemove(['currentUser', 'refreshToken'])
       }
       setLoading(false)
     }
