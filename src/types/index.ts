@@ -10,6 +10,7 @@ export interface User {
   emailVerified?: boolean; phoneVerified?: boolean
   identityVerificationStatus?: string; authenticatorTwoFactorEnabled?: boolean
   hasVerifiedPayoutAccount?: boolean; hasGoogleLogin?: boolean
+  marketingConsent?: boolean; marketingConsentUpdatedAt?: string; marketingConsentVersion?: string
   profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
   canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
   completedTasks: number; createdAt: string; lastLoginAt?: string
