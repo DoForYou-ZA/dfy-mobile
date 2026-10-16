@@ -605,6 +605,7 @@ export default function ProfileScreen({ navigation }: any) {
 
       {/* Authenticator security */}
       {activeTab === 'security' && (
+        <>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Linked sign-in methods</Text>
           {user?.hasGoogleLogin ? (
@@ -700,6 +701,7 @@ export default function ProfileScreen({ navigation }: any) {
             </>
           )}
         </View>
+        </>
       )}
 
       {/* Password */}
