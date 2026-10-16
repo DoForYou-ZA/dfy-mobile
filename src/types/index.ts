@@ -9,7 +9,7 @@ export interface User {
   contact: string; phoneNumber?: string; userType?: string; isVerified: boolean
   emailVerified?: boolean; phoneVerified?: boolean
   identityVerificationStatus?: string; authenticatorTwoFactorEnabled?: boolean
-  hasVerifiedPayoutAccount?: boolean; hasGoogleLogin?: boolean
+  hasVerifiedPayoutAccount?: boolean; hasGoogleLogin?: boolean; hasPasswordLogin?: boolean
   marketingConsent?: boolean; marketingConsentUpdatedAt?: string; marketingConsentVersion?: string
   profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
   canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
