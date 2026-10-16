@@ -526,6 +526,13 @@ export default function ProfileScreen({ navigation }: any) {
                   ) : (
                     <>
                       <Text style={styles.hint}>Sumsub will collect identity-document and liveness evidence. DoForYou stores only the provider status and minimal event metadata.</Text>
+                      <TouchableOpacity
+                        onPress={() => { void Linking.openURL(IDENTITY_PRIVACY_URL).catch(() => Alert.alert('Privacy notice', IDENTITY_PRIVACY_URL)) }}
+                        accessibilityRole="link"
+                        disabled={identitySessionLoading}
+                      >
+                        <Text style={styles.linkText}>Read the Privacy Policy</Text>
+                      </TouchableOpacity>
                       <View style={styles.consentRow}>
                         <Switch
                           value={identityConsentAccepted}
@@ -534,14 +541,23 @@ export default function ProfileScreen({ navigation }: any) {
                           accessibilityLabel="Consent to runner identity and liveness verification"
                         />
                         <Text style={[styles.hint, { flex: 1 }]}>
-                          I consent to runner identity and liveness verification as described in the privacy notice. Review the current notice before continuing.
+                          I consent to runner identity and liveness verification as described in the privacy notice.
                         </Text>
                       </View>
                       <Text style={styles.hint}>Verification starts remaining in this 24-hour window: {identityAttemptsRemaining}.</Text>
                       {!!identitySessionError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{identitySessionError}</Text></View>}
                       <Button
                         title={identitySessionLoading ? 'Preparing verification…' : 'Start identity verification'}
-                        onPress={() => { void startIdentityVerification() }}
+                        onPress={() => {
+                          Alert.alert(
+                            'Before you continue',
+                            'The verification provider will collect identity-document and liveness evidence. DoForYou receives the review result. Continue only after reading the Privacy Policy.',
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Continue', onPress: () => { void startIdentityVerification() } },
+                            ],
+                          )
+                        }}
                         loading={identitySessionLoading}
                         disabled={identitySessionLoading || !identityConsentAccepted || identityAttemptsRemaining < 1}
                         fullWidth
@@ -677,6 +693,8 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
+  consentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  linkText: { color: COLORS.primary, textDecorationLine: 'underline', fontSize: 13, fontWeight: '700' },
   consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   marketingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   marketingTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 5 },
