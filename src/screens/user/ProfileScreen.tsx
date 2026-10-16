@@ -36,7 +36,7 @@ export default function ProfileScreen({ navigation }: any) {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading] = useState(false)
   const [prefSaving, setPrefSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState<'info' | 'type' | 'password'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'type' | 'password' | 'security'>('info')
 
   useEffect(() => {
     authApi.getProfile().then(r => {
@@ -437,6 +437,8 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
+  errorBox: { padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', marginBottom: SPACING.sm },
+  errorText: { fontSize: 13, color: '#991B1B' },
   recoveryCard: { padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background, marginVertical: SPACING.sm },
   recoveryCodeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   recoveryCode: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '700', padding: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 6, backgroundColor: COLORS.surface, overflow: 'hidden' },
