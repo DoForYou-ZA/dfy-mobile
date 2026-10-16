@@ -221,23 +221,46 @@ export default function ProfileScreen({ navigation }: any) {
   }
 
   const handleUserTypeChange = async (value: string) => {
+    const previous = form.userType
     setForm(f => ({ ...f, userType: value }))
     setPrefSaving(true)
     try {
-      await userPreferencesApi.update({
+      const response = await userPreferencesApi.update({
+        userType: value,
         canCreateTasks: value === 'creator' || value === 'both',
         canAcceptTasks: value === 'runner' || value === 'both',
       })
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default
-      const stored = await AsyncStorage.getItem('currentUser')
-      if (stored) {
-        const updated = { ...JSON.parse(stored), userType: value }
-        await AsyncStorage.setItem('currentUser', JSON.stringify(updated))
-        refreshUser()
+      if (response.data?.success === false) {
+        throw new Error(response.data?.message || 'Could not update your account preference.')
       }
-      Alert.alert('Saved', 'User type updated!')
-    } catch {}
-    finally { setPrefSaving(false) }
+
+      // Re-read backend-calculated capabilities. A local role preference must not
+      // provision creator/runner access or overwrite KYC/2FA/payout state in cache.
+      const profileResponse = await authApi.getProfile()
+      const profile = profileResponse.data?.data || profileResponse.data
+      if (!profile) throw new Error('Could not refresh account eligibility. Try again.')
+      const safeProfile = { ...profile }
+      delete (safeProfile as any).idNumber
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default
+      await AsyncStorage.setItem('currentUser', JSON.stringify(safeProfile))
+      await AsyncStorage.setItem('userPreferences', JSON.stringify({
+        canCreateTasks: safeProfile.canCreateTasks === true,
+        canAcceptTasks: safeProfile.canAcceptTasks === true,
+      }))
+      setForm(f => ({ ...f, userType: safeProfile.userType || value }))
+      setIdentityVerificationStatus(safeProfile.identityVerificationStatus || 'not_started')
+      setAuthenticatorTwoFactorEnabled(!!safeProfile.authenticatorTwoFactorEnabled)
+      setCanAcceptTasks(!!safeProfile.canAcceptTasks)
+      setHasVerifiedPayoutAccount(!!safeProfile.hasVerifiedPayoutAccount)
+      setMarketingConsent(!!safeProfile.marketingConsent)
+      refreshUser()
+      Alert.alert('Saved', 'Account preference updated. Runner eligibility remains subject to verification.')
+    } catch (err: any) {
+      setForm(f => ({ ...f, userType: previous }))
+      Alert.alert('Could not update role', err.response?.data?.message || err.message || 'Please try again.')
+    } finally {
+      setPrefSaving(false)
+    }
   }
 
   const completion = user?.profileCompletion ?? 0
