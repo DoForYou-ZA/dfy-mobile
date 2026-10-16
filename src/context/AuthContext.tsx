@@ -92,8 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .then(r => {
                 const d = r.data?.data || r.data
                 if (d) {
-                  const merged = { ...parsed, ...d }
-                  AsyncStorage.setItem('currentUser', JSON.stringify(merged))
+                  const { idNumber: _legacyIdNumber, ...safeProfile } = d as any
+                  const merged = { ...parsed, ...safeProfile }
+                  await AsyncStorage.setItem('currentUser', JSON.stringify(merged))
+                  await AsyncStorage.setItem('userPreferences', JSON.stringify({
+                    canCreateTasks: merged.canCreateTasks === true,
+                    canAcceptTasks: merged.canAcceptTasks === true,
+                  }))
                   setUser(merged)
                 }
               })
