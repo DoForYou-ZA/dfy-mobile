@@ -68,7 +68,7 @@ export default function LoginScreen({ navigation }: any) {
 
     setLoading(true)
     try {
-      await login(trimmedEmail, password)
+      await login(trimmedEmail.toLowerCase(), password)
     } catch (err: any) {
       setFormError(
         err.response?.data?.message || err.message || 'We could not sign you in. Please try again.',
