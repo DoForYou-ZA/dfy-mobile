@@ -1,13 +1,15 @@
 export interface LoginModel { email: string; password: string }
 export interface RegisterModel {
   firstName: string; lastName: string; email: string; phoneNumber: string
-  userType: string; idNumber: string; dateOfBirth?: string; address: string; password: string
+  userType: string; password: string
   termsAccepted: boolean; privacyAccepted: boolean; termsVersion: string; privacyVersion: string; marketingConsent: boolean
 }
 export interface User {
   id: number; name: string; firstName?: string; lastName?: string; email: string
   contact: string; phoneNumber?: string; userType?: string; isVerified: boolean
-  emailVerified?: boolean
+  emailVerified?: boolean; phoneVerified?: boolean
+  identityVerificationStatus?: string; authenticatorTwoFactorEnabled?: boolean
+  hasVerifiedPayoutAccount?: boolean
   profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
   canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
   completedTasks: number; createdAt: string; lastLoginAt?: string
