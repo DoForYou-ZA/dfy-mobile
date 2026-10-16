@@ -62,7 +62,7 @@ export const bankingApi = {
   addBankAccount: (data: object, stepUpToken?: string) => api.post('/banking/accounts', data, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
   verifyBankAccount: (id: number, stepUpToken?: string) => api.post(`/banking/bank-accounts/${id}/verify`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
   setDefaultPayoutAccount: (id: number, stepUpToken?: string) => api.put(`/banking/bank-accounts/${id}/default`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
-  retryVerification: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
+  retryVerification: (id: number, stepUpToken?: string) => api.post(`/banking/bank-accounts/${id}/verify`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
   removeBankAccount: (id: number, stepUpToken?: string) => api.delete(`/banking/bank-accounts/${id}`, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
 }
 
