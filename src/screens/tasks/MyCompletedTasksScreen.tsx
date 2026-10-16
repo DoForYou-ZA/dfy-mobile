@@ -39,7 +39,11 @@ export default function MyCompletedTasksScreen({ navigation }: any) {
     if (!ratingTask) return
     setActionLoading(true)
     try {
-      await ratingsApi.submit(ratingTask.taskId, rating, ratingReview)
+      const response = await ratingsApi.submit(ratingTask.taskId, rating, ratingReview)
+      if (!response.data?.success) {
+        Alert.alert('Unable to submit rating', response.data?.message || 'Your rating was not submitted. Please try again.')
+        return
+      }
       setRatingTask(null); setRatingReview('')
       Alert.alert('Thanks!', 'Your rating was submitted.')
     } catch { Alert.alert('Error', 'Failed to submit rating.') }

@@ -7,6 +7,7 @@ export interface RegisterModel {
 export interface User {
   id: number; name: string; firstName?: string; lastName?: string; email: string
   contact: string; phoneNumber?: string; userType?: string; isVerified: boolean
+  emailVerified?: boolean
   profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
   canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
   completedTasks: number; createdAt: string; lastLoginAt?: string
@@ -15,6 +16,7 @@ export interface User {
 export interface AuthResponse {
   success: boolean; message: string; user?: User; token?: string
   refreshToken?: string; expiration?: string
+  requiresEmailVerification?: boolean; emailVerificationRequired?: boolean
 }
 export type PaymentStatus =
   | 'Pending' | 'EscrowHeld' | 'EscrowReleased' | 'PayoutPending' | 'Processing'

@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useCallback, useState, useMemo } from 'react'
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import { useNotifications } from '../context/NotificationContext'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
@@ -32,12 +33,12 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 export default function NotificationsScreen({ navigation }: any) {
-  const { notifications, unreadCount, loading, hasMore, loadMore, markRead, markAllRead, markTaskNotificationsRead, remove, clearRead } = useNotifications()
+  const { notifications, unreadCount, loading, hasMore, loadMore, markRead, markAllRead, markTaskNotificationsRead, remove, clearRead, refresh } = useNotifications()
   const { user } = useAuth()
   const isAdmin = user?.roles?.includes('Admin')
   const [tab, setTab] = useState<Tab>('all')
   const [refreshing, setRefreshing] = useState(false)
-  const { refresh } = useNotifications()
+  useFocusEffect(useCallback(() => { void refresh() }, [refresh]))
 
   const filtered = useMemo(() => {
     let base = notifications
@@ -66,8 +67,8 @@ export default function NotificationsScreen({ navigation }: any) {
       if (n.relatedTaskStringId) navigation.navigate('TaskChat', { taskId: n.relatedTaskStringId, title: 'Task Chat' })
     } else {
       if (!n.isRead) await markRead(n.id)
-      if (n.type === 'payment_received') navigation.navigate('Wallet')
-      else if (n.relatedTaskStringId) navigation.navigate('MyPostedTasks')
+      if (n.type === 'payment_received') navigation.navigate('MyCompletedTasks')
+      else if (n.relatedTaskStringId || n.relatedTaskId != null) navigation.navigate('MyPostedTasks')
     }
   }
 

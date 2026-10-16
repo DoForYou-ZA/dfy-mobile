@@ -199,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const canPostErrands = useCallback(() => {
     if (!isAuthenticated() || isAdmin()) return false
+    if (user?.emailVerified === false) return false
     if (typeof user?.canCreateTasks === 'boolean') return user.canCreateTasks
     const ut = user?.userType
     if (ut) return ut === 'creator' || ut === 'both'
@@ -208,11 +209,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const canAcceptTasks = useCallback(() => {
     if (!isAuthenticated() || isAdmin()) return false
     if (typeof user?.canAcceptTasks === 'boolean') return user.canAcceptTasks
-    if (isProfileIncomplete()) return false
-    const ut = user?.userType
-    if (ut) return ut === 'runner' || ut === 'both'
     return false
-  }, [user, isAuthenticated, isAdmin, isProfileIncomplete])
+  }, [user, isAuthenticated, isAdmin])
 
   const getProfileCompletion = useCallback(() => user?.profileCompletion ?? 0, [user])
 

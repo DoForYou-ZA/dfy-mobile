@@ -16,26 +16,6 @@ const PRIVACY_URL = `${LEGAL_BASE_URL}/privacy`
 const TERMS_VERSION = 'terms-v1'
 const PRIVACY_VERSION = 'privacy-v1'
 
-function extractDobFromId(id: string): string {
-  if (!/^\d{6}/.test(id)) return ''
-  const yy = Number(id.slice(0, 2))
-  const month = Number(id.slice(2, 4))
-  const day = Number(id.slice(4, 6))
-  const today = new Date()
-  const currentCentury = Math.floor(today.getFullYear() / 100) * 100
-  for (const year of [currentCentury + yy, currentCentury + yy - 100]) {
-    const dob = new Date(Date.UTC(year, month - 1, day))
-    if (dob.getUTCFullYear() !== year || dob.getUTCMonth() !== month - 1 || dob.getUTCDate() !== day) return ''
-    let age = today.getUTCFullYear() - year
-    const birthdayPassed = today.getUTCMonth() > month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() >= day)
-    if (!birthdayPassed) age--
-    if (age >= 18 && age <= 110 && dob.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
-      return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
-    }
-  }
-  return ''
-}
-
 function utf8ByteLength(value: string): number {
   let bytes = 0
   for (const character of value) {
@@ -44,21 +24,6 @@ function utf8ByteLength(value: string): number {
   }
   return bytes
 }
-
-function isValidSouthAfricanId(id: string): boolean {
-  if (!/^\d{13}$/.test(id) || !extractDobFromId(id)) return false
-  let sum = 0
-  for (let i = 0; i < id.length; i++) {
-    let digit = Number(id[i])
-    if (i % 2 === 1) {
-      digit *= 2
-      if (digit > 9) digit -= 9
-    }
-    sum += digit
-  }
-  return sum % 10 === 0
-}
-
 /**
  * Accepts "081 234 5678", "81 234 5678" or "+27 81 234 5678" and returns the local
  * format the app has always sent to the API ("0812345678"), or null if invalid.
@@ -88,7 +53,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
-    userType: '', idNumber: '', dateOfBirth: '', address: '',
+    userType: '', address: '',
     password: '', confirmPassword: '',
   })
 
@@ -99,11 +64,6 @@ export default function RegisterScreen({ navigation }: any) {
   const confirmRef = useRef<TextInput>(null)
 
   const set = (field: string) => (val: string) => setForm((f: typeof form) => ({ ...f, [field]: val }))
-
-  const handleIdChange = (val: string) => {
-    const digits = val.replace(/\D/g, '')
-    setForm((f: typeof form) => ({ ...f, idNumber: digits, dateOfBirth: extractDobFromId(digits) }))
-  }
 
   const finishValidation = (next: Record<string, string>) => {
     setErrors(next)
@@ -122,7 +82,6 @@ export default function RegisterScreen({ navigation }: any) {
   const validateStep2 = () => {
     const e: Record<string, string> = {}
     if (!form.userType) e.userType = 'Choose how you want to use DoForYou.'
-    if (!isValidSouthAfricanId(form.idNumber)) e.idNumber = 'Enter a valid 13-digit South African ID number for an adult aged 18 or older.'
     if (!form.address.trim()) e.address = 'Enter your address.'
     return finishValidation(e)
   }
@@ -154,15 +113,22 @@ export default function RegisterScreen({ navigation }: any) {
       const res = await authApi.register({
         firstName: form.firstName.trim(), lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(), phoneNumber: toLocalSouthAfricanNumber(form.phoneNumber) ?? form.phoneNumber,
-        userType: form.userType, idNumber: form.idNumber,
-        dateOfBirth: form.dateOfBirth, address: form.address.trim(),
+        userType: form.userType, address: form.address.trim(),
         password: form.password,
         termsAccepted: acceptedTerms, privacyAccepted: acceptedPrivacy,
         termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
         marketingConsent,
       })
       if (res.data.success) {
-        Alert.alert('Check your email', 'Your account was created. Open the verification link sent to your email before signing in.', [
+        const needsEmailVerification = res.data.requiresEmailVerification
+          ?? res.data.emailVerificationRequired
+          ?? res.data.user?.emailVerified === false
+        const title = needsEmailVerification ? 'Verify your email' : 'Account request received'
+        const message = res.data.message
+          || (needsEmailVerification
+            ? 'Follow the verification instructions sent to your email before signing in.'
+            : 'Your account request was received. Sign in only after completing any verification requested by DoForYou.')
+        Alert.alert(title, message, [
           { text: 'Sign In', onPress: () => navigation.navigate('Login') },
         ])
       } else {
@@ -394,20 +360,6 @@ export default function RegisterScreen({ navigation }: any) {
             {!!errors.userType && <Text style={styles.fieldError}>{errors.userType}</Text>}
 
             <FormField
-              label="ID number *"
-              value={form.idNumber}
-              onChangeText={handleIdChange}
-              error={errors.idNumber}
-              placeholder="13-digit SA ID"
-              keyboardType="number-pad"
-              maxLength={13}
-              returnKeyType="next"
-              onSubmitEditing={() => addressRef.current?.focus()}
-              containerStyle={{ marginTop: 14, marginBottom: form.dateOfBirth ? 4 : 14 }}
-            />
-            {!!form.dateOfBirth && <Text style={styles.hint}>Date of birth auto-filled: {form.dateOfBirth}</Text>}
-
-            <FormField
               ref={addressRef}
               label="Address *"
               value={form.address}
@@ -420,6 +372,9 @@ export default function RegisterScreen({ navigation }: any) {
               onSubmitEditing={handlePrimary}
               containerStyle={{ marginBottom: 0 }}
             />
+            <Text style={styles.hint}>
+              Your phone number is for contact only; DoForYou does not verify it by SMS.
+            </Text>
           </View>
         )}
 
