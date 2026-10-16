@@ -21,6 +21,17 @@ export default function ProfileScreen({ navigation }: any) {
   const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
   const [canAcceptTasks, setCanAcceptTasks] = useState(false)
   const [hasVerifiedPayoutAccount, setHasVerifiedPayoutAccount] = useState(false)
+  const [totpEnabled, setTotpEnabled] = useState(false)
+  const [totpConfigured, setTotpConfigured] = useState(false)
+  const [totpRemainingCodes, setTotpRemainingCodes] = useState(0)
+  const [totpSecret, setTotpSecret] = useState('')
+  const [totpProvisioningUri, setTotpProvisioningUri] = useState('')
+  const [totpCurrentPassword, setTotpCurrentPassword] = useState('')
+  const [totpCode, setTotpCode] = useState('')
+  const [totpRecoveryCodes, setTotpRecoveryCodes] = useState<string[]>([])
+  const [totpLoading, setTotpLoading] = useState(false)
+  const [totpMessage, setTotpMessage] = useState('')
+  const [totpError, setTotpError] = useState('')
   const [loading, setLoading] = useState(false)
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading] = useState(false)
@@ -55,6 +66,17 @@ export default function ProfileScreen({ navigation }: any) {
       })
     })
   }, [user])
+
+  useEffect(() => {
+    authApi.getTwoFactorStatus().then(response => {
+      const d = response.data?.data || response.data
+      if (d) {
+        setTotpEnabled(!!d.enabled)
+        setTotpRemainingCodes(Number(d.remainingRecoveryCodes || 0))
+        setTotpConfigured(!!d.encryptionConfigured)
+      }
+    }).catch(() => setTotpConfigured(false))
+  }, [])
 
   const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }))
 
@@ -101,6 +123,62 @@ export default function ProfileScreen({ navigation }: any) {
     } finally { setPwLoading(false) }
   }
 
+  const handleTotpSetup = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      const response = await authApi.setupTwoFactor({ currentPassword: totpCurrentPassword || undefined })
+      const d = response.data?.data || response.data
+      setTotpSecret(d.secret || '')
+      setTotpProvisioningUri(d.provisioningUri || '')
+      setTotpCode('')
+      setTotpMessage('Add the key to your authenticator app, then enter its current six-digit code to enable it.')
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'Authenticator setup could not start.')
+    } finally { setTotpLoading(false) }
+  }
+
+  const handleTotpConfirm = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      const response = await authApi.confirmTwoFactor(totpCode.trim())
+      const d = response.data?.data || response.data
+      const recoveryCodes = Array.isArray(d.recoveryCodes) ? d.recoveryCodes : []
+      setTotpEnabled(true)
+      setTotpRecoveryCodes(recoveryCodes)
+      setTotpRemainingCodes(recoveryCodes.length)
+      setTotpSecret('')
+      setTotpProvisioningUri('')
+      setTotpCurrentPassword('')
+      setTotpCode('')
+      setTotpMessage('Authenticator enabled. Save each one-time recovery code below now; these codes cannot be retrieved later.')
+      await refreshUser()
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'The authenticator code could not be confirmed.')
+    } finally { setTotpLoading(false) }
+  }
+
+  const handleTotpDisable = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      await authApi.disableTwoFactor({ currentPassword: totpCurrentPassword || undefined, code: totpCode.trim() })
+      setTotpEnabled(false)
+      setTotpRemainingCodes(0)
+      setTotpCurrentPassword('')
+      setTotpCode('')
+      setTotpRecoveryCodes([])
+      setTotpMessage('Authenticator disabled. Sign out and sign in again to refresh the session.')
+      await refreshUser()
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'Authenticator could not be disabled.')
+    } finally { setTotpLoading(false) }
+  }
+
+  const leaveRecoveryCodes = () => {
+    setTotpRecoveryCodes([])
+    void logout()
+    navigation.navigate('Login')
+  }
+
   const handleUserTypeChange = async (value: string) => {
     setForm(f => ({ ...f, userType: value }))
     setPrefSaving(true)
@@ -128,6 +206,7 @@ export default function ProfileScreen({ navigation }: any) {
     { id: 'info' as const, label: 'Info' },
     { id: 'type' as const, label: 'Role' },
     { id: 'password' as const, label: 'Password' },
+    { id: 'security' as const, label: 'Security' },
   ]
 
   return (
@@ -236,6 +315,67 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
       )}
 
+      {/* Authenticator security */}
+      {activeTab === 'security' && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Authenticator security</Text>
+          {!!totpError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{totpError}</Text></View>}
+          {!!totpMessage && <View style={styles.eligibilityCard} accessibilityRole="summary"><Text style={styles.hint}>{totpMessage}</Text></View>}
+          <Text style={styles.hint}>
+            An authenticator app generates your sign-in codes. Recovery codes work once each. Turning this feature on or off signs out existing sessions.
+          </Text>
+          {!totpConfigured && <Text style={styles.hint}>Authenticator enrollment is disabled on this staging API until its encryption key is configured.</Text>}
+          {totpRecoveryCodes.length > 0 && (
+            <View style={styles.recoveryCard}>
+              <Text style={styles.eligibilityTitle}>Save these recovery codes now</Text>
+              <Text style={styles.hint}>They will not be shown again. Save them in a secure password manager or other protected place.</Text>
+              <View style={styles.recoveryCodeGrid}>
+                {totpRecoveryCodes.map(code => <Text key={code} selectable style={styles.recoveryCode}>{code}</Text>)}
+              </View>
+              <Button title="I've saved my codes — sign out" onPress={leaveRecoveryCodes} fullWidth style={{ marginTop: 8 }} />
+            </View>
+          )}
+          {totpConfigured && !totpEnabled && !totpSecret && (
+            <>
+              {user?.hasGoogleLogin ? (
+                <Text style={styles.hint}>Because this account uses Google, sign in again immediately before setting up an authenticator.</Text>
+              ) : (
+                <>
+                  <Text style={styles.label}>Current password</Text>
+                  <TextInput style={styles.input} value={totpCurrentPassword} onChangeText={setTotpCurrentPassword} secureTextEntry autoComplete="current-password" placeholder="Confirm your current password" placeholderTextColor={COLORS.textMuted} />
+                </>
+              )}
+              <Button title="Set up authenticator" onPress={handleTotpSetup} loading={totpLoading} disabled={totpLoading || (!user?.hasGoogleLogin && !totpCurrentPassword)} fullWidth style={{ marginTop: 8 }} />
+            </>
+          )}
+          {totpConfigured && !totpEnabled && !!totpSecret && (
+            <>
+              <Text style={styles.label}>Authenticator setup key</Text>
+              <Text selectable style={styles.recoveryCode}>{totpSecret}</Text>
+              <Text style={styles.hint}>In your authenticator app, choose “enter setup key” and type this key. Do not share it.</Text>
+              <Text style={styles.label}>Current six-digit code</Text>
+              <TextInput style={styles.input} value={totpCode} onChangeText={v => setTotpCode(v.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} placeholder="123456" placeholderTextColor={COLORS.textMuted} />
+              <Button title="Confirm and enable" onPress={handleTotpConfirm} loading={totpLoading} disabled={totpLoading || totpCode.length !== 6} fullWidth style={{ marginTop: 8 }} />
+              <Text selectable style={[styles.hint, { marginTop: 8 }]}>Advanced provisioning URI: {totpProvisioningUri}</Text>
+            </>
+          )}
+          {totpConfigured && totpEnabled && totpRecoveryCodes.length === 0 && (
+            <>
+              <Text style={styles.hint}>Authenticator enabled. Remaining recovery codes: {totpRemainingCodes}.</Text>
+              {!user?.hasGoogleLogin && (
+                <>
+                  <Text style={styles.label}>Current password</Text>
+                  <TextInput style={styles.input} value={totpCurrentPassword} onChangeText={setTotpCurrentPassword} secureTextEntry autoComplete="current-password" placeholder="Confirm your current password" placeholderTextColor={COLORS.textMuted} />
+                </>
+              )}
+              <Text style={styles.label}>Authenticator or recovery code</Text>
+              <TextInput style={styles.input} value={totpCode} onChangeText={setTotpCode} autoCapitalize="characters" autoComplete="one-time-code" maxLength={20} placeholder="Six-digit code or recovery code" placeholderTextColor={COLORS.textMuted} />
+              <Button title="Disable authenticator" onPress={handleTotpDisable} loading={totpLoading} disabled={totpLoading || !totpCode.trim()} fullWidth style={{ marginTop: 8 }} />
+            </>
+          )}
+        </View>
+      )}
+
       {/* Password */}
       {activeTab === 'password' && (
         <View style={styles.card}>
@@ -280,6 +420,9 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
+  recoveryCard: { padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background, marginVertical: SPACING.sm },
+  recoveryCodeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
+  recoveryCode: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '700', padding: 8, borderWidth: 1, borderColor: COLORS.border, borderRadius: 6, backgroundColor: COLORS.surface, overflow: 'hidden' },
   progressTrack: { height: 6, backgroundColor: COLORS.border, borderRadius: 3 },
   progressFill: { height: 6, backgroundColor: COLORS.primary, borderRadius: 3 },
   tabs: { flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 4, ...SHADOW.sm },
