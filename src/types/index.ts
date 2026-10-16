@@ -42,7 +42,7 @@ export type Priority = 'standard' | 'urgent' | 'low'
 export interface Task {
   id: number; taskId: string; timestamp?: string; userName: string; userContact: string
   createdByUserId: number; taskName?: string; taskDescription: string; area: string
-  dateNeeded: string; budget: number; commissionPercentage?: number; commissionAmount?: number; payoutAmount?: number; notes?: string; paymentStatus: PaymentStatus
+  dateNeeded: string; budget: number; commissionPercentage?: number; commissionAmount?: number; payoutAmount?: number; notes?: string; paymentStatus: PaymentStatus; payoutStatus?: string
   taskStatus: TaskStatus; helperName?: string; helperContact?: string; helperEmail?: string
   acceptedByUserId?: number; priority: Priority; category?: string; createdAt: string
   updatedAt?: string; completedAt?: string; escrowStatus?: 'none' | 'pending' | 'held' | 'released' | 'refunded' | 'disputed' | 'refund_pending'; escrowHoldUntil?: string
