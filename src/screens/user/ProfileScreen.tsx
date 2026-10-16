@@ -1,8 +1,8 @@
 import SignOutButton from '../../components/SignOutButton'
-import React, { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity, Switch } from 'react-native'
+import React, { useState, useEffect, useCallback } from 'react'
+import { AppState, Linking, View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity, Switch } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
-import { authApi, userPreferencesApi } from '../../api'
+import { authApi, identityVerificationApi, userPreferencesApi } from '../../api'
 import Button from '../../components/Button'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 
@@ -24,6 +24,11 @@ export default function ProfileScreen({ navigation }: any) {
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [marketingConsentSaving, setMarketingConsentSaving] = useState(false)
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
+  const [identityProviderConfigured, setIdentityProviderConfigured] = useState(false)
+  const [identityAttemptsRemaining, setIdentityAttemptsRemaining] = useState(0)
+  const [identityConsentAccepted, setIdentityConsentAccepted] = useState(false)
+  const [identitySessionLoading, setIdentitySessionLoading] = useState(false)
+  const [identitySessionError, setIdentitySessionError] = useState('')
   const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
   const [canAcceptTasks, setCanAcceptTasks] = useState(false)
   const [hasVerifiedPayoutAccount, setHasVerifiedPayoutAccount] = useState(false)
@@ -76,6 +81,68 @@ export default function ProfileScreen({ navigation }: any) {
       })
     })
   }, [user])
+
+  const refreshIdentityVerificationState = useCallback(async () => {
+    const [profileResponse, statusResponse] = await Promise.all([
+      authApi.getProfile(),
+      identityVerificationApi.getStatus(),
+    ])
+    const profile = profileResponse.data?.data || profileResponse.data
+    const status = statusResponse.data?.data || statusResponse.data
+    if (profile) {
+      setIdentityVerificationStatus(profile.identityVerificationStatus || 'not_started')
+      setAuthenticatorTwoFactorEnabled(!!profile.authenticatorTwoFactorEnabled)
+      setCanAcceptTasks(!!profile.canAcceptTasks)
+      setHasVerifiedPayoutAccount(!!profile.hasVerifiedPayoutAccount)
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default
+      const safeProfile = { ...profile }
+      delete (safeProfile as any).idNumber
+      await AsyncStorage.setItem('currentUser', JSON.stringify(safeProfile))
+      refreshUser()
+    }
+    if (status) {
+      setIdentityProviderConfigured(!!status.configured)
+      setIdentityAttemptsRemaining(Number(status.attemptsRemaining ?? 0))
+    }
+  }, [refreshUser])
+
+  useEffect(() => {
+    let active = true
+    const refresh = async () => {
+      try {
+        const [profileResponse, statusResponse] = await Promise.all([
+          authApi.getProfile(),
+          identityVerificationApi.getStatus(),
+        ])
+        if (!active) return
+        const profile = profileResponse.data?.data || profileResponse.data
+        const status = statusResponse.data?.data || statusResponse.data
+        if (profile) {
+          setIdentityVerificationStatus(profile.identityVerificationStatus || 'not_started')
+          setAuthenticatorTwoFactorEnabled(!!profile.authenticatorTwoFactorEnabled)
+          setCanAcceptTasks(!!profile.canAcceptTasks)
+          setHasVerifiedPayoutAccount(!!profile.hasVerifiedPayoutAccount)
+        }
+        if (status) {
+          setIdentityProviderConfigured(!!status.configured)
+          setIdentityAttemptsRemaining(Number(status.attemptsRemaining ?? 0))
+        }
+      } catch {
+        if (active) {
+          setIdentityProviderConfigured(false)
+          setIdentityAttemptsRemaining(0)
+        }
+      }
+    }
+    void refresh()
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void refresh()
+    })
+    return () => {
+      active = false
+      subscription.remove()
+    }
+  }, [])
 
   useEffect(() => {
     authApi.getTwoFactorStatus().then(response => {
@@ -168,6 +235,42 @@ export default function ProfileScreen({ navigation }: any) {
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to change password.')
     } finally { setPwLoading(false) }
+  }
+
+  const startIdentityVerification = async () => {
+    if (!identityConsentAccepted) {
+      setIdentitySessionError('Accept the identity-verification notice before continuing.')
+      return
+    }
+    if (!identityProviderConfigured) {
+      setIdentitySessionError('Identity verification is not configured on this staging API yet.')
+      return
+    }
+    setIdentitySessionLoading(true)
+    setIdentitySessionError('')
+    try {
+      const response = await identityVerificationApi.createSession({
+        consentAccepted: true,
+        consentVersion: 'identity-verification-v1',
+      })
+      const body = response.data
+      const data = body?.data || body
+      if (body?.success === false || !data?.handoffCode) {
+        throw new Error(body?.message || 'The identity verification session could not be started.')
+      }
+      const webBase = process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'
+      const url = `${webBase.replace(/\/$/, '')}/runner-verification#handoff=${encodeURIComponent(String(data.handoffCode))}`
+      await Linking.openURL(url)
+      Alert.alert(
+        'Verification opened',
+        'Complete the identity document and liveness steps in your browser. Return to DoForYou when finished; your runner eligibility will refresh from the backend.',
+        [{ text: 'OK' }],
+      )
+    } catch (err: any) {
+      setIdentitySessionError(err.response?.data?.message || err.message || 'The identity verification session could not be started.')
+    } finally {
+      setIdentitySessionLoading(false)
+    }
   }
 
   const handleTotpSetup = async () => {
@@ -415,7 +518,42 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.hint}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</Text>
               <Text style={styles.hint}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</Text>
               <Text style={styles.hint}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</Text>
-              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Authenticator 2FA can be configured below. Task acceptance remains locked until a verified identity/liveness provider reports a passed result; no identity provider is configured for this staging release.'}</Text>
+              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance stays locked until the backend confirms passed identity verification and enabled authenticator 2FA.'}</Text>
+              {identityVerificationStatus !== 'passed' && identityVerificationStatus !== 'manual_review' && (
+                <View style={{ marginTop: SPACING.sm, gap: 8 }}>
+                  {!identityProviderConfigured ? (
+                    <Text style={styles.hint}>Identity verification is not enabled on this staging API yet. Provider credentials, webhook secret, verification level, and an approved notice version must be configured first.</Text>
+                  ) : (
+                    <>
+                      <Text style={styles.hint}>Sumsub will collect identity-document and liveness evidence. DoForYou stores only the provider status and minimal event metadata.</Text>
+                      <View style={styles.consentRow}>
+                        <Switch
+                          value={identityConsentAccepted}
+                          onValueChange={setIdentityConsentAccepted}
+                          disabled={identitySessionLoading}
+                          accessibilityLabel="Consent to runner identity and liveness verification"
+                        />
+                        <Text style={[styles.hint, { flex: 1 }]}>
+                          I consent to runner identity and liveness verification as described in the privacy notice. Review the current notice before continuing.
+                        </Text>
+                      </View>
+                      <Text style={styles.hint}>Verification starts remaining in this 24-hour window: {identityAttemptsRemaining}.</Text>
+                      {!!identitySessionError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{identitySessionError}</Text></View>}
+                      <Button
+                        title={identitySessionLoading ? 'Preparing verification…' : 'Start identity verification'}
+                        onPress={() => { void startIdentityVerification() }}
+                        loading={identitySessionLoading}
+                        disabled={identitySessionLoading || !identityConsentAccepted || identityAttemptsRemaining < 1}
+                        fullWidth
+                        style={{ marginTop: 4 }}
+                      />
+                    </>
+                  )}
+                </View>
+              )}
+              {identityVerificationStatus === 'manual_review' && (
+                <Text style={styles.hint}>Your verification requires review. Task acceptance remains locked; contact support for next steps.</Text>
+              )}
             </View>
           )}
         </View>
