@@ -154,63 +154,59 @@ export default function RegisterScreen({ navigation }: any) {
   const footer = (
     <View>
       {step === 3 && (
-        <View style={styles.consentRow}>
-          <Pressable
-            onPress={() => {
-              setAcceptedTerms((value) => !value)
-              setError((current) =>
-                current === 'Please agree to the terms and privacy notice to continue.' ? '' : current,
-              )
-            }}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: acceptedTerms }}
-            accessibilityLabel="Accept the Terms and Conditions"
-            style={styles.consentCheckboxTouch}
-          >
-            <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
-              {acceptedTerms && <Ionicons name="checkmark" size={15} color={colors.text} />}
-            </View>
-          </Pressable>
-          <Text style={styles.terms}>
-            I agree to the DoForYou{' '}
-            <Text style={styles.link} onPress={() => openLink(TERMS_URL)} accessibilityRole="link">
-              Terms & Conditions
+        <View>
+          <View style={styles.consentRow}>
+            <Pressable
+              onPress={() => setAcceptedTerms(value => !value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: acceptedTerms }}
+              accessibilityLabel="Accept the Terms and Conditions"
+              style={styles.consentCheckboxTouch}
+            >
+              <View style={[styles.consentBox, acceptedTerms && styles.consentBoxChecked]}>
+                {acceptedTerms && <Ionicons name="checkmark" size={15} color={colors.text} />}
+              </View>
+            </Pressable>
+            <Text style={styles.terms}>
+              I accept the DoForYou{' '}
+              <Text style={styles.link} onPress={() => openLink(TERMS_URL)} accessibilityRole="link">
+                Terms & Conditions
+              </Text>.
             </Text>
-            .
-          </Text>
-        </View>
-        <View style={styles.consentRow}>
-          <Pressable
-            onPress={() => setAcceptedPrivacy(value => !value)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: acceptedPrivacy }}
-            accessibilityLabel="Acknowledge the Privacy Policy"
-            style={styles.consentCheckboxTouch}
-          >
-            <View style={[styles.consentBox, acceptedPrivacy && styles.consentBoxChecked]}>
-              {acceptedPrivacy && <Ionicons name="checkmark" size={15} color={colors.text} />}
-            </View>
-          </Pressable>
-          <Text style={styles.terms}>
-            I acknowledge the DoForYou{' '}
-            <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)} accessibilityRole="link">
-              Privacy Policy
-            </Text>.
-          </Text>
-        </View>
-        <View style={styles.consentRow}>
-          <Pressable
-            onPress={() => setMarketingConsent(value => !value)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: marketingConsent }}
-            accessibilityLabel="Receive optional marketing updates"
-            style={styles.consentCheckboxTouch}
-          >
-            <View style={[styles.consentBox, marketingConsent && styles.consentBoxChecked]}>
-              {marketingConsent && <Ionicons name="checkmark" size={15} color={colors.text} />}
-            </View>
-          </Pressable>
-          <Text style={styles.terms}>Send me optional DoForYou product updates and offers.</Text>
+          </View>
+          <View style={styles.consentRow}>
+            <Pressable
+              onPress={() => setAcceptedPrivacy(value => !value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: acceptedPrivacy }}
+              accessibilityLabel="Acknowledge the Privacy Policy"
+              style={styles.consentCheckboxTouch}
+            >
+              <View style={[styles.consentBox, acceptedPrivacy && styles.consentBoxChecked]}>
+                {acceptedPrivacy && <Ionicons name="checkmark" size={15} color={colors.text} />}
+              </View>
+            </Pressable>
+            <Text style={styles.terms}>
+              I acknowledge the DoForYou{' '}
+              <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)} accessibilityRole="link">
+                Privacy Policy
+              </Text>.
+            </Text>
+          </View>
+          <View style={styles.consentRow}>
+            <Pressable
+              onPress={() => setMarketingConsent(value => !value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: marketingConsent }}
+              accessibilityLabel="Receive optional marketing updates"
+              style={styles.consentCheckboxTouch}
+            >
+              <View style={[styles.consentBox, marketingConsent && styles.consentBoxChecked]}>
+                {marketingConsent && <Ionicons name="checkmark" size={15} color={colors.text} />}
+              </View>
+            </Pressable>
+            <Text style={styles.terms}>Send me optional DoForYou product updates and offers.</Text>
+          </View>
         </View>
       )}
 
