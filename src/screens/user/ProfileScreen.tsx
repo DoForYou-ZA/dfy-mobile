@@ -101,7 +101,9 @@ export default function ProfileScreen({ navigation }: any) {
     try {
       await authApi.changePassword(pwForm)
       setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-      Alert.alert('Success', 'Password changed!')
+      await logout()
+      navigation.navigate('Login')
+      Alert.alert('Password changed', 'Sign in again with your new password.')
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to change password.')
     } finally { setPwLoading(false) }
