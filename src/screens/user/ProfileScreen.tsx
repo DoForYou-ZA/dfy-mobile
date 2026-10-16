@@ -17,6 +17,10 @@ export default function ProfileScreen({ navigation }: any) {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', address: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
+  const [hasPasswordLogin, setHasPasswordLogin] = useState(user?.hasPasswordLogin !== false)
+  const [passwordSetupLoading, setPasswordSetupLoading] = useState(false)
+  const [passwordSetupMessage, setPasswordSetupMessage] = useState('')
+  const [passwordSetupError, setPasswordSetupError] = useState('')
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [marketingConsentSaving, setMarketingConsentSaving] = useState(false)
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
@@ -52,6 +56,7 @@ export default function ProfileScreen({ navigation }: any) {
         })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setHasPasswordLogin(d.hasPasswordLogin !== false)
         setMarketingConsent(!!d.marketingConsent)
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
@@ -61,6 +66,7 @@ export default function ProfileScreen({ navigation }: any) {
     }).catch(() => {
       setHasIdNumber(false)
       setIdNumberLastFour('')
+      setHasPasswordLogin(user?.hasPasswordLogin !== false)
       setMarketingConsent(!!user?.marketingConsent)
       if (user) setForm({
         firstName: user.firstName || '', lastName: user.lastName || '',
@@ -93,6 +99,7 @@ export default function ProfileScreen({ navigation }: any) {
       if (d) {
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setHasPasswordLogin(d.hasPasswordLogin !== false)
         setMarketingConsent(!!d.marketingConsent)
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
@@ -106,6 +113,21 @@ export default function ProfileScreen({ navigation }: any) {
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to update profile.')
     } finally { setLoading(false) }
+  }
+
+  const requestPasswordSetup = async () => {
+    setPasswordSetupLoading(true)
+    setPasswordSetupMessage('')
+    setPasswordSetupError('')
+    try {
+      const response = await authApi.forgotPassword(form.email.trim().toLowerCase())
+      setPasswordSetupMessage(response.data?.message || 'If an account matches that email, password reset instructions will be sent shortly.')
+    } catch {
+      // Keep recovery responses neutral to avoid account enumeration.
+      setPasswordSetupMessage('If an account matches that email, password reset instructions will be sent shortly.')
+    } finally {
+      setPasswordSetupLoading(false)
+    }
   }
 
   const handleMarketingConsentChange = async (enabled: boolean) => {
@@ -464,14 +486,26 @@ export default function ProfileScreen({ navigation }: any) {
       {/* Password */}
       {activeTab === 'password' && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Change Password</Text>
-          <Text style={styles.label}>Current Password</Text>
-          <TextInput style={styles.input} value={pwForm.currentPassword} onChangeText={v => setPwForm(f => ({ ...f, currentPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="Current password" />
-          <Text style={styles.label}>New Password</Text>
-          <TextInput style={styles.input} value={pwForm.newPassword} onChangeText={v => setPwForm(f => ({ ...f, newPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="12–72 characters" />
-          <Text style={styles.label}>Confirm New Password</Text>
-          <TextInput style={styles.input} value={pwForm.confirmPassword} onChangeText={v => setPwForm(f => ({ ...f, confirmPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="Repeat new password" />
-          <Button title="Change Password" onPress={handlePwChange} loading={pwLoading} fullWidth style={{ marginTop: 8 }} />
+          {hasPasswordLogin ? (
+            <>
+              <Text style={styles.cardTitle}>Change Password</Text>
+              <Text style={styles.label}>Current Password</Text>
+              <TextInput style={styles.input} value={pwForm.currentPassword} onChangeText={v => setPwForm(f => ({ ...f, currentPassword: v }))} secureTextEntry autoComplete="current-password" placeholderTextColor={COLORS.textMuted} placeholder="Current password" />
+              <Text style={styles.label}>New Password</Text>
+              <TextInput style={styles.input} value={pwForm.newPassword} onChangeText={v => setPwForm(f => ({ ...f, newPassword: v }))} secureTextEntry autoComplete="new-password" placeholderTextColor={COLORS.textMuted} placeholder="12–72 characters" />
+              <Text style={styles.label}>Confirm New Password</Text>
+              <TextInput style={styles.input} value={pwForm.confirmPassword} onChangeText={v => setPwForm(f => ({ ...f, confirmPassword: v }))} secureTextEntry autoComplete="new-password" placeholderTextColor={COLORS.textMuted} placeholder="Repeat new password" />
+              <Button title="Change Password" onPress={handlePwChange} loading={pwLoading} fullWidth style={{ marginTop: 8 }} />
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>Add password sign-in</Text>
+              <Text style={styles.hint}>This account uses Google sign-in and does not have an email/password sign-in method yet. Request a password setup link sent to your verified email address.</Text>
+              {!!passwordSetupMessage && <View style={styles.eligibilityCard} accessibilityRole="summary"><Text style={styles.hint}>{passwordSetupMessage}</Text></View>}
+              {!!passwordSetupError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{passwordSetupError}</Text></View>}
+              <Button title={passwordSetupLoading ? 'Sending…' : 'Email password setup link'} onPress={requestPasswordSetup} loading={passwordSetupLoading} disabled={passwordSetupLoading || !form.email} fullWidth style={{ marginTop: 8 }} />
+            </>
+          )}
         </View>
       )}
 
