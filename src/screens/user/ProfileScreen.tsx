@@ -12,6 +12,9 @@ const USER_TYPES = [
   { value: 'both', label: '🤝 Both', desc: 'Full access to post and complete tasks' },
 ]
 
+const IDENTITY_VERIFICATION_CONSENT_VERSION = 'identity-verification-v1'
+const IDENTITY_PRIVACY_URL = `${(process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com').replace(/\/$/, '')}/privacy`
+
 export default function ProfileScreen({ navigation }: any) {
   const { user, refreshUser, logout } = useAuth()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', address: '' })
