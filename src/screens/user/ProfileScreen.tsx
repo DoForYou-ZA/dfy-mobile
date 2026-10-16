@@ -1,5 +1,5 @@
 import SignOutButton from '../../components/SignOutButton'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AppState, Linking, View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity, Switch } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
 import { authApi, identityVerificationApi, userPreferencesApi } from '../../api'
@@ -84,30 +84,6 @@ export default function ProfileScreen({ navigation }: any) {
       })
     })
   }, [user])
-
-  const refreshIdentityVerificationState = useCallback(async () => {
-    const [profileResponse, statusResponse] = await Promise.all([
-      authApi.getProfile(),
-      identityVerificationApi.getStatus(),
-    ])
-    const profile = profileResponse.data?.data || profileResponse.data
-    const status = statusResponse.data?.data || statusResponse.data
-    if (profile) {
-      setIdentityVerificationStatus(profile.identityVerificationStatus || 'not_started')
-      setAuthenticatorTwoFactorEnabled(!!profile.authenticatorTwoFactorEnabled)
-      setCanAcceptTasks(!!profile.canAcceptTasks)
-      setHasVerifiedPayoutAccount(!!profile.hasVerifiedPayoutAccount)
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default
-      const safeProfile = { ...profile }
-      delete (safeProfile as any).idNumber
-      await AsyncStorage.setItem('currentUser', JSON.stringify(safeProfile))
-      refreshUser()
-    }
-    if (status) {
-      setIdentityProviderConfigured(!!status.configured)
-      setIdentityAttemptsRemaining(Number(status.attemptsRemaining ?? 0))
-    }
-  }, [refreshUser])
 
   useEffect(() => {
     let active = true
@@ -254,7 +230,7 @@ export default function ProfileScreen({ navigation }: any) {
     try {
       const response = await identityVerificationApi.createSession({
         consentAccepted: true,
-        consentVersion: 'identity-verification-v1',
+        consentVersion: IDENTITY_VERIFICATION_CONSENT_VERSION,
       })
       const body = response.data
       const data = body?.data || body
@@ -696,7 +672,6 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
-  consentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   linkText: { color: COLORS.primary, textDecorationLine: 'underline', fontSize: 13, fontWeight: '700' },
   consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   marketingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
