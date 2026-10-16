@@ -137,6 +137,22 @@ export default function ProfileScreen({ navigation }: any) {
     } finally { setTotpLoading(false) }
   }
 
+  const handleTotpCancel = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      await authApi.cancelTwoFactorSetup()
+      setTotpSecret('')
+      setTotpProvisioningUri('')
+      setTotpCode('')
+      setTotpMessage('Authenticator setup cancelled.')
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'Setup could not be cancelled on the server. The pending setup expires automatically.')
+      setTotpSecret('')
+      setTotpProvisioningUri('')
+      setTotpCode('')
+    } finally { setTotpLoading(false) }
+  }
+
   const handleTotpConfirm = async () => {
     setTotpLoading(true); setTotpError(''); setTotpMessage('')
     try {
@@ -151,7 +167,6 @@ export default function ProfileScreen({ navigation }: any) {
       setTotpCurrentPassword('')
       setTotpCode('')
       setTotpMessage('Authenticator enabled. Save each one-time recovery code below now; these codes cannot be retrieved later.')
-      await refreshUser()
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'The authenticator code could not be confirmed.')
     } finally { setTotpLoading(false) }
@@ -166,8 +181,9 @@ export default function ProfileScreen({ navigation }: any) {
       setTotpCurrentPassword('')
       setTotpCode('')
       setTotpRecoveryCodes([])
-      setTotpMessage('Authenticator disabled. Sign out and sign in again to refresh the session.')
-      await refreshUser()
+      setTotpMessage('Authenticator disabled. Signing out so you can sign in again.')
+      await logout()
+      navigation.navigate('Login')
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'Authenticator could not be disabled.')
     } finally { setTotpLoading(false) }
@@ -356,6 +372,7 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.label}>Current six-digit code</Text>
               <TextInput style={styles.input} value={totpCode} onChangeText={v => setTotpCode(v.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} placeholder="123456" placeholderTextColor={COLORS.textMuted} />
               <Button title="Confirm and enable" onPress={handleTotpConfirm} loading={totpLoading} disabled={totpLoading || totpCode.length !== 6} fullWidth style={{ marginTop: 8 }} />
+              <Button title="Cancel setup" onPress={handleTotpCancel} loading={totpLoading} disabled={totpLoading} variant="secondary" fullWidth style={{ marginTop: 8 }} />
               <Text selectable style={[styles.hint, { marginTop: 8 }]}>Advanced provisioning URI: {totpProvisioningUri}</Text>
             </>
           )}
