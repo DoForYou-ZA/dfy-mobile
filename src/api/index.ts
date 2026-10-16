@@ -15,6 +15,7 @@ export const authApi = {
   confirmTwoFactor: (code: string) => api.post('/auth/two-factor/confirm', { code }),
   disableTwoFactor: (data: { currentPassword?: string; code: string }) => api.post('/auth/two-factor/disable', data),
   cancelTwoFactorSetup: () => api.post('/auth/two-factor/cancel-setup', {}),
+  reauthenticate: (data: { currentPassword?: string; googleIdToken?: string; secondFactorCode?: string }) => api.post('/auth/reauthenticate', data),
   logout: (token?: string) => api.post('/auth/logout', {}, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined),
   register: (data: RegisterModel) => api.post<AuthResponse>('/auth/register', data),
   verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
@@ -58,11 +59,11 @@ export const tasksApi = {
 export const bankingApi = {
   getBankAccounts: () => api.get('/banking/accounts'),
   getBanks: () => api.get('/banking/banks'),
-  addBankAccount: (data: object) => api.post('/banking/accounts', data),
-  verifyBankAccount: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
-  setDefaultPayoutAccount: (id: number) => api.put(`/banking/bank-accounts/${id}/default`, {}),
+  addBankAccount: (data: object, stepUpToken?: string) => api.post('/banking/accounts', data, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
+  verifyBankAccount: (id: number, stepUpToken?: string) => api.post(`/banking/bank-accounts/${id}/verify`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
+  setDefaultPayoutAccount: (id: number, stepUpToken?: string) => api.put(`/banking/bank-accounts/${id}/default`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
   retryVerification: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
-  removeBankAccount: (id: number) => api.delete(`/banking/bank-accounts/${id}`),
+  removeBankAccount: (id: number, stepUpToken?: string) => api.delete(`/banking/bank-accounts/${id}`, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
 }
 
 export const messagesApi = {
