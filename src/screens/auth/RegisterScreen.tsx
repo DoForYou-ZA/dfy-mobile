@@ -17,10 +17,37 @@ const TERMS_VERSION = 'terms-v1'
 const PRIVACY_VERSION = 'privacy-v1'
 
 function extractDobFromId(id: string): string {
-  if (id.length < 6) return ''
-  const yy = id.substring(0, 2), mm = id.substring(2, 4), dd = id.substring(4, 6)
-  const year = parseInt(yy) > 25 ? `19${yy}` : `20${yy}`
-  return `${year}-${mm}-${dd}`
+  if (!/^\d{6}/.test(id)) return ''
+  const yy = Number(id.slice(0, 2))
+  const month = Number(id.slice(2, 4))
+  const day = Number(id.slice(4, 6))
+  const today = new Date()
+  const currentCentury = Math.floor(today.getFullYear() / 100) * 100
+  for (const year of [currentCentury + yy, currentCentury + yy - 100]) {
+    const dob = new Date(Date.UTC(year, month - 1, day))
+    if (dob.getUTCFullYear() !== year || dob.getUTCMonth() !== month - 1 || dob.getUTCDate() !== day) return ''
+    let age = today.getUTCFullYear() - year
+    const birthdayPassed = today.getUTCMonth() > month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() >= day)
+    if (!birthdayPassed) age--
+    if (age >= 18 && age <= 110 && dob.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
+      return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
+    }
+  }
+  return ''
+}
+
+function isValidSouthAfricanId(id: string): boolean {
+  if (!/^\d{13}$/.test(id) || !extractDobFromId(id)) return false
+  let sum = 0
+  for (let i = 0; i < id.length; i++) {
+    let digit = Number(id[i])
+    if (i % 2 === 1) {
+      digit *= 2
+      if (digit > 9) digit -= 9
+    }
+    sum += digit
+  }
+  return sum % 10 === 0
 }
 
 /**
@@ -86,14 +113,14 @@ export default function RegisterScreen({ navigation }: any) {
   const validateStep2 = () => {
     const e: Record<string, string> = {}
     if (!form.userType) e.userType = 'Choose how you want to use DoForYou.'
-    if (!/^\d{13}$/.test(form.idNumber)) e.idNumber = 'Enter your 13-digit South African ID number.'
+    if (!isValidSouthAfricanId(form.idNumber)) e.idNumber = 'Enter a valid 13-digit South African ID number for an adult aged 18 or older.'
     if (!form.address.trim()) e.address = 'Enter your address.'
     return finishValidation(e)
   }
 
   const validateStep3 = () => {
     const e: Record<string, string> = {}
-    if (form.password.length < 12 || form.password.length > 128) e.password = 'Use a password between 12 and 128 characters.'
+    if (form.password.length < 12 || form.password.length > 72) e.password = 'Use a password between 12 and 128 characters.'
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match.'
     return finishValidation(e)
   }
