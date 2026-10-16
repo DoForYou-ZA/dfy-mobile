@@ -677,6 +677,7 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
+  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   marketingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   marketingTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 5 },
   errorBox: { padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', marginBottom: SPACING.sm },
