@@ -421,7 +421,7 @@ export default function RegisterScreen({ navigation }: any) {
               value={form.password}
               onChangeText={set('password')}
               error={errors.password}
-              placeholder="Min 6 characters"
+              placeholder="12–72 characters"
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoComplete="new-password"
