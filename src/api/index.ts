@@ -6,6 +6,12 @@ export const publicApi = {
   getStats: () => api.get('/public/stats'),
 }
 
+export const identityVerificationApi = {
+  getStatus: () => api.get('/identity-verification/status'),
+  createSession: (data: { consentAccepted: boolean; consentVersion: string }) => api.post('/identity-verification/session', data),
+  exchange: (handoffCode: string) => api.post('/identity-verification/exchange', { handoffCode }),
+}
+
 export const authApi = {
   login: (data: LoginModel) => api.post<AuthResponse>('/auth/login', data),
   googleLogin: (idToken: string, secondFactorCode?: string) => api.post<AuthResponse>('/auth/google', { idToken, secondFactorCode }),
