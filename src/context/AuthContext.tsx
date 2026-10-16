@@ -144,13 +144,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { idNumber: _legacyIdNumber, ...safeUser } = fullUser as any
     setToken(data.token)
     await AsyncStorage.setItem('currentUser', JSON.stringify(safeUser))
-    if (safeUser.userType) {
-      const prefs = {
-        canCreateTasks: safeUser.userType === 'creator' || safeUser.userType === 'both',
-        canAcceptTasks: safeUser.userType === 'runner' || safeUser.userType === 'both',
-      }
-      await AsyncStorage.setItem('userPreferences', JSON.stringify(prefs))
+    // Cached preferences mirror the backend capability response. UserType is a
+    // preference only and must never be used locally to grant creator/runner access.
+    const prefs = {
+      canCreateTasks: safeUser.canCreateTasks === true,
+      canAcceptTasks: safeUser.canAcceptTasks === true,
     }
+    await AsyncStorage.setItem('userPreferences', JSON.stringify(prefs))
     setUser(safeUser as User)
   }, [])
 
