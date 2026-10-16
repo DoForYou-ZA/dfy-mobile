@@ -36,6 +36,10 @@ export default function ProfileScreen({ navigation }: any) {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
+  const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
+  const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
+  const [canAcceptTasks, setCanAcceptTasks] = useState(false)
+  const [hasVerifiedPayoutAccount, setHasVerifiedPayoutAccount] = useState(false)
   const [loading, setLoading] = useState(false)
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading] = useState(false)
@@ -54,6 +58,10 @@ export default function ProfileScreen({ navigation }: any) {
         })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
+        setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
+        setCanAcceptTasks(!!d.canAcceptTasks)
+        setHasVerifiedPayoutAccount(!!d.hasVerifiedPayoutAccount)
       }
     }).catch(() => {
       setHasIdNumber(false)
@@ -84,6 +92,10 @@ export default function ProfileScreen({ navigation }: any) {
         setForm((prev: typeof form) => ({ ...prev, idNumber: '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : prev.dateOfBirth }))
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
+        setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
+        setCanAcceptTasks(!!d.canAcceptTasks)
+        setHasVerifiedPayoutAccount(!!d.hasVerifiedPayoutAccount)
         const AsyncStorage = require('@react-native-async-storage/async-storage').default
         await AsyncStorage.setItem('currentUser', JSON.stringify(d))
         refreshUser()
@@ -94,9 +106,14 @@ export default function ProfileScreen({ navigation }: any) {
     } finally { setLoading(false) }
   }
 
+  const utf8ByteLength = (value: string) => Array.from(value).reduce((bytes, char) => {
+    const codePoint = char.codePointAt(0) ?? 0
+    return bytes + (codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4)
+  }, 0)
+
   const handlePwChange = async () => {
     if (pwForm.newPassword !== pwForm.confirmPassword) { Alert.alert('Error', 'Passwords do not match'); return }
-    if (pwForm.newPassword.length < 12 || pwForm.newPassword.length > 72) { Alert.alert('Error', 'Use a password between 12 and 72 characters.'); return }
+    if (pwForm.newPassword.length < 12 || pwForm.newPassword.length > 72 || utf8ByteLength(pwForm.newPassword) > 72) { Alert.alert('Error', 'Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'); return }
     setPwLoading(true)
     try {
       await authApi.changePassword(pwForm)
@@ -203,13 +220,19 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
           </View>
           <Text style={styles.label}>Email</Text>
-          <TextInput style={styles.input} value={form.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" placeholderTextColor={COLORS.textMuted} />
+          <TextInput style={styles.input} value={form.email} editable={false} keyboardType="email-address" autoCapitalize="none" placeholderTextColor={COLORS.textMuted} />
+          <Text style={styles.hint}>Email changes require a separate verification flow and are not available here.</Text>
           <Text style={styles.label}>Phone Number</Text>
           <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} keyboardType="phone-pad" placeholderTextColor={COLORS.textMuted} />
-          <Text style={styles.label}>South African ID Number</Text>
-          {hasIdNumber ? <Text style={styles.hint}>ID securely on file ending {idNumberLastFour}. Leave blank to keep it, or enter a new ID to replace it.</Text> : null}
-          <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdNumber} keyboardType="numeric" maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} placeholderTextColor={COLORS.textMuted} />
-          {form.dateOfBirth ? <Text style={styles.hint}>Date of birth: {form.dateOfBirth}</Text> : null}
+          {(form.userType === 'runner' || form.userType === 'both') && (
+            <>
+              <Text style={styles.label}>Runner identity ID</Text>
+              {hasIdNumber ? <Text style={styles.hint}>ID on file ending {idNumberLastFour}. Leave blank to keep it, or enter a replacement.</Text> : null}
+              <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdNumber} keyboardType="numeric" maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} placeholderTextColor={COLORS.textMuted} />
+              {form.dateOfBirth ? <Text style={styles.hint}>Date of birth: {form.dateOfBirth}</Text> : null}
+              <Text style={styles.hint}>A valid ID format is not identity verification.</Text>
+            </>
+          )}
           <Text style={styles.label}>Address</Text>
           <TextInput style={styles.input} value={form.address} onChangeText={set('address')} placeholderTextColor={COLORS.textMuted} />
           <Button title="Save Changes" onPress={handleSave} loading={loading} fullWidth style={{ marginTop: 8 }} />
@@ -228,6 +251,15 @@ export default function ProfileScreen({ navigation }: any) {
               {form.userType === t.value && <Text style={styles.typeCheck}>✓ Selected</Text>}
             </TouchableOpacity>
           ))}
+          {(form.userType === 'runner' || form.userType === 'both') && (
+            <View style={styles.eligibilityCard} accessibilityRole="summary">
+              <Text style={styles.eligibilityTitle}>Runner eligibility</Text>
+              <Text style={styles.hint}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</Text>
+              <Text style={styles.hint}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</Text>
+              <Text style={styles.hint}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</Text>
+              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until identity verification and authenticator 2FA are completed. Those setup flows are not yet available in staging.'}</Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -238,7 +270,7 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={styles.label}>Current Password</Text>
           <TextInput style={styles.input} value={pwForm.currentPassword} onChangeText={v => setPwForm(f => ({ ...f, currentPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="Current password" />
           <Text style={styles.label}>New Password</Text>
-          <TextInput style={styles.input} value={pwForm.newPassword} onChangeText={v => setPwForm(f => ({ ...f, newPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="Min 6 characters" />
+          <TextInput style={styles.input} value={pwForm.newPassword} onChangeText={v => setPwForm(f => ({ ...f, newPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="12–72 characters" />
           <Text style={styles.label}>Confirm New Password</Text>
           <TextInput style={styles.input} value={pwForm.confirmPassword} onChangeText={v => setPwForm(f => ({ ...f, confirmPassword: v }))} secureTextEntry placeholderTextColor={COLORS.textMuted} placeholder="Repeat new password" />
           <Button title="Change Password" onPress={handlePwChange} loading={pwLoading} fullWidth style={{ marginTop: 8 }} />
@@ -273,6 +305,8 @@ const styles = StyleSheet.create({
   completionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   completionLabel: { fontSize: 12, color: COLORS.textSecondary },
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
+  eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
   progressTrack: { height: 6, backgroundColor: COLORS.border, borderRadius: 3 },
   progressFill: { height: 6, backgroundColor: COLORS.primary, borderRadius: 3 },
   tabs: { flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 4, ...SHADOW.sm },
