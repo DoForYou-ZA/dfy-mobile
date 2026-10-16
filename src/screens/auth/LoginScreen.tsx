@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View 
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
 import { authApi } from '../../api'
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import AuthBrandHeader from '../../components/AuthBrandHeader'
 import AuthScreenLayout from '../../components/AuthScreenLayout'
 import FormField from '../../components/FormField'
@@ -11,7 +12,7 @@ import { colors, fonts, radii } from '../../theme'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function LoginScreen({ navigation }: any) {
-  const { login } = useAuth()
+  const { login, googleLogin } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -20,6 +21,9 @@ export default function LoginScreen({ navigation }: any) {
   const [emailError, setEmailError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [formError, setFormError] = useState('')
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
+  const [secondFactorCode, setSecondFactorCode] = useState('')
+  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null)
   const passwordRef = useRef<TextInput>(null)
 
   const requestPasswordReset = async () => {
@@ -59,20 +63,59 @@ export default function LoginScreen({ navigation }: any) {
     if (loading) return
     const trimmedEmail = email.trim()
 
-    const nextEmailError = EMAIL_RE.test(trimmedEmail) ? '' : 'Enter a valid email address.'
-    const nextPasswordError = password ? '' : 'Enter your password.'
-    setEmailError(nextEmailError)
-    setPasswordError(nextPasswordError)
-    setFormError('')
-    if (nextEmailError || nextPasswordError) return
+    if (requiresTwoFactor && !secondFactorCode.trim()) {
+      setFormError('Enter the authenticator or recovery code to continue.')
+      return
+    }
 
+    if (!pendingGoogleToken) {
+      const nextEmailError = EMAIL_RE.test(trimmedEmail) ? '' : 'Enter a valid email address.'
+      const nextPasswordError = password ? '' : 'Enter your password.'
+      setEmailError(nextEmailError)
+      setPasswordError(nextPasswordError)
+      if (nextEmailError || nextPasswordError) return
+    }
+
+    setFormError('')
     setLoading(true)
     try {
-      await login(trimmedEmail.toLowerCase(), password)
+      if (pendingGoogleToken) {
+        await googleLogin(pendingGoogleToken, requiresTwoFactor ? secondFactorCode.trim() : undefined)
+      } else {
+        await login(trimmedEmail.toLowerCase(), password, requiresTwoFactor ? secondFactorCode.trim() : undefined)
+      }
+      setPendingGoogleToken(null)
+      setRequiresTwoFactor(false)
+      setSecondFactorCode('')
     } catch (err: any) {
-      setFormError(
-        err.response?.data?.message || err.message || 'We could not sign you in. Please try again.',
-      )
+      if (err.response?.data?.requiresTwoFactor) {
+        setRequiresTwoFactor(true)
+        setFormError(err.response?.data?.message || 'Enter your authenticator or recovery code to continue.')
+      } else if (err.response?.data?.requiresAccountSetup && pendingGoogleToken) {
+        navigation.navigate('Register', { googleIdToken: pendingGoogleToken })
+      } else {
+        setFormError(err.response?.data?.message || err.message || 'We could not sign you in. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleIdToken = async (idToken: string) => {
+    setLoading(true)
+    setFormError('')
+    try {
+      await googleLogin(idToken)
+    } catch (err: any) {
+      if (err.response?.data?.requiresTwoFactor) {
+        setPendingGoogleToken(idToken)
+        setRequiresTwoFactor(true)
+        setFormError(err.response?.data?.message || 'Enter your authenticator or recovery code to continue.')
+      } else if (err.response?.data?.requiresAccountSetup) {
+        navigation.navigate('Register', { googleIdToken: idToken })
+      } else {
+        setFormError(err.response?.data?.message || err.message || 'Google sign-in could not be completed.')
+      }
     } finally {
       setLoading(false)
     }
@@ -83,15 +126,15 @@ export default function LoginScreen({ navigation }: any) {
       <Pressable
         style={({ pressed }: { pressed: boolean }) => [styles.button, pressed && !loading && styles.pressed, loading && styles.loading]}
         onPress={handleSignIn}
-        disabled={loading}
+        disabled={loading || (requiresTwoFactor && !secondFactorCode.trim())}
         accessibilityRole="button"
-        accessibilityLabel="Sign in to DFY"
+        accessibilityLabel={requiresTwoFactor ? 'Verify and sign in' : 'Sign in to DFY'}
       >
         {loading ? (
           <ActivityIndicator color={colors.text} />
         ) : (
           <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>Sign in to DFY</Text>
+            <Text style={styles.buttonText}>{requiresTwoFactor ? 'Verify & sign in' : 'Sign in to DFY'}</Text>
             <Ionicons name="arrow-forward" size={18} color={colors.text} />
           </View>
         )}
@@ -186,6 +229,28 @@ export default function LoginScreen({ navigation }: any) {
           }
         />
 
+        {requiresTwoFactor && (
+          <FormField
+            label="Authenticator or recovery code"
+            value={secondFactorCode}
+            onChangeText={setSecondFactorCode}
+            placeholder="Six-digit code or recovery code"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            autoComplete="one-time-code"
+            textContentType="oneTimeCode"
+            maxLength={20}
+            returnKeyType="go"
+            onSubmitEditing={handleSignIn}
+            containerStyle={{ marginTop: 8 }}
+          />
+        )}
+
+        <View style={{ gap: 12, marginTop: 18 }}>
+          <View style={styles.orRow}><View style={styles.orLine} /><Text style={styles.orText}>or</Text><View style={styles.orLine} /></View>
+          <GoogleSignInButton onIdToken={handleGoogleIdToken} disabled={loading} />
+        </View>
+
         <Pressable
           onPress={requestPasswordReset}
           hitSlop={8}
@@ -267,4 +332,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   secureText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  orLine: { height: 1, flex: 1, backgroundColor: colors.cardBorder },
+  orText: { color: colors.textSecondary, fontFamily: fonts.regular, fontSize: 12 },
 })
