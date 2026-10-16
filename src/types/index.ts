@@ -10,7 +10,7 @@ export interface User {
   profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
   canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
   completedTasks: number; createdAt: string; lastLoginAt?: string
-  roles?: string[]; isAdmin?: boolean; idNumber?: string; address?: string
+  roles?: string[]; isAdmin?: boolean; idNumber?: string; hasIdNumber?: boolean; idNumberLastFour?: string; address?: string
 }
 export interface AuthResponse {
   success: boolean; message: string; user?: User; token?: string
