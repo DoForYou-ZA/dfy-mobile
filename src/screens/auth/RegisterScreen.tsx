@@ -53,14 +53,13 @@ export default function RegisterScreen({ navigation }: any) {
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
-    userType: '', address: '',
+    userType: '',
     password: '', confirmPassword: '',
   })
 
   const lastRef = useRef<TextInput>(null)
   const emailRef = useRef<TextInput>(null)
   const phoneRef = useRef<TextInput>(null)
-  const addressRef = useRef<TextInput>(null)
   const confirmRef = useRef<TextInput>(null)
 
   const set = (field: string) => (val: string) => setForm((f: typeof form) => ({ ...f, [field]: val }))
@@ -82,7 +81,6 @@ export default function RegisterScreen({ navigation }: any) {
   const validateStep2 = () => {
     const e: Record<string, string> = {}
     if (!form.userType) e.userType = 'Choose how you want to use DoForYou.'
-    if (!form.address.trim()) e.address = 'Enter your address.'
     return finishValidation(e)
   }
 
@@ -113,7 +111,7 @@ export default function RegisterScreen({ navigation }: any) {
       const res = await authApi.register({
         firstName: form.firstName.trim(), lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(), phoneNumber: toLocalSouthAfricanNumber(form.phoneNumber) ?? form.phoneNumber,
-        userType: form.userType, address: form.address.trim(),
+        userType: form.userType,
         password: form.password,
         termsAccepted: acceptedTerms, privacyAccepted: acceptedPrivacy,
         termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
@@ -359,21 +357,8 @@ export default function RegisterScreen({ navigation }: any) {
             })}
             {!!errors.userType && <Text style={styles.fieldError}>{errors.userType}</Text>}
 
-            <FormField
-              ref={addressRef}
-              label="Address *"
-              value={form.address}
-              onChangeText={set('address')}
-              error={errors.address}
-              placeholder="123 Main St, Johannesburg"
-              autoComplete="street-address"
-              textContentType="fullStreetAddress"
-              returnKeyType="done"
-              onSubmitEditing={handlePrimary}
-              containerStyle={{ marginBottom: 0 }}
-            />
             <Text style={styles.hint}>
-              Your phone number is for contact only; DoForYou does not verify it by SMS.
+              You can complete runner identity verification later, before accepting paid tasks. Your phone number is for contact only; DoForYou does not verify it by SMS.
             </Text>
           </View>
         )}
