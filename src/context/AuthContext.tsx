@@ -88,8 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(parsed)
           }
           if (!isAdminSession(parsed, storedToken) && (!parsed.idNumber || !parsed.address)) {
-            authApi.getProfile()
-              .then(r => {
+            void authApi.getProfile()
+              .then(async r => {
                 const d = r.data?.data || r.data
                 if (d) {
                   const { idNumber: _legacyIdNumber, ...safeProfile } = d as any
