@@ -20,7 +20,7 @@ export interface AuthResponse {
   success: boolean; message: string; user?: User; token?: string
   refreshToken?: string; expiration?: string
   requiresEmailVerification?: boolean; emailVerificationRequired?: boolean
-  requiresTwoFactor?: boolean; requiresAccountSetup?: boolean
+  requiresTwoFactor?: boolean; requiresAccountSetup?: boolean; requiresAccountLink?: boolean
 }
 export interface GoogleRegisterModel {
   idToken: string; firstName: string; lastName: string; phoneNumber: string; userType: string
