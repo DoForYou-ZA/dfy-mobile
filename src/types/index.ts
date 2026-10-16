@@ -1,4 +1,4 @@
-export interface LoginModel { email: string; password: string }
+export interface LoginModel { email: string; password: string; secondFactorCode?: string }
 export interface RegisterModel {
   firstName: string; lastName: string; email: string; phoneNumber: string
   userType: string; password: string
@@ -9,7 +9,7 @@ export interface User {
   contact: string; phoneNumber?: string; userType?: string; isVerified: boolean
   emailVerified?: boolean; phoneVerified?: boolean
   identityVerificationStatus?: string; authenticatorTwoFactorEnabled?: boolean
-  hasVerifiedPayoutAccount?: boolean
+  hasVerifiedPayoutAccount?: boolean; hasGoogleLogin?: boolean
   profileCompleted: boolean; profileCompletion?: number; missingProfileFields?: string[]
   canCreateTasks?: boolean; canAcceptTasks?: boolean; rating: number
   completedTasks: number; createdAt: string; lastLoginAt?: string
@@ -19,6 +19,11 @@ export interface AuthResponse {
   success: boolean; message: string; user?: User; token?: string
   refreshToken?: string; expiration?: string
   requiresEmailVerification?: boolean; emailVerificationRequired?: boolean
+  requiresTwoFactor?: boolean; requiresAccountSetup?: boolean
+}
+export interface GoogleRegisterModel {
+  idToken: string; firstName: string; lastName: string; phoneNumber: string; userType: string
+  termsAccepted: boolean; privacyAccepted: boolean; termsVersion: string; privacyVersion: string; marketingConsent: boolean
 }
 export type PaymentStatus =
   | 'Pending' | 'EscrowHeld' | 'EscrowReleased' | 'PayoutPending' | 'Processing'
