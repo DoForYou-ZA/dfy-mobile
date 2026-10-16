@@ -16,6 +16,7 @@ export const authApi = {
   login: (data: LoginModel) => api.post<AuthResponse>('/auth/login', data),
   googleLogin: (idToken: string, secondFactorCode?: string) => api.post<AuthResponse>('/auth/google', { idToken, secondFactorCode }),
   googleRegister: (data: import('../types').GoogleRegisterModel) => api.post<AuthResponse>('/auth/google/register', data),
+  linkGoogleAccount: (idToken: string, stepUpToken: string) => api.post('/auth/google/link', { idToken }, { headers: { 'X-DFY-Step-Up-Token': stepUpToken } }),
   getTwoFactorStatus: () => api.get('/auth/two-factor/status'),
   setupTwoFactor: (data: { currentPassword?: string }) => api.post('/auth/two-factor/setup', data),
   confirmTwoFactor: (code: string) => api.post('/auth/two-factor/confirm', { code }),
