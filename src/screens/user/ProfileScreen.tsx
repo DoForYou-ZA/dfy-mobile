@@ -15,6 +15,8 @@ const USER_TYPES = [
 export default function ProfileScreen({ navigation }: any) {
   const { user, refreshUser, logout } = useAuth()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
+  const [hasIdNumber, setHasIdNumber] = useState(false)
+  const [idNumberLastFour, setIdNumberLastFour] = useState('')
   const [loading, setLoading] = useState(false)
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading] = useState(false)
@@ -27,14 +29,16 @@ export default function ProfileScreen({ navigation }: any) {
       if (d) setForm({
         firstName: d.firstName || '', lastName: d.lastName || '',
         email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '',
-        userType: d.userType || '', idNumber: d.idNumber || '',
+        userType: d.userType || '', idNumber: '',
         address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '',
       })
+      setHasIdNumber(!!d.hasIdNumber)
+      setIdNumberLastFour(d.idNumberLastFour || '')
     }).catch(() => {
       if (user) setForm({
         firstName: user.firstName || '', lastName: user.lastName || '',
         email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '',
-        userType: user.userType || '', idNumber: user.idNumber || '',
+        userType: user.userType || '', idNumber: '',
         address: user.address || '', dateOfBirth: '',
       })
     })
@@ -60,6 +64,9 @@ export default function ProfileScreen({ navigation }: any) {
       const r = await authApi.getProfile()
       const d = r.data?.data || r.data
       if (d) {
+        setForm((prev: typeof form) => ({ ...prev, idNumber: '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : prev.dateOfBirth }))
+        setHasIdNumber(!!d.hasIdNumber)
+        setIdNumberLastFour(d.idNumberLastFour || '')
         const AsyncStorage = require('@react-native-async-storage/async-storage').default
         await AsyncStorage.setItem('currentUser', JSON.stringify(d))
         refreshUser()
@@ -72,7 +79,7 @@ export default function ProfileScreen({ navigation }: any) {
 
   const handlePwChange = async () => {
     if (pwForm.newPassword !== pwForm.confirmPassword) { Alert.alert('Error', 'Passwords do not match'); return }
-    if (pwForm.newPassword.length < 6) { Alert.alert('Error', 'Password must be at least 6 characters'); return }
+    if (pwForm.newPassword.length < 12 || pwForm.newPassword.length > 72) { Alert.alert('Error', 'Use a password between 12 and 72 characters.'); return }
     setPwLoading(true)
     try {
       await authApi.changePassword(pwForm)
@@ -180,8 +187,9 @@ export default function ProfileScreen({ navigation }: any) {
           <TextInput style={styles.input} value={form.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" placeholderTextColor={COLORS.textMuted} />
           <Text style={styles.label}>Phone Number</Text>
           <TextInput style={styles.input} value={form.phoneNumber} onChangeText={set('phoneNumber')} keyboardType="phone-pad" placeholderTextColor={COLORS.textMuted} />
-          <Text style={styles.label}>ID Number</Text>
-          <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdNumber} keyboardType="numeric" maxLength={13} placeholderTextColor={COLORS.textMuted} />
+          <Text style={styles.label}>South African ID Number</Text>
+          {hasIdNumber ? <Text style={styles.hint}>ID securely on file ending {idNumberLastFour}. Leave blank to keep it, or enter a new ID to replace it.</Text> : null}
+          <TextInput style={styles.input} value={form.idNumber} onChangeText={handleIdNumber} keyboardType="numeric" maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} placeholderTextColor={COLORS.textMuted} />
           {form.dateOfBirth ? <Text style={styles.hint}>Date of birth: {form.dateOfBirth}</Text> : null}
           <Text style={styles.label}>Address</Text>
           <TextInput style={styles.input} value={form.address} onChangeText={set('address')} placeholderTextColor={COLORS.textMuted} />
