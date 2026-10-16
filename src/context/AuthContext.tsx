@@ -223,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof user.profileCompleted === 'boolean') return user.profileCompleted
     if (typeof user.profileCompletion === 'number') return user.profileCompletion >= 100
     return !!(user.firstName && user.lastName && user.email && phone
-      && user.userType && user.idNumber && user.address)
+      && user.userType)
   }, [user])
 
   const isProfileIncomplete = useCallback(() => !isProfileComplete(), [isProfileComplete])
