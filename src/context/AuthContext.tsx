@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { clearAccessToken, getAccessToken, setAccessToken } from '../core/tokenStorage'
-import type { User } from '../types'
+import type { AuthResponse, GoogleRegisterModel, User } from '../types'
 import { authApi } from '../api'
 
 interface AuthContextType {
   user: User | null
   token: string | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, secondFactorCode?: string) => Promise<void>
+  googleLogin: (idToken: string, secondFactorCode?: string) => Promise<void>
+  googleRegister: (data: GoogleRegisterModel) => Promise<void>
   logout: () => void
   refreshUser: () => void
   isAuthenticated: () => boolean
@@ -109,11 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     init()
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await authApi.login({ email, password })
-    const data = res.data
+  const acceptAuthResponse = useCallback(async (data: AuthResponse) => {
     if (!data.success || !data.token || !data.user) {
-      throw new Error(data.message || 'Login failed')
+      const error: any = new Error(data.message || 'Sign-in failed')
+      error.response = { data }
+      throw error
     }
     if (isAdminSession(data.user, data.token)) {
       await clearAccessToken()
@@ -128,7 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profileRes = await authApi.getProfile()
       const profileData = profileRes.data?.data || profileRes.data
       if (profileData) fullUser = { ...data.user, ...profileData }
-    } catch {}
+    } catch {
+      // Auth response remains authoritative when profile refresh is temporarily unavailable.
+    }
     if (isAdminSession(fullUser, data.token)) {
       await clearAccessToken()
       await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
@@ -136,17 +140,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       throw new Error(ADMIN_MOBILE_MESSAGE)
     }
+    // Never cache full ID data in ordinary app storage.
+    const { idNumber: _legacyIdNumber, ...safeUser } = fullUser as any
     setToken(data.token)
-    await AsyncStorage.setItem('currentUser', JSON.stringify(fullUser))
-    if (fullUser.userType) {
+    await AsyncStorage.setItem('currentUser', JSON.stringify(safeUser))
+    if (safeUser.userType) {
       const prefs = {
-        canCreateTasks: fullUser.userType === 'creator' || fullUser.userType === 'both',
-        canAcceptTasks: fullUser.userType === 'runner' || fullUser.userType === 'both',
+        canCreateTasks: safeUser.userType === 'creator' || safeUser.userType === 'both',
+        canAcceptTasks: safeUser.userType === 'runner' || safeUser.userType === 'both',
       }
       await AsyncStorage.setItem('userPreferences', JSON.stringify(prefs))
     }
-    setUser(fullUser)
+    setUser(safeUser as User)
   }, [])
+
+  const login = useCallback(async (email: string, password: string, secondFactorCode?: string) => {
+    try {
+      const res = await authApi.login({ email, password, secondFactorCode })
+      await acceptAuthResponse(res.data)
+    } catch (error: any) {
+      if (error.response?.data) throw error
+      throw error
+    }
+  }, [acceptAuthResponse])
+
+  const googleLogin = useCallback(async (idToken: string, secondFactorCode?: string) => {
+    const response = await authApi.googleLogin(idToken, secondFactorCode)
+    await acceptAuthResponse(response.data)
+  }, [acceptAuthResponse])
+
+  const googleRegister = useCallback(async (data: GoogleRegisterModel) => {
+    const response = await authApi.googleRegister(data)
+    await acceptAuthResponse(response.data)
+  }, [acceptAuthResponse])
+
 
   const logout = useCallback(async () => {
     await clearAccessToken()
@@ -217,7 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, token, loading,
-      login, logout, refreshUser,
+      login, googleLogin, googleRegister, logout, refreshUser,
       isAuthenticated, isAdmin,
       isProfileComplete, isProfileIncomplete,
       canPostErrands, canAcceptTasks,
