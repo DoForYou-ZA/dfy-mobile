@@ -120,7 +120,7 @@ export default function RegisterScreen({ navigation }: any) {
 
   const validateStep3 = () => {
     const e: Record<string, string> = {}
-    if (form.password.length < 12 || form.password.length > 72) e.password = 'Use a password between 12 and 128 characters.'
+    if (form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72) e.password = 'Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match.'
     return finishValidation(e)
   }
@@ -144,7 +144,7 @@ export default function RegisterScreen({ navigation }: any) {
     try {
       const res = await authApi.register({
         firstName: form.firstName.trim(), lastName: form.lastName.trim(),
-        email: form.email.trim(), phoneNumber: toLocalSouthAfricanNumber(form.phoneNumber) ?? form.phoneNumber,
+        email: form.email.trim().toLowerCase(), phoneNumber: toLocalSouthAfricanNumber(form.phoneNumber) ?? form.phoneNumber,
         userType: form.userType, idNumber: form.idNumber,
         dateOfBirth: form.dateOfBirth, address: form.address.trim(),
         password: form.password,
@@ -153,7 +153,7 @@ export default function RegisterScreen({ navigation }: any) {
         marketingConsent,
       })
       if (res.data.success) {
-        Alert.alert('Account Created!', 'Please sign in to continue.', [
+        Alert.alert('Check your email', 'Your account was created. Open the verification link sent to your email before signing in.', [
           { text: 'Sign In', onPress: () => navigation.navigate('Login') },
         ])
       } else {
