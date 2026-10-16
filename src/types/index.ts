@@ -1,7 +1,7 @@
 export interface LoginModel { email: string; password: string }
 export interface RegisterModel {
   firstName: string; lastName: string; email: string; phoneNumber: string
-  userType: string; idNumber?: string; dateOfBirth?: string; address: string; password: string
+  userType: string; idNumber: string; dateOfBirth?: string; address: string; password: string
   termsAccepted: boolean; privacyAccepted: boolean; termsVersion: string; privacyVersion: string; marketingConsent: boolean
 }
 export interface User {
