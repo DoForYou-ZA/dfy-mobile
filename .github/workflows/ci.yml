@@ -2,9 +2,9 @@ name: Mobile CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, staging]
   push:
-    branches: [main, align/dfy-fe-be-contract]
+    branches: [main, staging, align/dfy-fe-be-contract]
   schedule:
     - cron: '27 6 * * *'
   workflow_dispatch:
