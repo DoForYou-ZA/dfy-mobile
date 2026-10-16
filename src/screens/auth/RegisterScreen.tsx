@@ -36,6 +36,15 @@ function extractDobFromId(id: string): string {
   return ''
 }
 
+function utf8ByteLength(value: string): number {
+  let bytes = 0
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0
+    bytes += codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4
+  }
+  return bytes
+}
+
 function isValidSouthAfricanId(id: string): boolean {
   if (!/^\d{13}$/.test(id) || !extractDobFromId(id)) return false
   let sum = 0
@@ -120,7 +129,7 @@ export default function RegisterScreen({ navigation }: any) {
 
   const validateStep3 = () => {
     const e: Record<string, string> = {}
-    if (form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72) e.password = 'Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'
+    if (form.password.length < 12 || form.password.length > 72 || utf8ByteLength(form.password) > 72) e.password = 'Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match.'
     return finishValidation(e)
   }
