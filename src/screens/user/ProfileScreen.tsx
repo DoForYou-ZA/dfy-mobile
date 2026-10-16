@@ -1,6 +1,6 @@
 import SignOutButton from '../../components/SignOutButton'
 import React, { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, TextInput, StyleSheet, Alert, TouchableOpacity, Switch } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
 import { authApi, userPreferencesApi } from '../../api'
 import Button from '../../components/Button'
@@ -17,6 +17,8 @@ export default function ProfileScreen({ navigation }: any) {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', address: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
+  const [marketingConsent, setMarketingConsent] = useState(false)
+  const [marketingConsentSaving, setMarketingConsentSaving] = useState(false)
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
   const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
   const [canAcceptTasks, setCanAcceptTasks] = useState(false)
@@ -50,6 +52,7 @@ export default function ProfileScreen({ navigation }: any) {
         })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setMarketingConsent(!!d.marketingConsent)
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
         setCanAcceptTasks(!!d.canAcceptTasks)
@@ -58,6 +61,7 @@ export default function ProfileScreen({ navigation }: any) {
     }).catch(() => {
       setHasIdNumber(false)
       setIdNumberLastFour('')
+      setMarketingConsent(!!user?.marketingConsent)
       if (user) setForm({
         firstName: user.firstName || '', lastName: user.lastName || '',
         email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '',
@@ -89,6 +93,7 @@ export default function ProfileScreen({ navigation }: any) {
       if (d) {
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setMarketingConsent(!!d.marketingConsent)
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
         setCanAcceptTasks(!!d.canAcceptTasks)
@@ -101,6 +106,26 @@ export default function ProfileScreen({ navigation }: any) {
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to update profile.')
     } finally { setLoading(false) }
+  }
+
+  const handleMarketingConsentChange = async (enabled: boolean) => {
+    const previous = marketingConsent
+    setMarketingConsent(enabled)
+    setMarketingConsentSaving(true)
+    try {
+      const response = await authApi.updateMarketingConsent(enabled)
+      if (response.data?.success === false) throw new Error(response.data?.message || 'Could not save your marketing preference.')
+      const data = response.data?.data || response.data
+      setMarketingConsent(Boolean(data?.enabled ?? enabled))
+      Alert.alert('Marketing preference updated', enabled
+        ? 'Optional marketing updates are enabled.'
+        : 'Optional marketing updates have been turned off.')
+    } catch (err: any) {
+      setMarketingConsent(previous)
+      Alert.alert('Could not save preference', err.response?.data?.message || err.message || 'Please try again.')
+    } finally {
+      setMarketingConsentSaving(false)
+    }
   }
 
   const utf8ByteLength = (value: string) => Array.from(value).reduce((bytes, char) => {
@@ -307,6 +332,26 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
       )}
 
+      {/* Optional marketing consent */}
+      {activeTab === 'info' && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Marketing preferences</Text>
+          <View style={styles.marketingRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.marketingTitle}>Optional product updates and offers</Text>
+              <Text style={styles.hint}>This is optional and can be changed at any time. Important account, task, security and payment messages are not marketing.</Text>
+              {marketingConsentSaving && <Text style={styles.hint} accessibilityRole="text">Saving preference…</Text>}
+            </View>
+            <Switch
+              value={marketingConsent}
+              onValueChange={handleMarketingConsentChange}
+              disabled={marketingConsentSaving}
+              accessibilityLabel="Receive optional DoForYou marketing emails"
+            />
+          </View>
+        </View>
+      )}
+
       {/* User Type */}
       {activeTab === 'type' && (
         <View style={styles.card}>
@@ -437,6 +482,8 @@ const styles = StyleSheet.create({
   completionPct: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   eligibilityCard: { marginTop: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   eligibilityTitle: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800', marginBottom: 6 },
+  marketingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  marketingTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 5 },
   errorBox: { padding: SPACING.md, borderRadius: RADIUS.md, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', marginBottom: SPACING.sm },
   errorText: { fontSize: 13, color: '#991B1B' },
   recoveryCard: { padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background, marginVertical: SPACING.sm },
