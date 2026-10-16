@@ -4,6 +4,7 @@ import { AppState, Linking, View, Text, ScrollView, TextInput, StyleSheet, Alert
 import { useAuth } from '../../context/AuthContext'
 import { authApi, identityVerificationApi, userPreferencesApi } from '../../api'
 import Button from '../../components/Button'
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
 
 const USER_TYPES = [
@@ -21,6 +22,12 @@ export default function ProfileScreen({ navigation }: any) {
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
   const [hasPasswordLogin, setHasPasswordLogin] = useState(user?.hasPasswordLogin !== false)
+  const [googleLinkIdToken, setGoogleLinkIdToken] = useState('')
+  const [googleLinkPassword, setGoogleLinkPassword] = useState('')
+  const [googleLinkSecondFactor, setGoogleLinkSecondFactor] = useState('')
+  const [googleLinkLoading, setGoogleLinkLoading] = useState(false)
+  const [googleLinkError, setGoogleLinkError] = useState('')
+  const [googleLinkMessage, setGoogleLinkMessage] = useState('')
   const [passwordSetupLoading, setPasswordSetupLoading] = useState(false)
   const [passwordSetupMessage, setPasswordSetupMessage] = useState('')
   const [passwordSetupError, setPasswordSetupError] = useState('')
@@ -249,6 +256,48 @@ export default function ProfileScreen({ navigation }: any) {
       setIdentitySessionError(err.response?.data?.message || err.message || 'The identity verification session could not be started.')
     } finally {
       setIdentitySessionLoading(false)
+    }
+  }
+
+  const handleGoogleLink = async () => {
+    setGoogleLinkError('')
+    setGoogleLinkMessage('')
+    if (!googleLinkIdToken) {
+      setGoogleLinkError('Choose the Google account you want to link first.')
+      return
+    }
+    if (!hasPasswordLogin || !googleLinkPassword) {
+      setGoogleLinkError('Enter your current DoForYou password to approve this link.')
+      return
+    }
+
+    setGoogleLinkLoading(true)
+    try {
+      const reauthResponse = await authApi.reauthenticate({
+        currentPassword: googleLinkPassword,
+        secondFactorCode: totpEnabled ? googleLinkSecondFactor.trim() || undefined : undefined,
+      })
+      if (reauthResponse.data?.success === false) {
+        throw new Error(reauthResponse.data?.message || 'Reauthentication failed.')
+      }
+      const reauthData = reauthResponse.data?.data || reauthResponse.data
+      const stepUpToken = reauthData?.stepUpToken
+      if (!stepUpToken) throw new Error('A fresh reauthentication token was not returned. Try again.')
+      const linkResponse = await authApi.linkGoogleAccount(googleLinkIdToken, stepUpToken)
+      if (linkResponse.data?.success === false) {
+        throw new Error(linkResponse.data?.message || 'Google could not be linked.')
+      }
+      setGoogleLinkIdToken('')
+      setGoogleLinkPassword('')
+      setGoogleLinkSecondFactor('')
+      await logout()
+      Alert.alert('Google linked', 'Your sessions have been revoked. Sign in again to continue.', [
+        { text: 'Sign in', onPress: () => navigation.navigate('Login') },
+      ])
+    } catch (err: any) {
+      setGoogleLinkError(err.response?.data?.message || err.message || 'Google could not be linked. No account changes were confirmed.')
+    } finally {
+      setGoogleLinkLoading(false)
     }
   }
 
@@ -556,6 +605,43 @@ export default function ProfileScreen({ navigation }: any) {
 
       {/* Authenticator security */}
       {activeTab === 'security' && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Linked sign-in methods</Text>
+          {user?.hasGoogleLogin ? (
+            <Text style={styles.hint}>Google sign-in is linked to this account.</Text>
+          ) : hasPasswordLogin ? (
+            <>
+              <Text style={styles.hint}>Link Google only after selecting the account and proving control of this DoForYou account. Matching email alone never merges accounts.</Text>
+              {!!googleLinkError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{googleLinkError}</Text></View>}
+              {!!googleLinkMessage && <View style={styles.eligibilityCard} accessibilityRole="summary"><Text style={styles.hint}>{googleLinkMessage}</Text></View>}
+              <GoogleSignInButton
+                onIdToken={(token) => {
+                  setGoogleLinkIdToken(token)
+                  setGoogleLinkError('')
+                  setGoogleLinkMessage('Google account selected. Complete reauthentication to link it.')
+                }}
+                disabled={googleLinkLoading}
+              />
+              {!!googleLinkIdToken && (
+                <>
+                  <Text style={styles.label}>Current DoForYou password</Text>
+                  <TextInput style={styles.input} value={googleLinkPassword} onChangeText={setGoogleLinkPassword} secureTextEntry autoComplete="current-password" placeholder="Confirm your current password" placeholderTextColor={COLORS.textMuted} />
+                  {totpEnabled && (
+                    <>
+                      <Text style={styles.label}>Authenticator or recovery code</Text>
+                      <TextInput style={styles.input} value={googleLinkSecondFactor} onChangeText={setGoogleLinkSecondFactor} autoCapitalize="characters" autoComplete="one-time-code" maxLength={20} placeholder="Code or recovery code" placeholderTextColor={COLORS.textMuted} />
+                    </>
+                  )}
+                  <Button title={googleLinkLoading ? 'Reauthenticating…' : 'Link Google account'} onPress={() => { void handleGoogleLink() }} loading={googleLinkLoading} disabled={googleLinkLoading || !googleLinkPassword || (totpEnabled && !googleLinkSecondFactor.trim())} fullWidth style={{ marginTop: 8 }} />
+                  <Button title="Cancel" onPress={() => { setGoogleLinkIdToken(''); setGoogleLinkPassword(''); setGoogleLinkSecondFactor(''); setGoogleLinkError(''); setGoogleLinkMessage('') }} disabled={googleLinkLoading} variant="secondary" fullWidth style={{ marginTop: 8 }} />
+                </>
+              )}
+            </>
+          ) : (
+            <Text style={styles.hint}>Google linking is unavailable for this account's current sign-in configuration. Contact support if you need to change your sign-in method.</Text>
+          )}
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Authenticator security</Text>
           {!!totpError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{totpError}</Text></View>}
