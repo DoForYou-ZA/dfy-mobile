@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react'
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
+import { authApi } from '../../api'
 import AuthBrandHeader from '../../components/AuthBrandHeader'
 import AuthScreenLayout from '../../components/AuthScreenLayout'
 import FormField from '../../components/FormField'
@@ -15,23 +16,43 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [formError, setFormError] = useState('')
   const passwordRef = useRef<TextInput>(null)
 
-  const requestPasswordReset = () => {
-    const subject = encodeURIComponent('Password reset assistance')
-    const accountEmail = email.trim() || '(please add the email address for my account)'
-    const body = encodeURIComponent(
-      `Hello DoForYou Support,\n\nI need help regaining access to my account. Please advise me on the secure next steps to reset my password.\n\nAccount email: ${accountEmail}\n\nThank you.`,
-    )
-    void Linking.openURL(`mailto:info@doforyou.co.za?subject=${subject}&body=${body}`).catch(() => {
-      Alert.alert(
-        'Contact DoForYou support',
-        'We could not open your email app. Please email info@doforyou.co.za with the subject “Password reset assistance”.',
-      )
-    })
+  const requestPasswordReset = async () => {
+    const accountEmail = email.trim().toLowerCase()
+    if (!EMAIL_RE.test(accountEmail)) {
+      Alert.alert('Enter your email', 'Enter the email address for your DoForYou account first.')
+      return
+    }
+    try {
+      const response = await authApi.forgotPassword(accountEmail)
+      Alert.alert('Check your email', response.data?.message || 'If an account matches that email, reset instructions will be sent shortly.')
+    } catch {
+      Alert.alert('Check your email', 'If an account matches that email, reset instructions will be sent shortly.')
+    }
+  }
+
+  const resendVerification = async () => {
+    const accountEmail = email.trim().toLowerCase()
+    if (!EMAIL_RE.test(accountEmail)) {
+      Alert.alert('Enter your email', 'Enter the email address for your account first.')
+      return
+    }
+    setResending(true)
+    try {
+      const response = await authApi.resendVerification(accountEmail)
+      Alert.alert('Check your inbox', response.data?.message || 'If the account needs verification, an email will be sent shortly.')
+      setFormError('')
+    } catch {
+      Alert.alert('Check your inbox', 'If the account needs verification, an email will be sent shortly.')
+      setFormError('')
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleSignIn = async () => {
@@ -112,6 +133,11 @@ export default function LoginScreen({ navigation }: any) {
           <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>{formError}</Text>
           </View>
+        )}
+        {formError.toLowerCase().includes('verify your email') && (
+          <Pressable onPress={resendVerification} disabled={resending} style={styles.forgot} accessibilityRole="button">
+            <Text style={styles.link}>{resending ? 'Sending verification email…' : 'Resend verification email'}</Text>
+          </Pressable>
         )}
 
         <FormField
