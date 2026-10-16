@@ -176,6 +176,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
   const logout = useCallback(async () => {
+    const existingToken = await getAccessToken()
+    // Best-effort server revocation is sent with an explicit header before the
+    // local token is cleared. Local sign-out must still work offline.
+    if (existingToken) void authApi.logout(existingToken).catch(() => undefined)
     await clearAccessToken()
     await AsyncStorage.multiRemove(['currentUser', 'refreshToken', 'userPreferences'])
     setToken(null)
