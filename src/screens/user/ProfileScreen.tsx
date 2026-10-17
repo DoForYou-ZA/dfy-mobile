@@ -97,18 +97,41 @@ export default function ProfileScreen({ navigation }: any) {
     let active = true
     const refresh = async () => {
       try {
-        const [profileResponse, statusResponse] = await Promise.all([
+        const [profileResponse, statusResponse, twoFactorResponse] = await Promise.all([
           authApi.getProfile(),
           identityVerificationApi.getStatus(),
+          authApi.getTwoFactorStatus(),
         ])
         if (!active) return
         const profile = profileResponse.data?.data || profileResponse.data
         const status = statusResponse.data?.data || statusResponse.data
+        const twoFactor = twoFactorResponse.data?.data || twoFactorResponse.data
         if (profile) {
+          // This refresh runs when the app returns to the foreground, including
+          // after identity verification completed in an external browser or after
+          // role/eligibility changes made on the website.
+          setForm(prev => ({
+            ...prev,
+            firstName: profile.firstName || prev.firstName,
+            lastName: profile.lastName || prev.lastName,
+            email: profile.email || prev.email,
+            phoneNumber: profile.phoneNumber || prev.phoneNumber,
+            userType: profile.userType || prev.userType,
+            address: profile.address || prev.address,
+          }))
+          setHasIdNumber(!!profile.hasIdNumber)
+          setIdNumberLastFour(profile.idNumberLastFour || '')
+          setHasPasswordLogin(profile.hasPasswordLogin !== false)
+          setMarketingConsent(!!profile.marketingConsent)
           setIdentityVerificationStatus(profile.identityVerificationStatus || 'not_started')
           setAuthenticatorTwoFactorEnabled(!!profile.authenticatorTwoFactorEnabled)
           setCanAcceptTasks(!!profile.canAcceptTasks)
           setHasVerifiedPayoutAccount(!!profile.hasVerifiedPayoutAccount)
+        }
+        if (twoFactor) {
+          setTotpEnabled(!!twoFactor.enabled)
+          setTotpRemainingCodes(Number(twoFactor.remainingRecoveryCodes || 0))
+          setTotpConfigured(!!twoFactor.encryptionConfigured)
         }
         if (status) {
           setIdentityProviderConfigured(!!status.configured)
