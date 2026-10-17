@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  View, Text, FlatList, TextInput, TouchableOpacity,
+  AppState, View, Text, FlatList, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native'
 import * as signalR from '@microsoft/signalr'
@@ -89,6 +89,7 @@ export default function TaskChatScreen({ route, navigation }: any) {
       hub.onreconnected(() => {
         setConnected(true)
         if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+        void fetchMessages()
       })
       hub.onclose(() => {
         setConnected(false)
@@ -115,6 +116,13 @@ export default function TaskChatScreen({ route, navigation }: any) {
     fetchMessages()
     pollRef.current = setInterval(fetchMessages, POLL_INTERVAL)
     return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null } }
+  }, [fetchMessages])
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void fetchMessages()
+    })
+    return () => subscription.remove()
   }, [fetchMessages])
 
   useEffect(() => {
