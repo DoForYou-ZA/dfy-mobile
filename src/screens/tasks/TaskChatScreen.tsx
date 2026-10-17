@@ -98,14 +98,14 @@ export default function TaskChatScreen({ route, navigation }: any) {
         .then(async () => {
           setConnected(true)
           if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
-          await hub.invoke('JoinTaskChat', parseInt(taskId.replace(/\D/g, '') || '0'))
+          await hub.invoke('JoinTaskChat', String(taskId))
         })
         .catch(() => { setConnected(false) })
       hubRef.current = hub
     }
     setupHub()
     return () => {
-      hubRef.current?.invoke('LeaveTaskChat', parseInt(taskId.replace(/\D/g, '') || '0')).catch(() => {})
+      hubRef.current?.invoke('LeaveTaskChat', String(taskId)).catch(() => {})
       hubRef.current?.stop()
       hubRef.current = null
     }
