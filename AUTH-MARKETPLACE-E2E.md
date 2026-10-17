@@ -380,18 +380,19 @@ This section records the local cross-repository fixes and the remaining staging 
 
 ### Still open before staging sign-off
 
-- The website admin shell redirects administrators away from `/notifications`; confirm the intended admin notification route and make it reachable or remove the misleading entry point.
-- Website sidebar task/conversation counters refresh on route changes, but a mutation performed without a route change may still leave the corresponding count stale until navigation. Add mutation-driven invalidation or a shared refresh event.
-- Mobile task, dashboard, and other retained screens generally fetch on mount; unlike notifications, they may show stale state when revisited without remounting. Add focus refresh or targeted cache invalidation to every stateful screen/action pair.
-- Numeric-only mobile task notification IDs cannot deep-link to the individual task/chat because the navigation contract expects a string task ID. Resolve the backend/client identifier contract and test deleted, inaccessible, and completed task destinations.
-- No focused regression tests were added for the backend webhook replay, dispute eligibility, checkout-vs-budget edit, budget bounds, browse-vs-accept eligibility, or client notification/read-action failure and cross-device cases.
-- Add web/mobile automated coverage for unread-count pagination, notification actions, sidebar counts after chat/task mutations, every notification destination, focus/reconnect refresh, and rating API failure responses.
-- The signup/profile ID and payout-bank checks are not a verified KYC state machine. Select and integrate the approved identity provider and ensure that client claims cannot substitute for a verified backend status.
-- Confirm whether local mobile fixes belong on the current `feat/mobile-feature-parity-audit-fixes` branch or should be ported to the staging-targeted auth branch before opening/updating a PR.
-
+- **Hosted integration/configuration:** verify SMTP delivery and fragment links, Google OAuth clients/redirects, persistent TOTP encryption key, Sumsub sandbox credentials/level/webhook signature and consent version on the deployed staging API. Code-level tests do not close these items.
+- **Database preflight:** safely audit normalized email duplicates in the staging database before the normalized-email unique-index migration. Confirm each pending migration is applied exactly once and the model snapshot matches the migration set. Do not clean up or run migrations against production.
+- **Privacy and key management:** confirm the legacy ID-field retention/access policy and whether existing stored ID values remain plaintext. Before claiming encryption at rest, design and verify a managed-key encryption/HMAC migration. Verify persistent TOTP/DataProtection keys survive service restarts and are appropriately protected.
+- **Trusted proxy/security topology:** verify that only the actual trusted Render ingress headers are honored, auth rate limiting observes the correct source address, and limitations of process-local throttling are documented before scaling beyond one API instance.
+- **Website navigation/freshness:** recheck the admin /notifications route; refresh task/conversation counters after mutations without requiring a route change; cover every notification destination and mutation failure path.
+- **Mobile freshness and identifiers:** add focus/reconnect refresh or targeted cache invalidation for retained task/dashboard/profile screens. Resolve numeric-only task notification identifiers and verify deep links for deleted, inaccessible and completed tasks.
+- **Focused regressions:** add/verify tests for payment-webhook replay, dispute eligibility, checkout-versus-budget edit, budget bounds, browse-versus-accept eligibility, same-task concurrent claims, password recovery cooldown/quotas, token-fragment cleanup, and notification/rating mutation failures.
+- **Marketplace exceptions and policy:** post-payment/assigned-task cancellation, no-show/refund rules, dispute evidence/participant conversation/appeal, reports/blocks, verified email changes and self-service deletion remain incomplete or policy-blocked. Use the current support/dispute path; do not invent fees or release rules just to fill test rows.
+- **Operational acceptance:** confirm that the actual hosted staging branch SHA matches the intended release; execute website and mobile smoke/E2E flows against that same backend and database; retain evidence of request/status, persisted state, no side effects on denial, and cross-client consistency.
+- **Release discipline:** keep all three PRs as drafts until final CI passes and staging provider/database/runtime checks are evidenced. Do not merge solely because the code builds.
 ### Validation and release evidence
 
-- Backend: `dotnet test DoForYou.Tests/DoForYou.Tests.csproj --no-restore --verbosity minimal` passed (42 passed, 0 failed). The existing suite does not include focused regression cases for the new controller guards.
-- Website: `npm run build` passed (`tsc` and Vite production build); Vite reported the existing large-chunk advisory.
-- Mobile: `npm run typecheck` passed after the notification focus and mutation-reconciliation changes.
-- Cross-client staging verification is still required; local builds do not prove the API response contracts, permissions, deployment configuration, or real-time state behavior in staging.
+- **Backend source tests:** include coverage for password reset/change security notifications, fragment-based one-time token links, email verification/resend quotas, password safety, Google-only account recovery, TOTP replay/recovery, Sumsub handoff/webhook behavior, consent history, profile privacy and independent capability eligibility. Recheck the latest PR CI result before claiming a pass.
+- **Website CI:** build and E2E are run by the PR workflow. Verify the current PR head run after the URL-fragment token changes; the workflow is not evidence of live SMTP/OAuth/identity-provider configuration.
+- **Mobile CI:** typecheck/bundle and Android build are run by the PR workflow. These do not replace device-level app/background/deep-link testing against the deployed staging API.
+- **Staging:** no auth PR merge or coordinated staging rollout is implied by branch CI. Record the deployed SHA, migration state, provider configuration and each cross-client test result separately.
