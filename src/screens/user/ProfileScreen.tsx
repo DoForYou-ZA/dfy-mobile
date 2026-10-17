@@ -48,6 +48,7 @@ export default function ProfileScreen({ navigation }: any) {
   const [totpSecret, setTotpSecret] = useState('')
   const [totpProvisioningUri, setTotpProvisioningUri] = useState('')
   const [totpCurrentPassword, setTotpCurrentPassword] = useState('')
+  const [totpGoogleIdToken, setTotpGoogleIdToken] = useState('')
   const [totpCode, setTotpCode] = useState('')
   const [totpRecoveryCodes, setTotpRecoveryCodes] = useState<string[]>([])
   const [totpLoading, setTotpLoading] = useState(false)
@@ -304,11 +305,19 @@ export default function ProfileScreen({ navigation }: any) {
   const handleTotpSetup = async () => {
     setTotpLoading(true); setTotpError(''); setTotpMessage('')
     try {
-      const response = await authApi.setupTwoFactor({ currentPassword: totpCurrentPassword || undefined })
+      if (user?.hasGoogleLogin && !totpGoogleIdToken) {
+        setTotpError('Confirm your linked Google account before setting up an authenticator.')
+        return
+      }
+      const response = await authApi.setupTwoFactor({
+        currentPassword: user?.hasGoogleLogin ? undefined : totpCurrentPassword || undefined,
+        googleIdToken: user?.hasGoogleLogin ? totpGoogleIdToken : undefined,
+      })
       const d = response.data?.data || response.data
       setTotpSecret(d.secret || '')
       setTotpProvisioningUri(d.provisioningUri || '')
       setTotpCode('')
+      setTotpGoogleIdToken('')
       setTotpMessage('Add the key to your authenticator app, then enter its current six-digit code to enable it.')
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'Authenticator setup could not start.')
@@ -322,6 +331,7 @@ export default function ProfileScreen({ navigation }: any) {
       setTotpSecret('')
       setTotpProvisioningUri('')
       setTotpCode('')
+      setTotpGoogleIdToken('')
       setTotpMessage('Authenticator setup cancelled.')
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'Setup could not be cancelled on the server. The pending setup expires automatically.')
@@ -664,14 +674,20 @@ export default function ProfileScreen({ navigation }: any) {
           {totpConfigured && !totpEnabled && !totpSecret && (
             <>
               {user?.hasGoogleLogin ? (
-                <Text style={styles.hint}>Because this account uses Google, sign in again immediately before setting up an authenticator.</Text>
+                <>
+                  <Text style={styles.hint}>Confirm control of your linked Google account for this authenticator setup.</Text>
+                  <GoogleSignInButton
+                    onIdToken={token => { setTotpGoogleIdToken(token); setTotpError(''); setTotpMessage('Google account confirmed. Continue to set up authenticator.') }}
+                    disabled={totpLoading}
+                  />
+                </>
               ) : (
                 <>
                   <Text style={styles.label}>Current password</Text>
                   <TextInput style={styles.input} value={totpCurrentPassword} onChangeText={setTotpCurrentPassword} secureTextEntry autoComplete="current-password" placeholder="Confirm your current password" placeholderTextColor={COLORS.textMuted} />
                 </>
               )}
-              <Button title="Set up authenticator" onPress={handleTotpSetup} loading={totpLoading} disabled={totpLoading || (!user?.hasGoogleLogin && !totpCurrentPassword)} fullWidth style={{ marginTop: 8 }} />
+              <Button title="Set up authenticator" onPress={handleTotpSetup} loading={totpLoading} disabled={totpLoading || (user?.hasGoogleLogin ? !totpGoogleIdToken : !totpCurrentPassword)} fullWidth style={{ marginTop: 8 }} />
             </>
           )}
           {totpConfigured && !totpEnabled && !!totpSecret && (
