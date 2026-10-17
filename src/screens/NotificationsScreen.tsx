@@ -63,13 +63,17 @@ export default function NotificationsScreen({ navigation }: any) {
 
   const handleClick = async (n: AppNotification) => {
     if (n.type === 'new_message' && n.relatedTaskId != null) {
-      markTaskNotificationsRead(n.relatedTaskId)
-      if (n.relatedTaskStringId) navigation.navigate('TaskChat', { taskId: n.relatedTaskStringId, title: 'Task Chat' })
-    } else {
-      if (!n.isRead) await markRead(n.id)
-      if (n.type === 'payment_received') navigation.navigate('MyCompletedTasks')
-      else if (n.relatedTaskStringId || n.relatedTaskId != null) navigation.navigate('MyPostedTasks')
+      markTaskNotificationsRead(n.relatedTaskStringId || String(n.relatedTaskId))
+      // Legacy notifications can carry only the numeric database ID. The API and
+      // SignalR hub resolve that alias and return/use the canonical public TaskId.
+      const taskIdentifier = n.relatedTaskStringId || String(n.relatedTaskId)
+      navigation.navigate('TaskChat', { taskId: taskIdentifier, title: 'Task Chat' })
+      return
     }
+
+    if (!n.isRead) await markRead(n.id)
+    if (n.type === 'payment_received') navigation.navigate('MyCompletedTasks')
+    else if (n.relatedTaskStringId || n.relatedTaskId != null) navigation.navigate('MyPostedTasks')
   }
 
   const onRefresh = async () => { setRefreshing(true); await refresh(); setRefreshing(false) }
