@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import {
   View, Text, TextInput, ScrollView, StyleSheet, Alert, TouchableOpacity,
   Modal, KeyboardAvoidingView, Platform,
 } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import { bankingApi, authApi } from '../../api'
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import { LoadingScreen, EmptyState } from '../../components/Common'
@@ -41,7 +42,7 @@ export default function BankAccountsScreen() {
   const [stepUpLoading, setStepUpLoading] = useState(false)
   const [pendingOperation, setPendingOperation] = useState<StepUpOperation | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     const [accountsResult, banksResult, profileResult] = await Promise.allSettled([
       bankingApi.getBankAccounts(),
@@ -82,9 +83,9 @@ export default function BankAccountsScreen() {
       setProfileSecurity(null)
     }
     setLoading(false)
-  }
+  }, [])
 
-  useEffect(() => { void load() }, [])
+  useFocusEffect(useCallback(() => { void load() }, [load]))
 
   const requestStepUp = (label: string, execute: (token: string) => Promise<void>) => {
     if (!profileSecurity) {
