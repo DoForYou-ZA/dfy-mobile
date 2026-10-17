@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { View, Text, FlatList, RefreshControl, StyleSheet, Alert } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import { tasksApi, ratingsApi, disputesApi } from '../../api'
 import { EmptyState, LoadingScreen } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
@@ -33,7 +34,7 @@ export default function MyCompletedTasksScreen({ navigation }: any) {
     } finally { setLoading(false); setRefreshing(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useFocusEffect(useCallback(() => { void load() }, [load]))
 
   const submitRating = async () => {
     if (!ratingTask) return
